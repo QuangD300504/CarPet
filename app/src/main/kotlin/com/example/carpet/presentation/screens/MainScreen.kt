@@ -8,8 +8,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -18,10 +18,16 @@ import com.example.carpet.presentation.components.CarPetBottomBar
 import com.example.carpet.presentation.components.topbars.HomeTopBar
 import com.example.carpet.presentation.navigation.Routes
 import com.example.carpet.presentation.viewmodels.HomeViewModel
+import com.example.carpet.presentation.viewmodels.HomeViewModelFactory
 
 @Composable
-fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
+fun MainScreen() {
     val bottomNavController = rememberNavController()
+    val repository = com.example.carpet.data.repository.MockServiceRepository()
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory(repository)
+    )
+    val categories by homeViewModel.categories.collectAsState()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val homeUiState by homeViewModel.uiState.collectAsState()
@@ -32,6 +38,7 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
             if (currentRoute == Routes.Home.route) {
                 HomeTopBar(hasNotification = homeUiState.hasNotification)
             } else {
+                // Simple top bar for other screens
                 Text(text = "Top Bar for $currentRoute")
             }
         },
@@ -45,9 +52,13 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Routes.Home.route) {
-                HomeScreenContent(
-                    uiState = homeUiState,
+                HomeScreen(
+                    viewModel = homeViewModel,
                     onSeeAllClick = {
+                        bottomNavController.navigate(Routes.Service.route)
+                    },
+                    onCategoryClick = { category ->
+                        println("Clicked: ${category.title}")
                         bottomNavController.navigate(Routes.Service.route) {
                             popUpTo(bottomNavController.graph.findStartDestination().id) {
                                 saveState = true
@@ -59,7 +70,12 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
                 )
             }
             composable(Routes.Service.route) {
-                Text(text = "Service Screen")
+                ServiceScreen(
+                    categories = categories,
+                    onCategoryClick = { categoryId ->
+                        println("Navigate to detail of: $categoryId")
+                    }
+                )
             }
             composable(Routes.Community.route) {
                 Text(text = "Community Screen")
@@ -69,4 +85,9 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
             }
         }
     }
+}
+@Preview
+@Composable
+fun MainScreenPreview() {
+    MainScreen()
 }

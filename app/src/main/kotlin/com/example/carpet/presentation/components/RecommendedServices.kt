@@ -17,9 +17,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.carpet.R
+import com.example.carpet.domain.models.ServiceCategory
 
 @Composable
 fun RecommendedServices(
+    categories: List<ServiceCategory>,
+    onCategoryClick: (ServiceCategory) -> Unit,
     onSeeAllClick: () -> Unit = {}
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
@@ -43,34 +46,25 @@ fun RecommendedServices(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ServiceCard(
-                iconRes = R.drawable.checkup,
-                title = "Vet Checkup",
-                modifier = Modifier.weight(1f))
-            ServiceCard(
-                iconRes = R.drawable.hotel,
-                title = "Pet Hotel",
-                modifier = Modifier.weight(1f))
-        }
+        val rows = categories.chunked(2)
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ServiceCard(
-                iconRes = R.drawable.groom,
-                title = "Grooming",
-                modifier = Modifier.weight(1f))
-            ServiceCard(
-                iconRes = R.drawable.pawns,
-                title = "Adoption",
-                modifier = Modifier.weight(1f))
+        rows.forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowItems.forEach { item ->
+                    ServiceCard(
+                        category = item,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onCategoryClick(item) }
+                    )
+                }
+                if (rowItems.size < 2) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-@Composable
-fun RecommendedServicesPreview(){
-    RecommendedServices()
 }
