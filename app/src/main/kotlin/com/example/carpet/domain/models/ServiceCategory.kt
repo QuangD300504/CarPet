@@ -10,3 +10,18 @@ data class ServiceCategory(
     val shortDescription: String,
     val iconRes: Int
 )
+data class ServicePackage(
+    val id: String,
+    val name: String,
+    val price: Double
+)
+
+data class PetServiceDetail(
+    val categoryId: String,
+    val rating: Float,
+    val reviewCount: String,
+    val about: String,
+    val packages: List<ServicePackage>,
+    val availableTimes: List<String>,
+    val bannerGradientColors: List<Long>
+)

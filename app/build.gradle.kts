@@ -43,6 +43,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.ui)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.material3)
     val lifecycle_version = "2.10.0"
     val arch_version = "2.2.0"
 
@@ -80,4 +82,6 @@ dependencies {
     // ViewModel integration with Navigation3
     implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0")
     implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.compose.material:material-icons-extended")
+
 }

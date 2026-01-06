@@ -10,16 +10,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.carpet.presentation.components.CarPetBottomBar
 import com.example.carpet.presentation.components.topbars.HomeTopBar
 import com.example.carpet.presentation.navigation.Routes
+import com.example.carpet.presentation.screens.service_detail.ServiceDetailScreen
 import com.example.carpet.presentation.viewmodels.HomeViewModel
 import com.example.carpet.presentation.viewmodels.HomeViewModelFactory
+import com.example.carpet.presentation.viewmodels.ServiceDetailViewModel
+import com.example.carpet.presentation.viewmodels.ServiceDetailViewModelFactory
 
 @Composable
 fun MainScreen() {
@@ -65,7 +71,7 @@ fun MainScreen() {
                         }
                     },
                     onCategoryClick = { category ->
-                        println("Clicked: ${category.title}")
+                        handleServiceNavigation(category.id, bottomNavController)
                     }
                 )
             }
@@ -73,9 +79,33 @@ fun MainScreen() {
                 ServiceScreen(
                     categories = categories,
                     onCategoryClick = { categoryId ->
-                        println("Navigate to detail of: $categoryId")
+                        handleServiceNavigation(categoryId, bottomNavController)
                     }
                 )
+            }
+
+            // --- MÀN HÌNH CHI TIẾT (Trang dùng chung cho Hotel, Spa, Home Care) ---
+            composable(
+                route = Routes.ServiceDetail.route,
+                arguments = listOf(navArgument("serviceId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val serviceId = backStackEntry.arguments?.getString("serviceId") ?: ""
+
+                // Khởi tạo ViewModel riêng cho trang chi tiết
+                val detailViewModel: ServiceDetailViewModel = viewModel(
+                    factory = ServiceDetailViewModelFactory(repository, serviceId)
+                )
+
+                val detailCategory by detailViewModel.category.collectAsState()
+                val detailData by detailViewModel.detail.collectAsState()
+
+                if (detailCategory != null && detailData != null) {
+                    ServiceDetailScreen(
+                        category = detailCategory!!,
+                        detail = detailData!!,
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
             }
             composable(Routes.Community.route) {
                 Text(text = "Community Screen")
@@ -84,6 +114,14 @@ fun MainScreen() {
                 Text(text = "Profile Screen")
             }
         }
+    }
+}
+private fun handleServiceNavigation(categoryId: String, navController: NavController) {
+    if (categoryId == "cat_vet") {
+        // Luồng Veterinary để sau
+        println("Veterinary flow - To be implemented")
+    } else {
+        navController.navigate(Routes.ServiceDetail.createRoute(categoryId))
     }
 }
 @Preview
