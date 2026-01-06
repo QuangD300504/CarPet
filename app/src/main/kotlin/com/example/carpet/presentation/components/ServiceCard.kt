@@ -1,6 +1,6 @@
 package com.example.carpet.presentation.components
 
-import android.R
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,14 +11,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun ServiceCard(
@@ -28,7 +31,12 @@ fun ServiceCard(
 ) {
     Card(
         modifier = modifier.height(110.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -40,14 +48,16 @@ fun ServiceCard(
             Image(
                 painter = painterResource(iconRes),
                 contentDescription = title,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(42.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = title,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color.Black
             )
         }
     }
@@ -58,6 +68,6 @@ fun ServiceCard(
 fun ServiceCardPreview() {
     ServiceCard(
         title = "Vet Checkup",
-        iconRes = R.drawable.ic_dialog_info,
+        iconRes = android.R.drawable.ic_dialog_info,
     )
 }

@@ -63,6 +63,7 @@ fun AppointmentCard() {
             Column {
                 Text(
                     text = "Lịch hẹn hôm nay",
+                    color = Color.Black.copy(alpha = 1f),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

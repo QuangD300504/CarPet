@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ fun TopBarSurface(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding() // Prevents overlapping with the status bar
                 .padding(vertical = 12.dp),
             content = content
         )

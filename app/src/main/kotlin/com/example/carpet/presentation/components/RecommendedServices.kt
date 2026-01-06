@@ -1,5 +1,6 @@
 package com.example.carpet.presentation.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,9 @@ import androidx.compose.ui.unit.sp
 import com.example.carpet.R
 
 @Composable
-fun RecommendedServices() {
+fun RecommendedServices(
+    onSeeAllClick: () -> Unit = {}
+) {
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -27,12 +30,14 @@ fun RecommendedServices() {
             Text(
                 text = "Recommended Services",
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
             )
             Text(
                 text = "See All",
-                color = Color(0xFFFFA500),
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFFFF9800),
+                modifier = Modifier.clickable { onSeeAllClick() }
             )
         }
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -91,7 +92,7 @@ fun FeaturedBanner() {
                     )
                     Text(
                         text = event.subtitle,
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = Color.White.copy(alpha = 0.9f), // Increased opacity
                         fontSize = 14.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -99,13 +100,14 @@ fun FeaturedBanner() {
                         onClick = { },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                         shape = RoundedCornerShape(20.dp),
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                        modifier = Modifier.height(36.dp)
+                        contentPadding = PaddingValues(horizontal = 20.dp), // Adjust padding
+                        modifier = Modifier.width(110.dp).height(40.dp) // Fixed width for full text
                     ) {
                         Text(
                             text = event.buttonText,
                             color = event.gradientColors.last(),
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
                         )
                     }
                 }
