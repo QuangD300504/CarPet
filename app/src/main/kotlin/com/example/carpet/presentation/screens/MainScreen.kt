@@ -8,8 +8,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -32,7 +32,6 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
             if (currentRoute == Routes.Home.route) {
                 HomeTopBar(hasNotification = homeUiState.hasNotification)
             } else {
-                // Simple top bar for other screens
                 Text(text = "Top Bar for $currentRoute")
             }
         },
@@ -49,7 +48,13 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
                 HomeScreenContent(
                     uiState = homeUiState,
                     onSeeAllClick = {
-                        bottomNavController.navigate(Routes.Service.route)
+                        bottomNavController.navigate(Routes.Service.route) {
+                            popUpTo(bottomNavController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }
@@ -64,9 +69,4 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel()) {
             }
         }
     }
-}
-@Preview
-@Composable
-fun MainScreenPreview() {
-    MainScreen()
 }
