@@ -15,11 +15,9 @@ fun CarPetNavGraph() {
         navController = rootNavController,
         startDestination = Routes.Login.route
     ) {
-        // 1. Login screen with no footer
         composable(Routes.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
-                    //go to main and delete login history
                     rootNavController.navigate("main") {
                         popUpTo(Routes.Login.route) { inclusive = true }
                     }
@@ -27,7 +25,6 @@ fun CarPetNavGraph() {
             )
         }
 
-        // 2.Main screen with footer
         composable("main") {
             MainScreen()
         }

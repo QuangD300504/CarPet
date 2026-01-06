@@ -13,7 +13,6 @@ import com.example.carpet.presentation.navigation.Routes
 
 @Composable
 fun MainScreen() {
-    // This NavController manages the 4 tabs only
     val bottomNavController = rememberNavController()
 
     Scaffold(
@@ -21,7 +20,6 @@ fun MainScreen() {
             CarPetBottomBar(navController = bottomNavController)
         }
     ) { innerPadding ->
-        // Content area that changes when you click the footer
         NavHost(
             navController = bottomNavController,
             startDestination = Routes.Home.route,

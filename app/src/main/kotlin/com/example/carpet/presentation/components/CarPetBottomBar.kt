@@ -1,10 +1,17 @@
 package com.example.carpet.presentation.components
 
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.painterResource // Import this to use drawable resources
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -12,36 +19,48 @@ import com.example.carpet.presentation.navigation.bottomNavItems
 
 @Composable
 fun CarPetBottomBar(navController: NavController) {
-    NavigationBar {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
+    Surface(
+        color = Color.White,
+        shadowElevation = 8.dp
+    ) {
+        NavigationBar(
+            containerColor = Color.White,
+            tonalElevation = 0.dp,
+            // This removes the extra system padding at the very bottom
+            windowInsets = WindowInsets(0, 0, 0, 0)
+        ) {
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
 
-        bottomNavItems.forEach { item ->
-            NavigationBarItem(
-                selected = currentRoute == item.route,
-                onClick = {
-                    navController.navigate(item.route) {
-                        navController.graph.startDestinationRoute?.let { startRoute ->
-                            popUpTo(startRoute) {
-                                saveState = true
+            bottomNavItems.forEach { item ->
+                val isSelected = currentRoute == item.route
+                NavigationBarItem(
+                    selected = isSelected,
+                    onClick = {
+                        navController.navigate(item.route) {
+                            navController.graph.startDestinationRoute?.let { startRoute ->
+                                popUpTo(startRoute) { saveState = true }
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-//                label = { Text(text = item.label) }, //cause already label in svg image
-                icon = {
-                    Icon(
-                        // Use painterResource for your SVG drawables
-                        painter = painterResource(id = item.iconRes),
-                        contentDescription = item.label
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = item.iconRes),
+                            contentDescription = item.label,
+                            tint = if (isSelected) Color(0xFFFF9800) else Color.Gray
+                        )
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = Color.Transparent
                     )
-                }
-            )
+                )
+            }
         }
     }
 }
+
 @Preview
 @Composable
 fun CarPetBottomBarPreview() {
