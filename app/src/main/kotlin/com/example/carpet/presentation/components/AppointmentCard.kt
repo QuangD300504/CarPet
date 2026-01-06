@@ -65,6 +65,7 @@ fun AppointmentCard() {
                     text = "Lịch hẹn hôm nay",
                     color = Color.Black.copy(alpha = 1f),
                     style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth(),
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))

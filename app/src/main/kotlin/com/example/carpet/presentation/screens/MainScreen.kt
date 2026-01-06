@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -55,10 +56,6 @@ fun MainScreen() {
                 HomeScreen(
                     viewModel = homeViewModel,
                     onSeeAllClick = {
-                        bottomNavController.navigate(Routes.Service.route)
-                    },
-                    onCategoryClick = { category ->
-                        println("Clicked: ${category.title}")
                         bottomNavController.navigate(Routes.Service.route) {
                             popUpTo(bottomNavController.graph.findStartDestination().id) {
                                 saveState = true
@@ -66,6 +63,9 @@ fun MainScreen() {
                             launchSingleTop = true
                             restoreState = true
                         }
+                    },
+                    onCategoryClick = { category ->
+                        println("Clicked: ${category.title}")
                     }
                 )
             }
