@@ -2,6 +2,7 @@ package com.example.carpet.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,15 +23,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.carpet.domain.models.ServiceCategory
 
 @Composable
 fun ServiceCard(
-    title: String,
-    iconRes: Int,
-    modifier: Modifier = Modifier
+    category: ServiceCategory,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = modifier.height(110.dp),
+        modifier = modifier.height(110.dp).clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -46,28 +48,19 @@ fun ServiceCard(
             horizontalAlignment = Alignment.Start
         ) {
             Image(
-                painter = painterResource(iconRes),
-                contentDescription = title,
+                painter = painterResource(category.iconRes),
+                contentDescription = category.title,
                 modifier = Modifier.size(42.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = title,
+                text = category.title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = Color.Black
             )
         }
     }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-@Composable
-fun ServiceCardPreview() {
-    ServiceCard(
-        title = "Vet Checkup",
-        iconRes = android.R.drawable.ic_dialog_info,
-    )
 }
