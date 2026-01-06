@@ -1,0 +1,4 @@
+# Domain Models
+# Place domain models (business entities) here.
+# These are pure Kotlin data classes representing business logic entities.
+

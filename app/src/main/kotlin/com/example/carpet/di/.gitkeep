@@ -1,0 +1,4 @@
+# Dependency Injection
+# Place DI modules here (Hilt modules, Koin modules, etc.).
+# Examples: DatabaseModule, NetworkModule, RepositoryModule.
+
