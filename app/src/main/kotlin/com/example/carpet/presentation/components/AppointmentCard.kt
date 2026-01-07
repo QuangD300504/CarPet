@@ -38,7 +38,8 @@ fun AppointmentCard() {
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -54,25 +55,24 @@ fun AppointmentCard() {
                 Image(
                     painter = painterResource(R.drawable.calender),
                     contentDescription = null,
-                    modifier = Modifier.size(50.dp)
+                    modifier = Modifier.size(32.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Lịch hẹn hôm nay",
                     color = Color.Black.copy(alpha = 1f),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.fillMaxWidth(),
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Vet appointment: 3:00 PM, Nov 2",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                    color = Color.Gray.copy(alpha = 1f)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedButton(

@@ -15,7 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.carpet.data.repository.MockCommunityRepository
 import com.example.carpet.data.repository.MockUserRepository
 import com.example.carpet.presentation.viewmodels.PetProfileViewModel
 import com.example.carpet.presentation.viewmodels.PetProfileViewModelFactory
@@ -41,7 +42,7 @@ import com.example.carpet.presentation.viewmodels.PetProfileViewModelFactory
 fun PetProfileScreen(
     petId: String,
     viewModel: PetProfileViewModel = viewModel(
-        factory = PetProfileViewModelFactory(MockUserRepository(), petId)
+        factory = PetProfileViewModelFactory(MockUserRepository(), MockCommunityRepository(), petId)
     ),
     onBackClick: () -> Unit = {}
 ) {
@@ -83,7 +84,7 @@ fun PetProfileScreen(
                             modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
                                 tint = Color(0xFF1A1A1A)
                             )
@@ -92,7 +93,7 @@ fun PetProfileScreen(
                             text = pet.name,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A)
+                            color = Color.Black.copy(alpha = 1f)
                         )
                         Box(modifier = Modifier.size(40.dp)) // Spacer for alignment
                     }
@@ -173,7 +174,7 @@ fun PetProfileScreen(
                             text = "Tình trạng sức khỏe",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1A1A1A),
+                            color = Color.Black.copy(alpha = 1f),
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
 
@@ -195,7 +196,7 @@ fun PetProfileScreen(
                                 Text(
                                     text = "Tình trạng: ${pet.parasiticStatus}",
                                     fontSize = 14.sp,
-                                    color = Color(0xFF1A1A1A)
+                                    color = Color.Black.copy(alpha = 1f)
                                 )
                                 Text(
                                     text = if (pet.parasiticStatus.lowercase() == "healthy" || pet.parasiticStatus.lowercase() == "khỏe mạnh") "✓" else "⚠",
@@ -218,7 +219,7 @@ fun PetProfileScreen(
                                 text = "Tiêm chủng",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1A1A1A),
+                                color = Color.Black.copy(alpha = 1f),
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
 
@@ -247,7 +248,7 @@ fun PetProfileScreen(
                                 text = "Ghi chú",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1A1A1A),
+                                color = Color.Black.copy(alpha = 1f),
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
 
@@ -263,7 +264,7 @@ fun PetProfileScreen(
                                 Text(
                                     text = pet.note,
                                     fontSize = 13.sp,
-                                    color = Color(0xFF666666),
+                                    color = Color.Gray.copy(alpha = 1f),
                                     lineHeight = 18.sp
                                 )
                             }
@@ -291,13 +292,13 @@ private fun InfoRow(
             text = label,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF1A1A1A)
+            color = Color.Black.copy(alpha = 1f)
         )
         Text(
             text = value,
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
-            color = Color(0xFF666666)
+            color = Color.Gray.copy(alpha = 1f)
         )
     }
 }
@@ -329,13 +330,13 @@ private fun VaccinationItem(
                 text = title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF1A1A1A)
+                color = Color.Black.copy(alpha = 1f)
             )
             if (date != null) {
                 Text(
                     text = date,
                     fontSize = 12.sp,
-                    color = Color(0xFF999999),
+                    color = Color.Gray.copy(alpha = 1f),
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }

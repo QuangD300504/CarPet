@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import com.example.carpet.domain.models.Pet
 import com.example.carpet.domain.repository.UserRepository
+import com.example.carpet.domain.repository.CommunityRepository
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 /**
  * UI State for Pet Profile Screen
@@ -22,6 +25,7 @@ data class PetProfileUiState(
  */
 class PetProfileViewModel(
     private val userRepository: UserRepository,
+    private val communityRepository: CommunityRepository,
     private val petId: String
 ) : ViewModel() {
 
@@ -34,23 +38,27 @@ class PetProfileViewModel(
 
     private fun loadPetDetails() {
         try {
+            // 1. First, search in User's pets
             val currentUser = userRepository.getCurrentUser()
+            var selectedPet: Pet? = null
+            
             if (currentUser != null) {
-                val pets = userRepository.getUserPets(currentUser.id)
-                val selectedPet = pets.find { it.id == petId }
-                
-                _uiState.value = if (selectedPet != null) {
-                    PetProfileUiState(pet = selectedPet, isLoading = false)
-                } else {
-                    PetProfileUiState(
-                        isLoading = false,
-                        error = "Pet not found"
-                    )
-                }
+                selectedPet = userRepository.getUserPets(currentUser.id).find { it.id == petId }
+            }
+
+            // 2. If not found, search in Community adoption pets
+            if (selectedPet == null) {
+                // Using runBlocking here for simplicity since mock repo uses flowOf
+                val adoptionPets = runBlocking { communityRepository.getAdoptionPets().first() }
+                selectedPet = adoptionPets.find { it.id == petId }
+            }
+            
+            _uiState.value = if (selectedPet != null) {
+                PetProfileUiState(pet = selectedPet, isLoading = false)
             } else {
-                _uiState.value = PetProfileUiState(
+                PetProfileUiState(
                     isLoading = false,
-                    error = "User not found"
+                    error = "Pet not found"
                 )
             }
         } catch (e: Exception) {
@@ -67,11 +75,12 @@ class PetProfileViewModel(
  */
 class PetProfileViewModelFactory(
     private val userRepository: UserRepository,
+    private val communityRepository: CommunityRepository,
     private val petId: String
 ) : ViewModelProvider.Factory {
     
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return PetProfileViewModel(userRepository, petId) as T
+        return PetProfileViewModel(userRepository, communityRepository, petId) as T
     }
 }

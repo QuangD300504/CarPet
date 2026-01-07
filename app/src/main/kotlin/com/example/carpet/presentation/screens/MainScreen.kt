@@ -2,13 +2,13 @@ package com.example.carpet.presentation.screens
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -18,15 +18,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.carpet.data.repository.MockServiceRepository
 import com.example.carpet.presentation.components.CarPetBottomBar
 import com.example.carpet.presentation.components.topbars.HomeTopBar
+import com.example.carpet.presentation.components.topbars.SimpleTopBar
 import com.example.carpet.presentation.navigation.Routes
 import com.example.carpet.presentation.screens.service_detail.ServiceDetailScreen
 import com.example.carpet.presentation.viewmodels.HomeViewModel
 import com.example.carpet.presentation.viewmodels.HomeViewModelFactory
 import com.example.carpet.presentation.viewmodels.ServiceDetailViewModel
 import com.example.carpet.presentation.viewmodels.ServiceDetailViewModelFactory
+import com.example.carpet.data.repository.MockServiceRepository
 
 @Composable
 fun MainScreen(onLogout: () -> Unit = {}) {
@@ -43,13 +44,38 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     Scaffold(
         containerColor = Color.White,
         topBar = {
-            if (currentRoute == Routes.Home.route) {
-                HomeTopBar(hasNotification = homeUiState.hasNotification)
+            when {
+                currentRoute == Routes.Home.route -> {
+                    HomeTopBar(hasNotification = homeUiState.hasNotification)
+                }
+                currentRoute == Routes.Service.route -> {
+                    SimpleTopBar(
+                        title = "Services",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Community.route -> {
+                    SimpleTopBar(
+                        title = "Community",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Profile.route -> {
+                    SimpleTopBar(
+                        title = "Profile",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                // Don't show scaffold top bar for detailed screens that have their own
+                currentRoute?.startsWith("service_detail") == true || currentRoute?.startsWith("pet_profile") == true -> { }
+                
+                else -> {
+                    SimpleTopBar(
+                        title = "CarPet",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
             }
-//            else {
-//                // Simple top bar for other screens
-//                Text(text = "Top Bar for $currentRoute")
-//            }
         },
         bottomBar = {
             CarPetBottomBar(navController = bottomNavController)
@@ -86,18 +112,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 )
             }
 
-            // --- MÀN HÌNH CHI TIẾT (Trang dùng chung cho Hotel, Spa, Home Care) ---
             composable(
                 route = Routes.ServiceDetail.route,
                 arguments = listOf(navArgument("serviceId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val serviceId = backStackEntry.arguments?.getString("serviceId") ?: ""
-
-                // Khởi tạo ViewModel riêng cho trang chi tiết
                 val detailViewModel: ServiceDetailViewModel = viewModel(
                     factory = ServiceDetailViewModelFactory(repository, serviceId)
                 )
-
                 val detailCategory by detailViewModel.category.collectAsState()
                 val detailData by detailViewModel.detail.collectAsState()
 
@@ -109,9 +131,17 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     )
                 }
             }
+            
             composable(Routes.Community.route) {
-                Text(text = "Community Screen")
+                CommunityScreen(
+                    onAdoptClick = { petId ->
+                        // Since mock data IDs differ, we'll map "1" to "pet_001" for the demo
+                        val actualId = if (petId == "1") "pet_001" else if (petId == "2") "pet_002" else petId
+                        bottomNavController.navigate(Routes.PetProfile.createRoute(actualId))
+                    }
+                )
             }
+            
             composable(Routes.Profile.route) {
                 ProfileScreen(
                     onLogout = onLogout,
@@ -121,7 +151,6 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 )
             }
 
-            // Pet Profile Screen Route
             composable(
                 route = Routes.PetProfile.route,
                 arguments = listOf(navArgument("petId") { type = NavType.StringType })
@@ -135,15 +164,16 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         }
     }
 }
+
 private fun handleServiceNavigation(categoryId: String, navController: NavController) {
     if (categoryId == "cat_vet") {
-        // Luồng Veterinary để sau
         println("Veterinary flow - To be implemented")
     } else {
         navController.navigate(Routes.ServiceDetail.createRoute(categoryId))
     }
 }
-@Preview
+
+@Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
     MainScreen()

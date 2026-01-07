@@ -20,14 +20,10 @@ class MockServiceRepository : ServiceRepository {
                 title = "Professional Grooming",
                 shortDescription = "Deep cleaning and styling by certified experts",
                 iconRes = R.drawable.groom
-            ), ServiceCategory(
+            ),
+            ServiceCategory(
                 id = "cat_homecare",
                 title = "Home Care Service",
-                shortDescription = "Pet sitter visits your home",
-                iconRes = R.drawable.homecare
-            ), ServiceCategory(
-                id = "cat_homecare",
-                title = "Skibidi",
                 shortDescription = "Pet sitter visits your home",
                 iconRes = R.drawable.homecare
             ),

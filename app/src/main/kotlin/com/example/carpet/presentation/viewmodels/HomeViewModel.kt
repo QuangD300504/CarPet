@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.carpet.domain.models.ServiceCategory
 import com.example.carpet.domain.repository.ServiceRepository
+import com.example.carpet.presentation.models.HomeUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
