@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.carpet.data.repository.MockServiceRepository
 import com.example.carpet.presentation.components.CarPetBottomBar
 import com.example.carpet.presentation.components.topbars.HomeTopBar
 import com.example.carpet.presentation.navigation.Routes
@@ -28,9 +29,9 @@ import com.example.carpet.presentation.viewmodels.ServiceDetailViewModel
 import com.example.carpet.presentation.viewmodels.ServiceDetailViewModelFactory
 
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit = {}) {
     val bottomNavController = rememberNavController()
-    val repository = com.example.carpet.data.repository.MockServiceRepository()
+    val repository = MockServiceRepository()
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(repository)
     )
@@ -44,10 +45,11 @@ fun MainScreen() {
         topBar = {
             if (currentRoute == Routes.Home.route) {
                 HomeTopBar(hasNotification = homeUiState.hasNotification)
-            } else {
-                // Simple top bar for other screens
-                Text(text = "Top Bar for $currentRoute")
             }
+//            else {
+//                // Simple top bar for other screens
+//                Text(text = "Top Bar for $currentRoute")
+//            }
         },
         bottomBar = {
             CarPetBottomBar(navController = bottomNavController)
@@ -111,7 +113,9 @@ fun MainScreen() {
                 Text(text = "Community Screen")
             }
             composable(Routes.Profile.route) {
-                Text(text = "Profile Screen")
+                ProfileScreen(
+                    onLogout = onLogout
+                )
             }
         }
     }

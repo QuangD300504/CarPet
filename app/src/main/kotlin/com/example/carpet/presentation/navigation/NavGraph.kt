@@ -42,7 +42,17 @@ fun CarPetNavGraph() {
         }
 
         composable("main") {
-            MainScreen()
+            MainScreen(
+                onLogout = {
+                    // Navigate to Login using the root NavController
+                    // This clears the entire back stack and resets the session
+                    rootNavController.navigate(Routes.Login.route) {
+                        popUpTo(rootNavController.graph.id) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
         }
     }
 }
