@@ -114,7 +114,22 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             }
             composable(Routes.Profile.route) {
                 ProfileScreen(
-                    onLogout = onLogout
+                    onLogout = onLogout,
+                    onPetClick = { petId ->
+                        bottomNavController.navigate(Routes.PetProfile.createRoute(petId))
+                    }
+                )
+            }
+
+            // Pet Profile Screen Route
+            composable(
+                route = Routes.PetProfile.route,
+                arguments = listOf(navArgument("petId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val petId = backStackEntry.arguments?.getString("petId") ?: ""
+                PetProfileScreen(
+                    petId = petId,
+                    onBackClick = { bottomNavController.popBackStack() }
                 )
             }
         }

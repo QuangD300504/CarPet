@@ -1,6 +1,7 @@
 package com.example.carpet.presentation.components.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +24,9 @@ import androidx.compose.ui.unit.sp
 fun PetCard(
     name: String,
     breed: String,
-    petEmoji: String
+    petEmoji: String,
+    onClick: ((String) -> Unit)? = null,
+    petId: String = ""
 ) {
     Column(
         modifier = Modifier
@@ -31,7 +34,16 @@ fun PetCard(
                 color = Color(0xFFFAFAFA),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
             )
-            .then(Modifier.size(width = 160.dp, height = 180.dp)),
+            .then(Modifier.size(width = 160.dp, height = 180.dp))
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable {
+                        onClick(petId)
+                    }
+                } else {
+                    Modifier
+                }
+            ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(20.dp))

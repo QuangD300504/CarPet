@@ -48,7 +48,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModelFactory(MockUserRepository())
     ),
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onPetClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -126,7 +127,9 @@ fun ProfileScreen(
                     PetCard(
                         name = pet.name,
                         breed = pet.breed,
-                        petEmoji = petEmoji
+                        petEmoji = petEmoji,
+                        onClick = onPetClick,
+                        petId = pet.id
                     )
                 }
             }
