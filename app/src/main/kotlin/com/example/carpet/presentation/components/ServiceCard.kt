@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.carpet.domain.models.ServiceCategory
@@ -32,7 +31,9 @@ fun ServiceCard(
     onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = modifier.height(110.dp).clickable { onClick() },
+        modifier = modifier
+            .height(130.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -43,7 +44,7 @@ fun ServiceCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 16.dp),
+                .padding(20.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start
         ) {
@@ -53,13 +54,13 @@ fun ServiceCard(
                 modifier = Modifier.size(42.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = category.title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
-                color = Color.Black
+                color = Color.Black.copy(alpha = 1f)
             )
         }
     }

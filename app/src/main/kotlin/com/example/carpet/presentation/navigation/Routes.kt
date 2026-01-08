@@ -11,7 +11,6 @@ sealed class Routes(val route: String) {
     object ServiceDetail : Routes("service_detail/{serviceId}") {
         fun createRoute(serviceId: String) = "service_detail/$serviceId"
     }
-
     object PetProfile : Routes("pet_profile/{petId}") {
         fun createRoute(petId: String) = "pet_profile/$petId"
     }

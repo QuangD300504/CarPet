@@ -25,13 +25,6 @@ fun ServiceScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = "All Services",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp)

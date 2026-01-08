@@ -12,7 +12,7 @@ import com.example.carpet.domain.models.ServiceCategory
 import com.example.carpet.presentation.components.AppointmentCard
 import com.example.carpet.presentation.components.FeaturedBanner
 import com.example.carpet.presentation.components.RecommendedServices
-import com.example.carpet.presentation.viewmodels.HomeUiState
+import com.example.carpet.presentation.models.HomeUiState
 import com.example.carpet.presentation.viewmodels.HomeViewModel
 
 @Composable

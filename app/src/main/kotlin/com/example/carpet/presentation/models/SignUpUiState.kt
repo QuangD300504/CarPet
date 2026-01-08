@@ -1,4 +1,4 @@
-package com.example.carpet.presentation.viewmodels
+package com.example.carpet.presentation.models
 
 data class SignUpUiState(
     val username: String = "",

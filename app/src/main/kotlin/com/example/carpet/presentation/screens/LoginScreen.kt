@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.carpet.R
 import com.example.carpet.presentation.theme.CarPetTheme
-import com.example.carpet.presentation.viewmodels.LoginUiState
+import com.example.carpet.presentation.models.LoginUiState
 import com.example.carpet.presentation.viewmodels.LoginViewModel
 
 

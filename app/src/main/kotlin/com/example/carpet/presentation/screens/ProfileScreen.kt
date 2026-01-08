@@ -61,17 +61,6 @@ fun ProfileScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        // Header
-        Text(
-            text = "Profile",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1A1A),
-            modifier = Modifier.padding(vertical = 12.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Profile Header Card
         uiState.user?.let { user ->
             val initials = user.name.split(" ").map { it.first() }.joinToString("")

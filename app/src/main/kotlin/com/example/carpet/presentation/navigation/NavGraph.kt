@@ -24,9 +24,8 @@ fun CarPetNavGraph() {
                     }
                 },
                 onSignUpClick = {
-                    rootNavController.navigate(route = "signup") {
-                        popUpTo(Routes.SignUp.route) { inclusive = true }
-                    }
+                    // Fixed route here to match Routes.SignUp.route
+                    rootNavController.navigate(Routes.SignUp.route)
                 }
             )
         }
@@ -34,9 +33,8 @@ fun CarPetNavGraph() {
         composable(Routes.SignUp.route) {
             SignInScreen(
                 onSignInSuccess = {
-                    rootNavController.navigate(Routes.Login.route) {
-                        popUpTo(Routes.SignUp.route) { inclusive = true }
-                    }
+                    // Navigate back to login
+                    rootNavController.popBackStack()
                 }
             )
         }
