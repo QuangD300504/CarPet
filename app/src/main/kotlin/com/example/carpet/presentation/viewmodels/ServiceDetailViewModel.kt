@@ -24,6 +24,7 @@ class ServiceDetailViewModel(
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 class ServiceDetailViewModelFactory(
     private val repository: ServiceRepository,
     private val categoryId: String
