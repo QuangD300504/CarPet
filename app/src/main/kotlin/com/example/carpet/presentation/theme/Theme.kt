@@ -24,7 +24,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun CarPetTheme(
+fun VetBookTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

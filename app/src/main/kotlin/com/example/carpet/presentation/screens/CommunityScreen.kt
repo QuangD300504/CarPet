@@ -2,18 +2,7 @@ package com.example.carpet.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -22,16 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,16 +26,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.example.carpet.data.repository.MockCommunityRepository
 import com.example.carpet.domain.models.Pet
 import com.example.carpet.domain.models.PetEvent
 import com.example.carpet.domain.models.Post
-import com.example.carpet.presentation.viewmodels.CommunityTab
+import com.example.carpet.presentation.models.CommunityTab
 import com.example.carpet.presentation.viewmodels.CommunityViewModel
+import com.example.carpet.presentation.viewmodels.CommunityViewModelFactory
 
 @Composable
 fun CommunityScreen(
     modifier: Modifier = Modifier,
-    viewModel: CommunityViewModel = viewModel(),
+    viewModel: CommunityViewModel = viewModel(
+        factory = CommunityViewModelFactory(MockCommunityRepository())
+    ),
     onAdoptClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -65,7 +49,6 @@ fun CommunityScreen(
             .fillMaxSize()
             .background(Color(0xFFFDFDFD))
     ) {
-        // Tab Header
         Surface(shadowElevation = 0.dp) {
             Column(
                 modifier = Modifier
@@ -104,16 +87,15 @@ fun CommunityScreen(
             }
         }
 
-        // List Content
         when (uiState.selectedTab) {
             CommunityTab.Feed -> FeedList(
                 posts = uiState.posts,
-                onLikeClick = { /* Future implement */ },
-                onCommentClick = { /* Future implement */ },
-                onShareClick = { /* Future implement */ }
+                onLikeClick = { },
+                onCommentClick = { },
+                onShareClick = { }
             )
             CommunityTab.Adoption -> AdoptionList(
-                pets = uiState.adoptionPets,
+                pets = uiState.pets,
                 onAdoptClick = onAdoptClick
             )
             CommunityTab.Events -> EventList(uiState.events)

@@ -4,18 +4,26 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.carpet.presentation.screens.LoginScreen
-import com.example.carpet.presentation.screens.MainScreen
-import com.example.carpet.presentation.screens.SignInScreen
+import com.example.carpet.presentation.screens.*
 
 @Composable
-fun CarPetNavGraph() {
+fun VetBookNavGraph() {
     val rootNavController = rememberNavController()
 
     NavHost(
         navController = rootNavController,
-        startDestination = Routes.Login.route
+        startDestination = Routes.Splash.route
     ) {
+        composable(Routes.Splash.route) {
+            SplashScreen(
+                onAnimationFinished = {
+                    rootNavController.navigate(Routes.Login.route) {
+                        popUpTo(Routes.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
@@ -24,17 +32,31 @@ fun CarPetNavGraph() {
                     }
                 },
                 onSignUpClick = {
-                    // Fixed route here to match Routes.SignUp.route
                     rootNavController.navigate(Routes.SignUp.route)
+                },
+                onForgotPasswordClick = {
+                    rootNavController.navigate(Routes.ForgotPassword.route)
+                }
+            )
+        }
+
+        composable(Routes.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onBack = {
+                    rootNavController.popBackStack()
                 }
             )
         }
 
         composable(Routes.SignUp.route) {
-            SignInScreen(
-                onSignInSuccess = {
-                    // Navigate back to login
+            SignUpScreen(
+                onLoginClick = {
                     rootNavController.popBackStack()
+                },
+                onSignUpComplete = {
+                    rootNavController.navigate("main") {
+                        popUpTo(Routes.Login.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -42,8 +64,6 @@ fun CarPetNavGraph() {
         composable("main") {
             MainScreen(
                 onLogout = {
-                    // Navigate to Login using the root NavController
-                    // This clears the entire back stack and resets the session
                     rootNavController.navigate(Routes.Login.route) {
                         popUpTo(rootNavController.graph.id) {
                             inclusive = true

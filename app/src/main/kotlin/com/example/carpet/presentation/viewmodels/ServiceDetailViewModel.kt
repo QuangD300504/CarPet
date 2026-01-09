@@ -1,10 +1,10 @@
 package com.example.carpet.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import com.example.carpet.domain.models.PetServiceDetail
 import com.example.carpet.domain.models.ServiceCategory
 import com.example.carpet.domain.repository.ServiceRepository
+import com.example.carpet.utils.ViewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -27,8 +27,7 @@ class ServiceDetailViewModel(
 class ServiceDetailViewModelFactory(
     private val repository: ServiceRepository,
     private val categoryId: String
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ServiceDetailViewModel(repository, categoryId) as T
-    }
-}
+) : ViewModelFactory<ServiceDetailViewModel>(
+    create = { ServiceDetailViewModel(repository, categoryId) },
+    viewModelClass = ServiceDetailViewModel::class.java
+)

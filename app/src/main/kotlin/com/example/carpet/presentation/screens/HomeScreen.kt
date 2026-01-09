@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.carpet.domain.models.ServiceCategory
 import com.example.carpet.presentation.components.AppointmentCard
@@ -21,11 +22,10 @@ fun HomeScreen(
     onSeeAllClick: () -> Unit,
     onCategoryClick: (ServiceCategory) -> Unit
 ) {
-    // Collect các State từ ViewModel
     val uiState by viewModel.uiState.collectAsState()
     val categories by viewModel.categories.collectAsState()
 
-    HomeScreenContent(
+    HomeContent(
         uiState = uiState,
         categories = categories,
         onCategoryClick = onCategoryClick,
@@ -34,7 +34,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeScreenContent(
+fun HomeContent(
     uiState: HomeUiState,
     categories: List<ServiceCategory>,
     onCategoryClick: (ServiceCategory) -> Unit,
@@ -57,3 +57,13 @@ fun HomeScreenContent(
     }
 }
 
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+fun HomeScreenPreview() {
+    HomeContent(
+        uiState = HomeUiState(),
+        categories = emptyList(),
+        onCategoryClick = {},
+        onSeeAllClick = {}
+    )
+}
