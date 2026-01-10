@@ -1,4 +1,4 @@
-# CarPet
+# VetBook
 
 An Android application built with Jetpack Compose following Clean Architecture principles.
 
@@ -30,7 +30,7 @@ An Android application built with Jetpack Compose following Clean Architecture p
 ## 📁 Project Structure
 
 ```
-app/src/main/java/com/example/carpet/
+app/src/main/kotlin/com/example/vetbook/
 ├── data/                    # Data Layer
 │   ├── datasource/         # Remote & Local data sources
 │   ├── models/             # Data models (DTOs, entities)
@@ -65,7 +65,7 @@ The project follows **Clean Architecture** principles:
 1. Clone the repository
    ```bash
    git clone <repository-url>
-   cd CarPet
+   cd VetBook
    ```
 
 2. Open the project in Android Studio

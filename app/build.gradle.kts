@@ -2,14 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "com.example.carpet"
+    namespace = "com.example.vetbook"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.carpet"
+        applicationId = "com.example.vetbook"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -40,10 +43,10 @@ android {
 }
 
 dependencies {
-    // 1. IMPORT THE BOM FIRST
+    // Import the BOM
     implementation(platform(libs.androidx.compose.bom))
 
-    // 2. COMPOSE LIBRARIES (Remove manual versions like 1.10.0 in your libs.versions.toml)
+    // Compose libraries
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -52,24 +55,38 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation("androidx.compose.material:material-icons-extended")
 
-    // 3. CORE & ACTIVITY
+    // Core & Activity
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    
+    // Firebase
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.kotlinx.coroutines.play.services)
 
-    // 4. LIFECYCLE (Use stable 2.8.7 for guaranteed compatibility)
-    val lifecycle_version = "2.8.7"
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
+    // Credentials & Google ID
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
-    // 5. NAVIGATION & IMAGES
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Lifecycle
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+
+    // Navigation & Images
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
 
-    // 6. TESTING & TOOLING
+    // Testing & Tooling
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
