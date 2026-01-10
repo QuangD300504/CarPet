@@ -1,31 +1,22 @@
 package com.example.carpet.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.carpet.domain.repository.CommunityRepository
+import com.example.carpet.domain.repository.UserRepository
+import com.example.carpet.domain.usecases.GetPetProfileUseCase
+import com.example.carpet.presentation.models.PetProfileUiState
+import com.example.carpet.utils.ViewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import com.example.carpet.domain.models.Pet
-import com.example.carpet.domain.repository.UserRepository
-import com.example.carpet.domain.repository.CommunityRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-
-/**
- * UI State for Pet Profile Screen
- */
-data class PetProfileUiState(
-    val pet: Pet? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for PetProfileScreen
  * Manages pet details and vaccination records
  */
 class PetProfileViewModel(
-    private val userRepository: UserRepository,
-    private val communityRepository: CommunityRepository,
+    private val getPetProfileUseCase: GetPetProfileUseCase,
     private val petId: String
 ) : ViewModel() {
 
@@ -37,35 +28,23 @@ class PetProfileViewModel(
     }
 
     private fun loadPetDetails() {
-        try {
-            // 1. First, search in User's pets
-            val currentUser = userRepository.getCurrentUser()
-            var selectedPet: Pet? = null
-            
-            if (currentUser != null) {
-                selectedPet = userRepository.getUserPets(currentUser.id).find { it.id == petId }
-            }
-
-            // 2. If not found, search in Community adoption pets
-            if (selectedPet == null) {
-                // Using runBlocking here for simplicity since mock repo uses flowOf
-                val adoptionPets = runBlocking { communityRepository.getAdoptionPets().first() }
-                selectedPet = adoptionPets.find { it.id == petId }
-            }
-            
-            _uiState.value = if (selectedPet != null) {
-                PetProfileUiState(pet = selectedPet, isLoading = false)
-            } else {
-                PetProfileUiState(
+        viewModelScope.launch {
+            try {
+                val pet = getPetProfileUseCase(petId)
+                _uiState.value = if (pet != null) {
+                    PetProfileUiState(pet = pet, isLoading = false)
+                } else {
+                    PetProfileUiState(
+                        isLoading = false,
+                        error = "Pet not found"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = PetProfileUiState(
                     isLoading = false,
-                    error = "Pet not found"
+                    error = e.message ?: "Unknown error occurred"
                 )
             }
-        } catch (e: Exception) {
-            _uiState.value = PetProfileUiState(
-                isLoading = false,
-                error = e.message ?: "Unknown error occurred"
-            )
         }
     }
 }
@@ -77,10 +56,12 @@ class PetProfileViewModelFactory(
     private val userRepository: UserRepository,
     private val communityRepository: CommunityRepository,
     private val petId: String
-) : ViewModelProvider.Factory {
-    
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return PetProfileViewModel(userRepository, communityRepository, petId) as T
-    }
-}
+) : ViewModelFactory<PetProfileViewModel>(
+    create = {
+        PetProfileViewModel(
+            getPetProfileUseCase = GetPetProfileUseCase(userRepository, communityRepository),
+            petId = petId
+        )
+    },
+    viewModelClass = PetProfileViewModel::class.java
+)

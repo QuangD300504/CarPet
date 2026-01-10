@@ -66,15 +66,19 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
-                // Don't show scaffold top bar for detailed screens that have their own
-                currentRoute?.startsWith("service_detail") == true || currentRoute?.startsWith("pet_profile") == true -> { }
-                
-                else -> {
+                currentRoute == Routes.Veterinarians.route -> {
                     SimpleTopBar(
-                        title = "CarPet",
+                        title = "Veterinarians",
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
+                currentRoute?.startsWith("doctor_profile") == true -> {
+                    SimpleTopBar(
+                        title = "Doctor Profile",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                else -> { }
             }
         },
         bottomBar = {
@@ -135,9 +139,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             composable(Routes.Community.route) {
                 CommunityScreen(
                     onAdoptClick = { petId ->
-                        // Since mock data IDs differ, we'll map "1" to "pet_001" for the demo
-                        val actualId = if (petId == "1") "pet_001" else if (petId == "2") "pet_002" else petId
-                        bottomNavController.navigate(Routes.PetProfile.createRoute(actualId))
+                        bottomNavController.navigate(Routes.PetProfile.createRoute(petId))
                     }
                 )
             }
@@ -161,13 +163,36 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     onBackClick = { bottomNavController.popBackStack() }
                 )
             }
+
+            composable(Routes.Veterinarians.route) {
+                VeterinariansScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onVetClick = { doctorId ->
+                        bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.DoctorProfile.route,
+                arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+                DoctorProfileScreen(
+                    doctorId = doctorId,
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onBookClick = {
+                        bottomNavController.navigate(Routes.ServiceDetail.createRoute("cat_vet"))
+                    }
+                )
+            }
         }
     }
 }
 
 private fun handleServiceNavigation(categoryId: String, navController: NavController) {
     if (categoryId == "cat_vet") {
-        println("Veterinary flow - To be implemented")
+        navController.navigate(Routes.Veterinarians.route)
     } else {
         navController.navigate(Routes.ServiceDetail.createRoute(categoryId))
     }

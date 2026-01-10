@@ -1,167 +1,69 @@
 package com.example.carpet.presentation.screens
 
-import androidx.compose.foundation.Image
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.carpet.R
-import com.example.carpet.presentation.theme.CarPetTheme
+import com.example.carpet.presentation.components.OtpContent
+import com.example.carpet.presentation.theme.VetBookTheme
 import com.example.carpet.presentation.viewmodels.SignUpViewModel
+import kotlinx.coroutines.delay
+
+enum class SignUpStep {
+    Details, OTP, Welcome, Introduction
+}
 
 @Composable
-fun SignInScreen(
-    onSignInSuccess: () -> Unit = {},
+fun SignUpScreen(
+    onLoginClick: () -> Unit = {},
+    onSignUpComplete: () -> Unit = {},
     viewModel: SignUpViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            onSignInSuccess()
-        }
-    }
-
+    var currentStep by remember { mutableStateOf(SignUpStep.Details) }
+    
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFFDF9F4) // Warm cream background
+        color = if (currentStep == SignUpStep.Introduction) Color.White else Color(0xFFFFD700)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp))
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFFFF3E0)),
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.happypets),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+        Crossfade(targetState = currentStep, label = "signUpFlow") { step ->
+            when (step) {
+                SignUpStep.Details -> SignUpDetailsContent(
+                    onNext = { currentStep = SignUpStep.OTP },
+                    onLoginClick = onLoginClick
                 )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = buildAnnotatedString {
-                    append("Welcome to ")
-                    withStyle(style = SpanStyle(color = Color(0xFFFF9800))) {
-                        append("CarPet")
-                    }
-                },
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF333333)
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Input Fields
-            SignInInputRow(
-                label = "Username",
-                value = uiState.username,
-                placeholder = "Quacanh123",
-                onValueChange = { viewModel.onUsernameChange(it) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SignInInputRow(
-                label = "Password",
-                value = uiState.password,
-                placeholder = "**********",
-                isPassword = true,
-                onValueChange = { viewModel.onPasswordChange(it) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SignInInputRow(
-                label = "Re-Password",
-                value = uiState.rePassword,
-                placeholder = "**********",
-                isPassword = true,
-                onValueChange = { viewModel.onRePasswordChange(it) }
-            )
-
-            if (uiState.errorMessage != null) {
-                Text(
-                    text = uiState.errorMessage!!,
-                    color = Color.Red,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 8.dp)
+                SignUpStep.OTP -> OtpContent(
+                    title = "Gần xong rồi!",
+                    onVerify = { currentStep = SignUpStep.Welcome },
+                    onBack = { currentStep = SignUpStep.Details }
                 )
-            }
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            Button(
-                onClick = { viewModel.onSignInClick() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFFFFE0B2),
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                elevation = null
-            ) {
-                Text(
-                    text = "Sign In",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFF9800)
+                SignUpStep.Welcome -> WelcomeContent(
+                    onFinished = { currentStep = SignUpStep.Introduction }
+                )
+                SignUpStep.Introduction -> IntroductionContent(
+                    onFinished = onSignUpComplete
                 )
             }
         }
@@ -169,59 +71,261 @@ fun SignInScreen(
 }
 
 @Composable
-fun SignInInputRow(
-    label: String,
-    value: String,
-    placeholder: String,
-    isPassword: Boolean = false,
-    onValueChange: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+fun SignUpDetailsContent(onNext: () -> Unit, onLoginClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(40.dp))
+        
         Text(
-            text = label,
-            fontSize = 16.sp,
+            text = "Chào mừng bạn đến với VetBook",
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF333333),
-            modifier = Modifier.width(115.dp) // Increased width to fix line break for "Re-Password"
+            color = Color.Black,
+            modifier = Modifier.fillMaxWidth()
         )
+        
+        Text(
+            text = "Giải pháp toàn diện cho mọi nhu cầu của thú cưng – từ đặt lịch spa, khám bệnh đến mua sắm phụ kiện. Tất cả đều sẵn sàng chỉ trong vài bước chạm",
+            fontSize = 13.sp,
+            color = Color.Black.copy(alpha = 0.7f),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        SignUpTextField(label = "Tên đầy đủ", icon = Icons.Default.Person)
+        Spacer(modifier = Modifier.height(12.dp))
+        SignUpTextField(label = "Địa chỉ Email", icon = Icons.Default.Mail)
+        Spacer(modifier = Modifier.height(12.dp))
+        SignUpTextField(label = "Số điện thoại", icon = Icons.Default.Phone)
+        Spacer(modifier = Modifier.height(12.dp))
+        SignUpTextField(label = "Mật khẩu", icon = Icons.Default.Lock, isPassword = true)
+
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        Text(
+            text = "Bằng việc đánh dấu vào ô bên dưới, bạn xác nhận đã đồng ý với Điều khoản và Điều kiện của chúng tôi.",
+            fontSize = 11.sp,
+            color = Color.Black.copy(alpha = 0.6f)
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onNext,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(text = "Tiếp tục", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row {
+            Text(text = "Already a member? ", color = Color.Black.copy(alpha = 0.7f))
+            Text(
+                text = "Log In",
+                color = Color(0xFFEF4444),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { onLoginClick() }
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+fun WelcomeContent(onFinished: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(80.dp))
+        
+        Text(
+            text = "Welcome",
+            fontSize = 36.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(48.dp))
 
         Box(
             modifier = Modifier
-                .weight(1f)
-                .height(44.dp)
-                .shadow(elevation = 2.dp, shape = RoundedCornerShape(22.dp))
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFFEEEEEE), Color(0xFFF5F5F5))
-                    ),
-                    shape = RoundedCornerShape(22.dp)
-                )
-                .padding(horizontal = 20.dp),
-            contentAlignment = Alignment.CenterStart
+                .fillMaxWidth()
+                .height(220.dp)
+                .clip(RoundedCornerShape(32.dp))
+                .background(Color.LightGray.copy(alpha = 0.4f))
+        )
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        Text(
+            text = "Tài khoản của bạn đã sẵn sàng. Hãy để chúng mình cùng bạn chăm sóc và mang lại những điều tuyệt vời nhất cho những người bạn bốn chân nhé! 🐾",
+            fontSize = 15.sp,
+            color = Color.Black.copy(alpha = 0.8f),
+            lineHeight = 22.sp,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Box(
+            modifier = Modifier.size(48.dp).padding(bottom = 40.dp),
+            contentAlignment = Alignment.Center
         ) {
-            if (value.isEmpty()) {
-                Text(text = placeholder, color = Color.LightGray, fontSize = 14.sp)
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                textStyle = TextStyle(fontSize = 14.sp, color = Color.Gray),
-                singleLine = true,
-                visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-                keyboardOptions = if (isPassword) KeyboardOptions(keyboardType = KeyboardType.Password) else KeyboardOptions.Default,
-                modifier = Modifier.fillMaxWidth()
-            )
+            CircularProgressIndicator(color = Color.Black, strokeWidth = 3.dp)
+        }
+        
+        LaunchedEffect(Unit) {
+            delay(2000)
+            onFinished()
         }
     }
+}
+
+data class IntroPage(val title: String, val description: String)
+
+@Composable
+fun IntroductionContent(onFinished: () -> Unit) {
+    val pages = listOf(
+        IntroPage(
+            "Chăm sóc bé yêu toàn diện",
+            "Từ lịch tiêm phòng, theo dõi sức khỏe đến chế độ dinh dưỡng – tất cả đều được gói gọn trong tầm tay bạn."
+        ),
+        IntroPage(
+            "Đặt lịch dịch vụ trong tích tắc",
+            "Tìm kiếm và đặt chỗ tại các spa, cửa hàng làm đẹp uy tín nhất gần bạn. Để “Boss” luôn xinh đẹp và thơm tho!"
+        ),
+        IntroPage(
+            "Thế giới dành riêng cho thú cưng",
+            "Mua sắm phụ kiện cực chất và kết nối với cộng đồng những người yêu động vật giống như bạn."
+        )
+    )
+
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(40.dp))
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f)
+        ) { pageIndex ->
+            val page = pages[pageIndex]
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(Color.LightGray.copy(alpha = 0.3f))
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = page.title,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.Black,
+                    lineHeight = 34.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = page.description,
+                    fontSize = 16.sp,
+                    color = Color.Black.copy(alpha = 0.6f),
+                    lineHeight = 24.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Page Indicator
+        Row(
+            Modifier
+                .height(50.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(pages.size) { iteration ->
+                val color = if (pagerState.currentPage == iteration) Color(0xFFFFD700) else Color(0xFFFFD700).copy(alpha = 0.3f)
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                        .size(12.dp)
+                )
+            }
+        }
+
+        if (pagerState.currentPage == pages.size - 1) {
+            Button(
+                onClick = onFinished,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Bắt đầu ngay", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        } else {
+            Spacer(modifier = Modifier.height(56.dp))
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+fun SignUpTextField(label: String, icon: ImageVector, isPassword: Boolean = false) {
+    OutlinedTextField(
+        value = "",
+        onValueChange = {},
+        placeholder = { Text(label, fontSize = 14.sp) },
+        trailingIcon = { Icon(icon, contentDescription = null, tint = Color.LightGray) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        visualTransformation = if (isPassword) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = Color.Transparent
+        )
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
-fun SignInScreenPreview() {
-    CarPetTheme {
-        SignInScreen()
+fun SignUpScreenPreview() {
+    VetBookTheme {
+        SignUpScreen()
     }
 }

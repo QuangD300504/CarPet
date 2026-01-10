@@ -1,22 +1,16 @@
 package com.example.carpet.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import com.example.carpet.domain.models.Pet
-import com.example.carpet.domain.models.User
 import com.example.carpet.domain.repository.UserRepository
+import com.example.carpet.domain.usecases.GetUserProfileUseCase
+import com.example.carpet.presentation.models.ProfileUiState
+import com.example.carpet.utils.ViewModelFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-data class ProfileUiState(
-    val user: User? = null,
-    val pets: List<Pet> = emptyList(),
-    val isLoading: Boolean = true,
-    val selectedLanguage: String = "English",
-    val isDarkModeEnabled: Boolean = false
-)
-
-class ProfileViewModel(private val userRepository: UserRepository) : ViewModel() {
+class ProfileViewModel(
+    private val getUserProfileUseCase: GetUserProfileUseCase
+) : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
 
@@ -25,18 +19,21 @@ class ProfileViewModel(private val userRepository: UserRepository) : ViewModel()
     }
 
     private fun loadProfileData() {
-        val user = userRepository.getCurrentUser()
-        val pets = if (user != null) {
-            userRepository.getUserPets(user.id)
+        val result = getUserProfileUseCase()
+        if (result != null) {
+            val (user, pets) = result
+            _uiState.value = _uiState.value.copy(
+                user = user,
+                pets = pets,
+                isLoading = false
+            )
         } else {
-            emptyList()
+            _uiState.value = _uiState.value.copy(
+                user = null,
+                pets = emptyList(),
+                isLoading = false
+            )
         }
-
-        _uiState.value = _uiState.value.copy(
-            user = user,
-            pets = pets,
-            isLoading = false
-        )
     }
 
     fun toggleDarkMode() {
@@ -51,12 +48,9 @@ class ProfileViewModel(private val userRepository: UserRepository) : ViewModel()
     }
 }
 
-class ProfileViewModelFactory(private val userRepository: UserRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ProfileViewModel(userRepository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
+class ProfileViewModelFactory(
+    private val userRepository: UserRepository
+) : ViewModelFactory<ProfileViewModel>(
+    create = { ProfileViewModel(GetUserProfileUseCase(userRepository)) },
+    viewModelClass = ProfileViewModel::class.java
+)

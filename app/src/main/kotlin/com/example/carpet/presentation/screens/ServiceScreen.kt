@@ -17,7 +17,7 @@ import com.example.carpet.presentation.components.ServiceCategoryCard
 
 @Composable
 fun ServiceScreen(
-    categories: List<ServiceCategory>, // Dữ liệu lấy từ ViewModel/Repository
+    categories: List<ServiceCategory>,
     onCategoryClick: (String) -> Unit
 ) {
     Column(
