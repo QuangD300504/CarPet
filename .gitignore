@@ -129,3 +129,6 @@ fastlane/test_output
 # User-specific configurations
 *.iml
 .idea/
+
+# Firebase
+google-services.json  "google-services.json" 
