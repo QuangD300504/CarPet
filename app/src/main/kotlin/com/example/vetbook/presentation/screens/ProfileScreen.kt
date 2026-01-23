@@ -1,6 +1,7 @@
 package com.example.vetbook.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,7 +47,8 @@ import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     onLogout: () -> Unit = {},
-    onPetClick: (String) -> Unit = {}
+    onPetClick: (String) -> Unit = {},
+    onAddPetClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -100,7 +102,8 @@ fun ProfileScreen(
                     text = "Add Pet",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFFFF9800)
+                    color = Color(0xFFFF9800),
+                    modifier = Modifier.clickable { onAddPetClick() }
                 )
             }
 

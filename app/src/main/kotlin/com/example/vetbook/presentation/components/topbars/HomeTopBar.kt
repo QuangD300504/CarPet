@@ -51,7 +51,7 @@ fun HomeTopBar(
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "CarPet",
+                    text = "VetBook",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF9800)

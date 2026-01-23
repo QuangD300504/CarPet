@@ -24,15 +24,24 @@ class ProfileViewModel @Inject constructor(
     private fun loadProfileData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = getUserProfileUseCase()
-            if (result != null) {
-                val (user, pets) = result
-                _uiState.value = _uiState.value.copy(
-                    user = user,
-                    pets = pets,
-                    isLoading = false
-                )
-            } else {
+            try {
+                val result = getUserProfileUseCase()
+                if (result != null) {
+                    val (user, pets) = result
+                    _uiState.value = _uiState.value.copy(
+                        user = user,
+                        pets = pets,
+                        isLoading = false
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        user = null,
+                        pets = emptyList(),
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                // Handle any errors gracefully
                 _uiState.value = _uiState.value.copy(
                     user = null,
                     pets = emptyList(),

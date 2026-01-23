@@ -1,7 +1,7 @@
 package com.example.vetbook.domain.models
 
 /**
- * Represents a user in the CarPet application.
+ * Represents a user in the VetBook application.
  */
 data class User(
     val id: String,

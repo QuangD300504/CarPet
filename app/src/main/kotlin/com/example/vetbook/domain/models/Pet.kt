@@ -1,7 +1,7 @@
 package com.example.vetbook.domain.models
 
 /**
- * Represents a pet in the CarPet application (either owned by a user or available for adoption).
+ * Represents a pet in the VetBook application (either owned by a user or available for adoption).
  */
 data class Pet(
     val id: String,

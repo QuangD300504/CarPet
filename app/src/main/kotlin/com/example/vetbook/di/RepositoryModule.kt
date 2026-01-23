@@ -1,17 +1,11 @@
 package com.example.vetbook.di
 
-import com.example.vetbook.data.repository.AuthRepositoryImpl
-import com.example.vetbook.data.repository.MockCommunityRepository
-import com.example.vetbook.data.repository.MockServiceRepository
-import com.example.vetbook.data.repository.MockUserRepository
-import com.example.vetbook.data.repository.MockVeterinarianRepository
-import com.example.vetbook.domain.repository.AuthRepository
-import com.example.vetbook.domain.repository.CommunityRepository
-import com.example.vetbook.domain.repository.ServiceRepository
-import com.example.vetbook.domain.repository.UserRepository
-import com.example.vetbook.domain.repository.VeterinarianRepository
+import com.example.vetbook.data.datasource.RemoteCommunityDataSource
+import com.example.vetbook.data.datasource.RemotePetDataSource
+import com.example.vetbook.data.datasource.RemoteUserDataSource
+import com.example.vetbook.data.repository.*
+import com.example.vetbook.domain.repository.*
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,32 +20,49 @@ object RepositoryModule {
     @Singleton
     fun provideAuthRepository(
         auth: FirebaseAuth,
-        firestore: FirebaseFirestore
+        remoteUserDataSource: RemoteUserDataSource
     ): AuthRepository {
-        return AuthRepositoryImpl(auth, firestore)
+        return AuthRepositoryImpl(auth, remoteUserDataSource)
     }
 
     @Provides
     @Singleton
-    fun provideCommunityRepository(): CommunityRepository {
-        return MockCommunityRepository()
-    }
+    @MockRepo
+    fun provideMockCommunityRepository(): CommunityRepository =
+        MockCommunityRepository()
 
     @Provides
     @Singleton
-    fun provideVeterinarianRepository(): VeterinarianRepository {
-        return MockVeterinarianRepository()
-    }
+    @RemoteRepo
+    fun provideFirebaseCommunityRepository(
+        remoteCommunityDataSource: RemoteCommunityDataSource
+    ): CommunityRepository =
+        FirebaseCommunityRepository(remoteCommunityDataSource)
 
     @Provides
     @Singleton
-    fun provideServiceRepository(): ServiceRepository {
-        return MockServiceRepository()
-    }
+    @MockRepo
+    fun provideVeterinarianRepository(): VeterinarianRepository =
+        MockVeterinarianRepository()
 
     @Provides
     @Singleton
-    fun provideUserRepository(): UserRepository {
-        return MockUserRepository()
+    @MockRepo
+    fun provideMockServiceRepository(): ServiceRepository =
+        MockServiceRepository()
+
+    @Provides
+    @Singleton
+    fun provideServiceRepository(): ServiceRepository =
+        MockServiceRepository()
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        auth: FirebaseAuth,
+        remoteUserDataSource: RemoteUserDataSource,
+        remotePetDataSource: RemotePetDataSource
+    ): UserRepository {
+        return FirebaseAuthUserRepository(auth, remoteUserDataSource, remotePetDataSource)
     }
 }

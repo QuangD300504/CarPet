@@ -1,5 +1,6 @@
 package com.example.vetbook.di
 
+import com.example.vetbook.di.MockRepo
 import com.example.vetbook.domain.interfaces.EmailValidator
 import com.example.vetbook.domain.usecases.*
 import com.example.vetbook.domain.repository.*
@@ -23,17 +24,17 @@ object UseCaseModule {
     }
 
     @Provides
-    fun provideGetCommunityDataUseCase(repository: CommunityRepository): GetCommunityDataUseCase {
+    fun provideGetCommunityDataUseCase(@MockRepo repository: CommunityRepository): GetCommunityDataUseCase {
         return GetCommunityDataUseCase(repository)
     }
 
     @Provides
-    fun provideGetVeterinariansUseCase(repository: VeterinarianRepository): GetVeterinariansUseCase {
+    fun provideGetVeterinariansUseCase(@MockRepo repository: VeterinarianRepository): GetVeterinariansUseCase {
         return GetVeterinariansUseCase(repository)
     }
 
     @Provides
-    fun provideGetServiceCategoriesUseCase(repository: ServiceRepository): GetServiceCategoriesUseCase {
+    fun provideGetServiceCategoriesUseCase(@MockRepo repository: ServiceRepository): GetServiceCategoriesUseCase {
         return GetServiceCategoriesUseCase(repository)
     }
 
@@ -43,7 +44,10 @@ object UseCaseModule {
     }
 
     @Provides
-    fun provideGetPetProfileUseCase(userRepository: UserRepository, communityRepository: CommunityRepository): GetPetProfileUseCase {
+    fun provideGetPetProfileUseCase(
+        userRepository: UserRepository,
+        @MockRepo communityRepository: CommunityRepository
+    ): GetPetProfileUseCase {
         return GetPetProfileUseCase(userRepository, communityRepository)
     }
 }

@@ -212,23 +212,12 @@ fun LoginContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Row(
+        SocialLoginButton(
+            text = "Google",
+            iconRes = null,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SocialLoginButton(
-                text = "Google",
-                iconRes = null,
-                modifier = Modifier.weight(1f),
-                onClick = onGoogleLoginClick
-            )
-            SocialLoginButton(
-                text = "Facebook",
-                iconRes = null,
-                modifier = Modifier.weight(1f),
-                onClick = { /* TODO */ }
-            )
-        }
+            onClick = onGoogleLoginClick
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
 

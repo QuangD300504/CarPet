@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun PointsCard(
     points: Int,
-    pointsLabel: String = "CarPet Rewards"
+    pointsLabel: String = "VetBook Rewards"
 ) {
     Box(
         modifier = Modifier
