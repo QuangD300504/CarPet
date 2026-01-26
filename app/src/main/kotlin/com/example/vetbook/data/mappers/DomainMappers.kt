@@ -37,11 +37,27 @@ fun PetDto.toDomain(): Pet =
 
 // endregion
 
+// region Vaccinations
+
+fun VaccinationRecordDto.toDomain(): Vaccination =
+    Vaccination(
+        id = id,
+        petId = petId, // Foreign key relationship
+        veterinarianId = veterinarianId, // Optional foreign key relationship
+        title = title,
+        isCompleted = isCompleted,
+        date = date?.toString(),
+        notes = notes
+    )
+
+// endregion
+
 // region Community
 
 fun PostDto.toDomain(): Post =
     Post(
         id = id,
+        authorId = authorId, // Foreign key relationship
         authorName = authorName,
         authorAvatarUrl = authorAvatarUrl,
         timestamp = createdAt.toString(),
@@ -54,6 +70,7 @@ fun PostDto.toDomain(): Post =
 fun PetEventDto.toDomain(): PetEvent =
     PetEvent(
         id = id,
+        organizerId = organizerId, // Foreign key relationship
         title = title,
         date = date.toString(),
         location = location,

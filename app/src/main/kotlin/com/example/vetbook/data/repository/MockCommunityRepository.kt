@@ -13,6 +13,7 @@ class MockCommunityRepository : CommunityRepository {
         listOf(
             Post(
                 id = "1",
+                authorId = "user_001", // Foreign key relationship
                 authorName = "Sarah M.",
                 authorAvatarUrl = null,
                 timestamp = "2 hours ago",
@@ -23,6 +24,7 @@ class MockCommunityRepository : CommunityRepository {
             ),
             Post(
                 id = "2",
+                authorId = "user_002", // Foreign key relationship
                 authorName = "Mike T.",
                 authorAvatarUrl = null,
                 timestamp = "2 hours ago",
@@ -47,8 +49,8 @@ class MockCommunityRepository : CommunityRepository {
                 parasiticStatus = "Healthy",
                 note = "Luna is very friendly and well-trained. She loves long walks and playing fetch.",
                 vaccinations = listOf(
-                    Vaccination("v1", "Rabies", true, "2024-10-12"),
-                    Vaccination("v2", "DHPP", true, "2024-11-05")
+                    Vaccination("v1", "adopt_001", null, "Rabies", true, "2024-10-12"),
+                    Vaccination("v2", "adopt_001", null, "DHPP", true, "2024-11-05")
                 )
             ),
             Pet(
@@ -62,8 +64,8 @@ class MockCommunityRepository : CommunityRepository {
                 parasiticStatus = "Healthy",
                 note = "Oliver is a quiet and independent cat. He enjoys being petted but also likes his space.",
                 vaccinations = listOf(
-                    Vaccination("v3", "FVRCP", true, "2025-01-20"),
-                    Vaccination("v4", "Rabies", false)
+                    Vaccination("v3", "adopt_002", null, "FVRCP", true, "2025-01-20"),
+                    Vaccination("v4", "adopt_002", null, "Rabies", false)
                 )
             )
         )
@@ -73,6 +75,7 @@ class MockCommunityRepository : CommunityRepository {
         listOf(
             PetEvent(
                 id = "1",
+                organizerId = "user_001", // Foreign key relationship
                 title = "Pet Adoption Fair",
                 date = "Saturday, Nov 15",
                 location = "Central Park, 10:00 AM",

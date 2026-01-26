@@ -23,6 +23,7 @@ flowchart LR
 - `RemoteUserDataSource` → implemented by `FirebaseUserDataSource`
 - `RemotePetDataSource` → implemented by `FirebasePetDataSource`
 - `RemoteCommunityDataSource` → implemented by `FirebaseCommunityDataSource`
+- `RemoteVaccinationDataSource` → implemented by `FirebaseVaccinationDataSource`
 
 ### How to switch from mocks to Firebase
 

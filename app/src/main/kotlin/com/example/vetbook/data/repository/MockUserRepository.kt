@@ -35,24 +35,32 @@ class MockUserRepository : UserRepository {
                 vaccinations = listOf(
                     Vaccination(
                         id = "vac_001",
+                        petId = "pet_001", // Foreign key relationship
+                        veterinarianId = null,
                         title = "5-in-1",
                         isCompleted = true,
                         date = "2025-01-15"
                     ),
                     Vaccination(
                         id = "vac_002",
+                        petId = "pet_001", // Foreign key relationship
+                        veterinarianId = null,
                         title = "Rabies",
                         isCompleted = true,
                         date = "2025-01-15"
                     ),
                     Vaccination(
                         id = "vac_003",
+                        petId = "pet_001", // Foreign key relationship
+                        veterinarianId = null,
                         title = "DHPP Booster",
                         isCompleted = true,
                         date = "2024-12-20"
                     ),
                     Vaccination(
                         id = "vac_004",
+                        petId = "pet_001", // Foreign key relationship
+                        veterinarianId = null,
                         title = "Parasite Prevention",
                         isCompleted = false
                     )
