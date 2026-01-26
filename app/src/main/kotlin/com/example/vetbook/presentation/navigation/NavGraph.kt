@@ -5,7 +5,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.vetbook.presentation.screens.*
+import com.example.vetbook.presentation.screens.MainScreen
+import com.example.vetbook.presentation.screens.auth.ForgotPasswordScreen
+import com.example.vetbook.presentation.screens.auth.LoginScreen
+import com.example.vetbook.presentation.screens.auth.SignUpScreen
+import com.example.vetbook.presentation.screens.auth.SplashScreen
 import com.example.vetbook.presentation.viewmodels.MainViewModel
 
 @Composable

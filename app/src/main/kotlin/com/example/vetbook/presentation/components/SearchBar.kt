@@ -24,7 +24,7 @@ fun SearchBar() {
         },
         value = "",
         onValueChange = {},
-        placeholder = { Text("Tìm khách sạn, dịch vụ...") },
+        placeholder = { Text("Search for a service") },
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),

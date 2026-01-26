@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,19 +25,23 @@ class VeterinariansViewModel @Inject constructor(
 
     private fun loadVeterinarians() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.update { it.copy(isLoading = true) }
             try {
                 getVeterinariansUseCase().collect { vets ->
-                    _uiState.value = VeterinariansUiState(
-                        veterinarians = vets,
-                        isLoading = false
-                    )
+                    _uiState.update {
+                        VeterinariansUiState(
+                            veterinarians = vets,
+                            isLoading = false
+                        )
+                    }
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Failed to load veterinarians"
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load veterinarians"
+                    )
+                }
             }
         }
     }

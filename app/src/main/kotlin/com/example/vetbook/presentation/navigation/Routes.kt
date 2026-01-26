@@ -20,4 +20,16 @@ sealed class Routes(val route: String) {
     object PetProfile : Routes("pet_profile/{petId}") {
         fun createRoute(petId: String) = "pet_profile/$petId"
     }
+    object BookAppointment : Routes("book_appointment/{doctorId}") {
+        fun createRoute(doctorId: String) = "book_appointment/$doctorId"
+    }
+    object Store : Routes("store")
+    object Products : Routes("products")
+    object Cart : Routes("cart")
+    object Payment : Routes("payment")
+    object Notifications : Routes("notifications")
+    object EditProfile : Routes("edit_profile")
+    object Language : Routes("language")
+    object PrivacyPolicy : Routes("privacy_policy")
+    object Accommodation : Routes("accommodation")
 }

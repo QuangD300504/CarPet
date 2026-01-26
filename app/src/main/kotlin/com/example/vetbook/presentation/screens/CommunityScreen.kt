@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -136,7 +137,10 @@ fun FeedList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(posts) { post ->
+        items(
+            items = posts,
+            key = { it.id }
+        ) { post ->
             PostCard(
                 post = post,
                 onLikeClick = { onLikeClick(post) },
@@ -259,7 +263,10 @@ fun AdoptionList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(pets) { pet ->
+        items(
+            items = pets,
+            key = { it.id }
+        ) { pet ->
             AdoptionCard(
                 pet = pet,
                 onAdoptClick = { onAdoptClick(pet.id) }
@@ -290,7 +297,10 @@ fun AdoptionCard(
                     .background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = if (pet.type.lowercase() == "dog") "🐕" else "🐱", fontSize = 40.sp)
+                val petEmoji = remember(pet.type) {
+                    if (pet.type.lowercase() == "dog") "🐕" else "🐱"
+                }
+                Text(text = petEmoji, fontSize = 40.sp)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -323,7 +333,10 @@ fun EventList(events: List<PetEvent>) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(events) { event ->
+        items(
+            items = events,
+            key = { it.id }
+        ) { event ->
             EventCard(event)
         }
     }

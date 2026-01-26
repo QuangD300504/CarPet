@@ -11,27 +11,45 @@ class MockServiceRepository : ServiceRepository {
         return listOf(
             ServiceCategory(
                 id = "cat_vet",
-                title = "Veterinary & Health",
+                title = "Vet care",
                 shortDescription = "24/7 smart booking with verified clinics",
                 iconRes = R.drawable.checkup
             ),
             ServiceCategory(
+                id = "cat_hotel",
+                title = "Stay & Care",
+                shortDescription = "Safe and comfortable stay for your pets",
+                iconRes = R.drawable.hotel
+            ),
+            ServiceCategory(
+                id = "cat_ride",
+                title = "Pet Ride",
+                shortDescription = "Safe transportation for your pets",
+                iconRes = R.drawable.homecare // Using homecare icon as placeholder
+            ),
+            ServiceCategory(
                 id = "cat_spa",
-                title = "Professional Grooming",
+                title = "Pamper",
                 shortDescription = "Deep cleaning and styling by certified experts",
                 iconRes = R.drawable.groom
             ),
             ServiceCategory(
-                id = "cat_homecare",
-                title = "Home Care Service",
-                shortDescription = "Pet sitter visits your home",
-                iconRes = R.drawable.homecare
+                id = "cat_training",
+                title = "Training",
+                shortDescription = "Professional pet training services",
+                iconRes = R.drawable.checkup // Using checkup icon as placeholder
             ),
             ServiceCategory(
-                id = "cat_hotel",
-                title = "Pet Hotel & Boarding",
-                shortDescription = "Safe and comfortable stay for your pets",
-                iconRes = R.drawable.hotel
+                id = "cat_party",
+                title = "Party",
+                shortDescription = "Pet party and celebration services",
+                iconRes = R.drawable.hotel // Using hotel icon as placeholder
+            ),
+            ServiceCategory(
+                id = "cat_funeral",
+                title = "Funeral",
+                shortDescription = "Pet funeral and memorial services",
+                iconRes = R.drawable.groom // Using groom icon as placeholder
             )
         )
     }

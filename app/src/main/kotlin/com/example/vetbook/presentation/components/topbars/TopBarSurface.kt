@@ -14,12 +14,17 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun TopBarSurface(
     modifier: Modifier = Modifier,
+    backgroundColor: Color = Color(0xFFFFD813), // Yellow background from Figma
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 4.dp
+        color = backgroundColor,
+        shadowElevation = 4.dp,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            bottomStart = 40.dp,
+            bottomEnd = 40.dp
+        )
     ) {
         Column(
             modifier = Modifier

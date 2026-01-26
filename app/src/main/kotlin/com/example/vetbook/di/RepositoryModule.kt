@@ -1,6 +1,5 @@
 package com.example.vetbook.di
 
-import com.example.vetbook.data.datasource.RemoteCommunityDataSource
 import com.example.vetbook.data.datasource.RemotePetDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.data.repository.*
@@ -30,14 +29,6 @@ object RepositoryModule {
     @MockRepo
     fun provideMockCommunityRepository(): CommunityRepository =
         MockCommunityRepository()
-
-    @Provides
-    @Singleton
-    @RemoteRepo
-    fun provideFirebaseCommunityRepository(
-        remoteCommunityDataSource: RemoteCommunityDataSource
-    ): CommunityRepository =
-        FirebaseCommunityRepository(remoteCommunityDataSource)
 
     @Provides
     @Singleton

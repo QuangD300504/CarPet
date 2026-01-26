@@ -1,4 +1,4 @@
-package com.example.vetbook.presentation.screens
+package com.example.vetbook.presentation.screens.auth
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState

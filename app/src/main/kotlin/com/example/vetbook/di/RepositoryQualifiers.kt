@@ -6,8 +6,4 @@ import javax.inject.Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class MockRepo
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class RemoteRepo
-
 

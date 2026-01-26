@@ -23,11 +23,16 @@ sealed class NavigationItem(val route: String, val label: String, val iconRes: I
         label = "Profile",
         iconRes = R.drawable.profile
     )
+    object Store : NavigationItem(
+        route = Routes.Store.route,
+        label = "Store",
+        iconRes = R.drawable.store
+    )
 }
 
 val bottomNavItems = listOf(
     NavigationItem.Home,
     NavigationItem.Service,
-    NavigationItem.Community,
+    NavigationItem.Store,
     NavigationItem.Profile
 )

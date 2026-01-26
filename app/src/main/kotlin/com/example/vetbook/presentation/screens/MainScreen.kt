@@ -22,6 +22,10 @@ import com.example.vetbook.presentation.components.topbars.HomeTopBar
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
 import com.example.vetbook.presentation.navigation.Routes
 import com.example.vetbook.presentation.screens.service_detail.ServiceDetailScreen
+import com.example.vetbook.presentation.screens.profile.*
+import com.example.vetbook.presentation.screens.store.*
+import com.example.vetbook.presentation.screens.vetcare.*
+import com.example.vetbook.presentation.screens.accommodation.AccommodationScreen
 import com.example.vetbook.presentation.viewmodels.HomeViewModel
 import com.example.vetbook.presentation.viewmodels.ServiceDetailViewModel
 
@@ -39,38 +43,23 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         topBar = {
             when {
                 currentRoute == Routes.Home.route -> {
-                    HomeTopBar(hasNotification = homeUiState.hasNotification)
-                }
-                currentRoute == Routes.Service.route -> {
-                    SimpleTopBar(
-                        title = "Services",
-                        onBackClick = { bottomNavController.popBackStack() }
+                    HomeTopBar(
+                        hasNotification = homeUiState.hasNotification,
+                        onNotificationClick = {
+                            bottomNavController.navigate(Routes.Notifications.route)
+                        },
+                        onProfileClick = {
+                            bottomNavController.navigate(Routes.Profile.route)
+                        }
                     )
                 }
-                currentRoute == Routes.Community.route -> {
-                    SimpleTopBar(
-                        title = "Community",
-                        onBackClick = { bottomNavController.popBackStack() }
-                    )
-                }
-                currentRoute == Routes.Profile.route -> {
-                    SimpleTopBar(
-                        title = "Profile",
-                        onBackClick = { bottomNavController.popBackStack() }
-                    )
-                }
-                currentRoute == Routes.Veterinarians.route -> {
-                    SimpleTopBar(
-                        title = "Veterinarians",
-                        onBackClick = { bottomNavController.popBackStack() }
-                    )
-                }
-                currentRoute?.startsWith("doctor_profile") == true -> {
-                    SimpleTopBar(
-                        title = "Doctor Profile",
-                        onBackClick = { bottomNavController.popBackStack() }
-                    )
-                }
+                // Profile route has its own yellow header built-in, don't show duplicate topBar
+                // Service route now has its own header built-in
+                // Veterinarians route has its own yellow header built-in
+                // DoctorProfile route has its own header with back button overlay
+                // BookAppointment route has its own header with back button overlay
+                // Store/Products/Cart routes have their own header built-in
+                // Notifications/EditProfile/Language/PrivacyPolicy routes have their own yellow headers
                 else -> { }
             }
         },
@@ -105,7 +94,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     categories = categories,
                     onCategoryClick = { categoryId ->
                         handleServiceNavigation(categoryId, bottomNavController)
-                    }
+                    },
+                    onBackClick = { bottomNavController.popBackStack() }
                 )
             }
 
@@ -126,19 +116,102 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 }
             }
             
-            composable(Routes.Community.route) {
-                CommunityScreen(
-                    onAdoptClick = { petId ->
-                        bottomNavController.navigate(Routes.PetProfile.createRoute(petId))
+            composable(Routes.Store.route) {
+                StoreScreen(
+                    onProductsClick = {
+                        bottomNavController.navigate(Routes.Products.route)
+                    },
+                    onCartClick = {
+                        bottomNavController.navigate(Routes.Cart.route)
+                    }
+                )
+            }
+            
+            composable(Routes.Products.route) {
+                ProductsScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onCartClick = {
+                        bottomNavController.navigate(Routes.Cart.route)
+                    }
+                )
+            }
+            
+            composable(Routes.Cart.route) {
+                CartScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onCheckoutClick = {
+                        bottomNavController.navigate(Routes.Payment.route)
+                    }
+                )
+            }
+            
+            composable(Routes.Payment.route) {
+                PaymentScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onCheckoutClick = {
+                        // Handle final checkout
+                        bottomNavController.popBackStack(Routes.Home.route, inclusive = false)
                     }
                 )
             }
             
             composable(Routes.Profile.route) {
                 ProfileScreen(
-                    onLogout = onLogout,
-                    onPetClick = { petId ->
-                        bottomNavController.navigate(Routes.PetProfile.createRoute(petId))
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onEditProfileClick = {
+                        bottomNavController.navigate(Routes.EditProfile.route)
+                    },
+                    onNotificationClick = {
+                        bottomNavController.navigate(Routes.Notifications.route)
+                    },
+                    onLanguageClick = {
+                        bottomNavController.navigate(Routes.Language.route)
+                    },
+                    onContactUsClick = {
+                        // Handle contact us
+                    },
+                    onPrivacyPolicyClick = {
+                        bottomNavController.navigate(Routes.PrivacyPolicy.route)
+                    },
+                    onLogout = onLogout
+                )
+            }
+            
+            composable(Routes.Notifications.route) {
+                NotificationScreen(
+                    onBackClick = { bottomNavController.popBackStack() }
+                )
+            }
+            
+            composable(Routes.EditProfile.route) {
+                EditProfileScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onSubmitClick = {
+                        bottomNavController.popBackStack()
+                    }
+                )
+            }
+            
+            composable(Routes.Language.route) {
+                LanguageScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onLanguageSelected = {
+                        bottomNavController.popBackStack()
+                    }
+                )
+            }
+            
+            composable(Routes.PrivacyPolicy.route) {
+                PrivacyPolicyScreen(
+                    onBackClick = { bottomNavController.popBackStack() }
+                )
+            }
+            
+            composable(Routes.Accommodation.route) {
+                AccommodationScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onAccommodationClick = { accommodationId ->
+                        // TODO: Navigate to accommodation detail screen
                     }
                 )
             }
@@ -156,7 +229,6 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 
             composable(Routes.Veterinarians.route) {
                 VeterinariansScreen(
-                    onBackClick = { bottomNavController.popBackStack() },
                     onVetClick = { doctorId ->
                         bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
                     }
@@ -172,7 +244,22 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     doctorId = doctorId,
                     onBackClick = { bottomNavController.popBackStack() },
                     onBookClick = {
-                        bottomNavController.navigate(Routes.ServiceDetail.createRoute("cat_vet"))
+                        bottomNavController.navigate(Routes.BookAppointment.createRoute(doctorId))
+                    }
+                )
+            }
+            
+            composable(
+                route = Routes.BookAppointment.route,
+                arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+                BookAppointmentScreen(
+                    doctorId = doctorId,
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onConfirmClick = {
+                        // Handle appointment confirmation
+                        bottomNavController.popBackStack(Routes.Home.route, inclusive = false)
                     }
                 )
             }
@@ -181,10 +268,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 }
 
 private fun handleServiceNavigation(categoryId: String, navController: NavController) {
-    if (categoryId == "cat_vet") {
-        navController.navigate(Routes.Veterinarians.route)
-    } else {
-        navController.navigate(Routes.ServiceDetail.createRoute(categoryId))
+    when (categoryId) {
+        "cat_vet" -> navController.navigate(Routes.Veterinarians.route)
+        "cat_hotel" -> navController.navigate(Routes.Accommodation.route)
+        else -> navController.navigate(Routes.ServiceDetail.createRoute(categoryId))
     }
 }
 

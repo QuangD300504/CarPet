@@ -1,4 +1,4 @@
-package com.example.vetbook.presentation.screens
+package com.example.vetbook.presentation.screens.auth
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background

@@ -61,26 +61,9 @@ fun ServiceDetailScreen(
     detail: PetServiceDetail,
     onBackClick: () -> Unit
 ) {
-    Scaffold(
-        bottomBar = {
-            // Nút Book Now cố định ở dưới
-            Button(
-                onClick = { /* Xử lý đặt lịch */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB74D))
-            ) {
-                Text("Book Now", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-    ) { innerPadding ->
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize()
         ) {
             // 1. Header Gradient với nút Back/Heart
             item {
@@ -135,7 +118,10 @@ fun ServiceDetailScreen(
             }
 
             // 3. Danh sách giá dịch vụ con
-            items(detail.packages) { pkg ->
+            items(
+                items = detail.packages,
+                key = { it.name }
+            ) { pkg ->
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                     ServicePriceItem(servicePackage = pkg)
                 }
@@ -147,7 +133,10 @@ fun ServiceDetailScreen(
                     Text(text = "Available Today", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
                     Spacer(modifier = Modifier.height(8.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(detail.availableTimes) { time ->
+                        items(
+                            items = detail.availableTimes,
+                            key = { it }
+                        ) { time ->
                             OutlinedButton(
                                 onClick = { /* Chọn giờ */ },
                                 border = BorderStroke(1.dp, Color(0xFFFFB74D)),
@@ -160,6 +149,21 @@ fun ServiceDetailScreen(
                     Spacer(modifier = Modifier.height(100.dp)) // Padding cuối để không bị nút Book Now che
                 }
             }
+        }
+        
+        // Book Now button - positioned above bottom bar
+        Button(
+            onClick = { /* Xử lý đặt lịch */ },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 80.dp)
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB74D))
+        ) {
+            Text("Book Now", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }

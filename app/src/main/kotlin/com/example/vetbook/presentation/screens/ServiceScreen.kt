@@ -1,37 +1,140 @@
 package com.example.vetbook.presentation.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.ServiceCategory
-import com.example.vetbook.presentation.components.ServiceCategoryCard
 
 @Composable
 fun ServiceScreen(
     categories: List<ServiceCategory>,
-    onCategoryClick: (String) -> Unit
+    onCategoryClick: (String) -> Unit,
+    onBackClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        // Yellow header with back button from Figma
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .background(
+                    Color(0xFFFFD813), // Yellow from Figma
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                        bottomStart = 40.dp,
+                        bottomEnd = 40.dp
+                    )
+                )
+                .padding(vertical = 16.dp, horizontal = 20.dp)
         ) {
-            items(categories) { category ->
-                ServiceCategoryCard(
-                    category = category,
-                    onClick = { onCategoryClick(category.id) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onBackClick() },
+                    tint = Color.Black
                 )
             }
+        }
+        
+        // White content area with grid
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            
+            // Categories grid - matching Figma 2x2 layout
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                items(
+                    items = categories,
+                    key = { it.id }
+                ) { category ->
+                    CategoryGridCard(
+                        category = category,
+                        onClick = { onCategoryClick(category.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryGridCard(
+    category: ServiceCategory,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(76.dp), // Fixed height from Figma
+        shape = RoundedCornerShape(15.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF2F2F2) // Light grey from Figma
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp, vertical = 11.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(Color.White, RoundedCornerShape(15.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(category.iconRes),
+                    contentDescription = category.title,
+                    modifier = Modifier.size(35.dp),
+                    colorFilter = ColorFilter.tint(Color(0xFFFFD813)) // Yellow from Figma
+                )
+            }
+            Text(
+                text = category.title,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black
+            )
         }
     }
 }
