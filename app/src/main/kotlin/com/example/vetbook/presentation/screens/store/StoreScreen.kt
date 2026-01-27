@@ -19,13 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.components.store.LocationDropdown
 import com.example.vetbook.presentation.components.store.ProductCard
-import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.models.Product
+import com.example.vetbook.presentation.previews.PreviewNavScaffold
 
 @Composable
 fun StoreScreen(
@@ -56,16 +55,6 @@ fun StoreScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        StoreHeader(
-            currentLocation = currentLocation,
-            onLocationClick = { showLocationDropdown = !showLocationDropdown },
-            onCartClick = onCartClick,
-            onNotificationClick = onNotificationClick,
-            onProfileClick = onProfileClick,
-            searchValue = searchValue,
-            onSearchChange = { searchValue = it }
-        )
-        
         if (showLocationDropdown) {
             LocationDropdown(
                 cities = cities,
@@ -207,8 +196,12 @@ fun CategoryIcon(
     }
 }
 
-@Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun StoreScreenPreview() {
-    StoreScreen()
+    PreviewNavScaffold { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            StoreScreen()
+        }
+    }
 }

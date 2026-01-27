@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
+import com.example.vetbook.presentation.previews.PreviewNavScaffold
 
 @Composable
 fun EditProfileScreen(
@@ -27,47 +29,47 @@ fun EditProfileScreen(
     onSubmitClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
-    var fullName by remember { mutableStateOf(uiState.user?.name ?: "Phùng Canh Mộ") }
-    var nickName by remember { mutableStateOf("puerto_rico") }
-    var email by remember { mutableStateOf(uiState.user?.email ?: "youremail@domain.com") }
-    var phoneNumber by remember { mutableStateOf("123-456-7890") }
-    var country by remember { mutableStateOf("United States") }
-    var gender by remember { mutableStateOf("Female") }
-    var address by remember { mutableStateOf("45 New Avenue, New York") }
-    
+    EditProfileContent(
+        fullNameInitial = uiState.user?.name ?: "Phùng Canh Mộ",
+        nickNameInitial = "puerto_rico",
+        emailInitial = uiState.user?.email ?: "youremail@domain.com",
+        phoneNumberInitial = uiState.user?.phoneNumber ?: "123-456-7890",
+        countryInitial = "United States",
+        genderInitial = "Female",
+        addressInitial = "45 New Avenue, New York",
+        onBackClick = onBackClick,
+        onSubmitClick = onSubmitClick
+    )
+}
+
+@Composable
+fun EditProfileContent(
+    fullNameInitial: String,
+    nickNameInitial: String,
+    emailInitial: String,
+    phoneNumberInitial: String,
+    countryInitial: String,
+    genderInitial: String,
+    addressInitial: String,
+    onBackClick: () -> Unit = {},
+    onSubmitClick: () -> Unit = {}
+) {
+    var fullName by remember { mutableStateOf(fullNameInitial) }
+    var nickName by remember { mutableStateOf(nickNameInitial) }
+    var email by remember { mutableStateOf(emailInitial) }
+    var phoneNumber by remember { mutableStateOf(phoneNumberInitial) }
+    var country by remember { mutableStateOf(countryInitial) }
+    var gender by remember { mutableStateOf(genderInitial) }
+    var address by remember { mutableStateOf(addressInitial) }
+
     var showCountryDropdown by remember { mutableStateOf(false) }
     var showGenderDropdown by remember { mutableStateOf(false) }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Yellow header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFFFEB3B))
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.Black
-                )
-            }
-            Text(
-                text = "edit profile",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-        
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -81,73 +83,65 @@ fun EditProfileScreen(
                 color = Color.Black,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Full name
+
             ProfileTextField(
                 label = "Full name",
                 value = fullName,
                 onValueChange = { fullName = it }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Nick name
+
             ProfileTextField(
                 label = "Nick name",
                 value = nickName,
                 onValueChange = { nickName = it }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Email
+
             ProfileTextField(
                 label = "Email",
                 value = email,
                 onValueChange = { email = it }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Phone Number
+
             ProfileTextField(
                 label = "Phone Number",
                 value = phoneNumber,
                 onValueChange = { phoneNumber = it }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Country dropdown
+
             ProfileDropdownField(
                 label = "Country",
                 value = country,
                 onClick = { showCountryDropdown = true }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Gender dropdown
+
             ProfileDropdownField(
                 label = "Gender",
                 value = gender,
                 onClick = { showGenderDropdown = true }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Address
+
             ProfileTextField(
                 label = "Address",
                 value = address,
                 onValueChange = { address = it }
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
-            // Submit button
+
             Button(
                 onClick = onSubmitClick,
                 modifier = Modifier
@@ -235,6 +229,18 @@ fun ProfileDropdownField(
 @Preview(showBackground = true)
 @Composable
 fun EditProfileScreenPreview() {
-    EditProfileScreen()
+    PreviewNavScaffold { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            EditProfileContent(
+                fullNameInitial = "Phùng Canh Mộ",
+                nickNameInitial = "puerto_rico",
+                emailInitial = "youremail@domain.com",
+                phoneNumberInitial = "+01 234 567 89",
+                countryInitial = "United States",
+                genderInitial = "Female",
+                addressInitial = "45 New Avenue, New York"
+            )
+        }
+    }
 }
 

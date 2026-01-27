@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,13 +19,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.R
 import com.example.vetbook.presentation.components.store.OrderSummaryCard
 import com.example.vetbook.presentation.models.OrderSummary
 import com.example.vetbook.presentation.models.PaymentMethod
+import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import java.util.*
 
 @Composable
@@ -90,7 +91,7 @@ fun PaymentScreen(
             ) {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = Color.Black
                     )
@@ -318,8 +319,12 @@ fun PaymentMethodCard(
     }
 }
 
-@Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun PaymentScreenPreview() {
-    PaymentScreen()
+    PreviewNavScaffold { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            PaymentScreen()
+        }
+    }
 }

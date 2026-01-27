@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "1074707230062-9lvloa7kgush5aprfk5cj2tukgh0u4i1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vetbook",
+            "certificate_hash": "309e1ada49877d32091cbc8372d66782ef994ccf"
+          }
+        },
+        {
+          "client_id": "1074707230062-tk1duchbpji4avvhtcevvfsoatthkdsm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vetbook",
+            "certificate_hash": "c86eac8d3badca1ff449a6e49005bbb8ef48500c"
+          }
+        },
+        {
           "client_id": "1074707230062-q87i0is1715lbeiommbbo4tq6pekuo64.apps.googleusercontent.com",
           "client_type": 3
         }

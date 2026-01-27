@@ -1,5 +1,9 @@
 package com.example.vetbook.presentation.screens
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -8,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -18,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.vetbook.presentation.components.VetBookBottomBar
+import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.components.topbars.HomeTopBar
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
 import com.example.vetbook.presentation.navigation.Routes
@@ -40,26 +46,82 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 
     Scaffold(
         containerColor = Color.White,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             when {
                 currentRoute == Routes.Home.route -> {
                     HomeTopBar(
-                        hasNotification = homeUiState.hasNotification,
+                        currentLocation = "Ho Chi Minh City",
+                        onLocationClick = { /* TODO: open location picker */ },
+                        onCartClick = {
+                            bottomNavController.navigate(Routes.Store.route)
+                        },
                         onNotificationClick = {
                             bottomNavController.navigate(Routes.Notifications.route)
                         },
                         onProfileClick = {
                             bottomNavController.navigate(Routes.Profile.route)
-                        }
+                        },
+                        searchPlaceholder = "Search for a service",
+                        searchValue = "",
+                        onSearchChange = { /* no-op for now */ }
                     )
                 }
-                // Profile route has its own yellow header built-in, don't show duplicate topBar
-                // Service route now has its own header built-in
-                // Veterinarians route has its own yellow header built-in
-                // DoctorProfile route has its own header with back button overlay
-                // BookAppointment route has its own header with back button overlay
-                // Store/Products/Cart routes have their own header built-in
-                // Notifications/EditProfile/Language/PrivacyPolicy routes have their own yellow headers
+                currentRoute == Routes.Pet.route -> {
+                    SimpleTopBar(
+                        title = "Pet",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Service.route -> {
+                    SimpleTopBar(
+                        title = "Calendar",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Store.route -> {
+                    StoreHeader(
+                        currentLocation = "Ho Chi Minh City",
+                        onLocationClick = { /* toggle handled in screen state later */ },
+                        onCartClick = {
+                            bottomNavController.navigate(Routes.Cart.route)
+                        },
+                        onNotificationClick = {
+                            bottomNavController.navigate(Routes.Notifications.route)
+                        },
+                        onProfileClick = {
+                            bottomNavController.navigate(Routes.Profile.route)
+                        },
+                        showSearchBar = true,
+                        searchPlaceholder = "Search for your items",
+                        onSearchChange = { /* handled inside screen state for now */ },
+                        searchValue = ""
+                    )
+                }
+                currentRoute == Routes.Notifications.route -> {
+                    SimpleTopBar(
+                        title = "Notifications",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.EditProfile.route -> {
+                    SimpleTopBar(
+                        title = "Edit profile",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Language.route -> {
+                    SimpleTopBar(
+                        title = "Language",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.PrivacyPolicy.route -> {
+                    SimpleTopBar(
+                        title = "Privacy policy",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
                 else -> { }
             }
         },
@@ -67,36 +129,54 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             VetBookBottomBar(navController = bottomNavController)
         }
     ) { innerPadding ->
+        val topBarPadding = innerPadding.calculateTopPadding()
+        val contentModifier = Modifier.padding(
+            start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+            end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+            bottom = innerPadding.calculateBottomPadding()
+        )
+
         NavHost(
             navController = bottomNavController,
             startDestination = Routes.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = contentModifier
         ) {
             composable(Routes.Home.route) {
-                HomeScreen(
-                    viewModel = homeViewModel,
-                    onSeeAllClick = {
-                        bottomNavController.navigate(Routes.Service.route) {
-                            popUpTo(bottomNavController.graph.findStartDestination().id) {
-                                saveState = true
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    HomeScreen(
+                        viewModel = homeViewModel,
+                        onSeeAllClick = {
+                            bottomNavController.navigate(Routes.Service.route) {
+                                popUpTo(bottomNavController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
+                        },
+                        onCategoryClick = { category ->
+                            handleServiceNavigation(category.id, bottomNavController)
                         }
-                    },
-                    onCategoryClick = { category ->
-                        handleServiceNavigation(category.id, bottomNavController)
-                    }
-                )
+                    )
+                }
+            }
+            composable(Routes.Pet.route) {
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    PetScreen(
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
             }
             composable(Routes.Service.route) {
-                ServiceScreen(
-                    categories = categories,
-                    onCategoryClick = { categoryId ->
-                        handleServiceNavigation(categoryId, bottomNavController)
-                    },
-                    onBackClick = { bottomNavController.popBackStack() }
-                )
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    ServiceScreen(
+                        categories = categories,
+                        onCategoryClick = { categoryId ->
+                            handleServiceNavigation(categoryId, bottomNavController)
+                        },
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
             }
 
             composable(
@@ -117,14 +197,56 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             }
             
             composable(Routes.Store.route) {
-                StoreScreen(
-                    onProductsClick = {
-                        bottomNavController.navigate(Routes.Products.route)
-                    },
-                    onCartClick = {
-                        bottomNavController.navigate(Routes.Cart.route)
-                    }
-                )
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    StoreScreen(
+                        onProductsClick = {
+                            bottomNavController.navigate(Routes.Products.route)
+                        },
+                        onCartClick = {
+                            bottomNavController.navigate(Routes.Cart.route)
+                        },
+                        onNotificationClick = {
+                            bottomNavController.navigate(Routes.Notifications.route)
+                        },
+                        onProfileClick = {
+                            bottomNavController.navigate(Routes.Profile.route)
+                        }
+                    )
+                }
+            }
+            composable(Routes.Notifications.route) {
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    NotificationScreen(
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+            }
+            composable(Routes.EditProfile.route) {
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    EditProfileScreen(
+                        onBackClick = { bottomNavController.popBackStack() },
+                        onSubmitClick = {
+                            bottomNavController.popBackStack()
+                        }
+                    )
+                }
+            }
+            composable(Routes.Language.route) {
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    LanguageScreen(
+                        onBackClick = { bottomNavController.popBackStack() },
+                        onLanguageSelected = {
+                            bottomNavController.popBackStack()
+                        }
+                    )
+                }
+            }
+            composable(Routes.PrivacyPolicy.route) {
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    PrivacyPolicyScreen(
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
             }
             
             composable(Routes.Products.route) {
@@ -132,6 +254,12 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     onBackClick = { bottomNavController.popBackStack() },
                     onCartClick = {
                         bottomNavController.navigate(Routes.Cart.route)
+                    },
+                    onNotificationClick = {
+                        bottomNavController.navigate(Routes.Notifications.route)
+                    },
+                    onProfileClick = {
+                        bottomNavController.navigate(Routes.Profile.route)
                     }
                 )
             }
@@ -176,37 +304,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     onLogout = onLogout
                 )
             }
-            
-            composable(Routes.Notifications.route) {
-                NotificationScreen(
-                    onBackClick = { bottomNavController.popBackStack() }
-                )
-            }
-            
-            composable(Routes.EditProfile.route) {
-                EditProfileScreen(
-                    onBackClick = { bottomNavController.popBackStack() },
-                    onSubmitClick = {
-                        bottomNavController.popBackStack()
-                    }
-                )
-            }
-            
-            composable(Routes.Language.route) {
-                LanguageScreen(
-                    onBackClick = { bottomNavController.popBackStack() },
-                    onLanguageSelected = {
-                        bottomNavController.popBackStack()
-                    }
-                )
-            }
-            
-            composable(Routes.PrivacyPolicy.route) {
-                PrivacyPolicyScreen(
-                    onBackClick = { bottomNavController.popBackStack() }
-                )
-            }
-            
+
             composable(Routes.Accommodation.route) {
                 AccommodationScreen(
                     onBackClick = { bottomNavController.popBackStack() },

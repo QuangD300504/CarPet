@@ -10,13 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.components.store.LocationDropdown
 import com.example.vetbook.presentation.components.store.ProductCard
 import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.models.Product
+import com.example.vetbook.presentation.previews.PreviewNavScaffold
 
 @Composable
 fun ProductsScreen(
@@ -109,8 +109,12 @@ fun ProductsScreen(
     }
 }
 
-@Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun ProductsScreenPreview() {
-    ProductsScreen()
+    PreviewNavScaffold { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            ProductsScreen()
+        }
+    }
 }

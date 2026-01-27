@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.ServiceCategory
@@ -19,6 +18,8 @@ import com.example.vetbook.presentation.components.RecommendedServices
 import com.example.vetbook.presentation.components.ServiceCategoriesSection
 import com.example.vetbook.presentation.components.SponsoredSection
 import com.example.vetbook.presentation.models.HomeUiState
+import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.components.topbars.HomeTopBar
 import com.example.vetbook.presentation.viewmodels.HomeViewModel
 
 @Composable
@@ -95,13 +96,37 @@ fun HomeContent(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+fun previewHomeCategories() = listOf(
+    ServiceCategory("cat_vet", "Vet Care", "Book vets", com.example.vetbook.R.drawable.services),
+    ServiceCategory("cat_hotel", "Pet Hotel", "Stay safe", com.example.vetbook.R.drawable.services),
+    ServiceCategory("cat_walk", "Dog Walk", "Walk time", com.example.vetbook.R.drawable.services),
+    ServiceCategory("cat_shop", "Shop", "Buy goods", com.example.vetbook.R.drawable.store)
+)
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 fun HomeScreenPreview() {
-    HomeContent(
-        uiState = HomeUiState(),
-        categories = emptyList(),
-        onCategoryClick = {},
-        onSeeAllClick = {}
-    )
+    PreviewNavScaffold(
+        topBar = {
+            HomeTopBar(
+                currentLocation = "Ho Chi Minh City",
+                onLocationClick = {},
+                onCartClick = {},
+                onNotificationClick = {},
+                onProfileClick = {},
+                searchPlaceholder = "Search for a service",
+                searchValue = "",
+                onSearchChange = {}
+            )
+        }
+    ) { padding ->
+        HomeContent(
+            uiState = HomeUiState(),
+            categories = previewHomeCategories(),
+            onCategoryClick = {},
+            onSeeAllClick = {},
+            modifier = Modifier.padding(padding)
+        )
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.vetbook.presentation.components
 
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,7 +19,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import com.example.vetbook.presentation.navigation.bottomNavItems
+import com.example.vetbook.presentation.navigation.Routes
 
 @Composable
 fun VetBookBottomBar(navController: NavController) {
@@ -55,23 +59,16 @@ fun VetBookBottomBar(navController: NavController) {
                         Icon(
                             painter = painterResource(id = item.iconRes),
                             contentDescription = item.label,
-                            tint = if (isSelected) Color(0xFFFFE357) else Color.Black // Yellow from Figma when selected
-                        )
-                    },
-                    label = {
-                        androidx.compose.material3.Text(
-                            text = item.label,
-                            fontSize = 10.sp,
-                            fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
-                            color = if (isSelected) Color(0xFFFFE357) else Color.Black
+                            tint = if (isSelected) Color(0xFFFFE357) else Color.Black, // Yellow from Figma when selected
+                            modifier = androidx.compose.ui.Modifier.size(96.dp)
                         )
                     },
                     colors = NavigationBarItemDefaults.colors(
                         indicatorColor = Color.Transparent,
                         selectedIconColor = Color(0xFFFFE357),
-                        selectedTextColor = Color.Transparent, // Custom label handles text color
+                        selectedTextColor = Color(0xFFFFE357),
                         unselectedIconColor = Color.Black,
-                        unselectedTextColor = Color.Transparent // Custom label handles text color
+                        unselectedTextColor = Color.Black
                     )
                 )
             }
@@ -83,5 +80,14 @@ fun VetBookBottomBar(navController: NavController) {
 @Composable
 fun VetBookBottomBarPreview() {
     val navController = rememberNavController()
+    NavHost(
+        navController = navController,
+        startDestination = Routes.Home.route
+    ) {
+        composable(Routes.Home.route) {}
+        composable(Routes.Service.route) {}
+        composable(Routes.Store.route) {}
+        composable(Routes.Pet.route) {}
+    }
     VetBookBottomBar(navController = navController)
 }

@@ -32,4 +32,5 @@ sealed class Routes(val route: String) {
     object Language : Routes("language")
     object PrivacyPolicy : Routes("privacy_policy")
     object Accommodation : Routes("accommodation")
+    object Pet : Routes("pet")
 }

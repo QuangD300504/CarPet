@@ -38,7 +38,6 @@ fun StoreHeader(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .statusBarsPadding()
             .background(
                 Color(0xFFFFD813), // Yellow from Figma
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(
@@ -46,6 +45,8 @@ fun StoreHeader(
                     bottomEnd = 40.dp
                 )
             )
+            // Apply padding AFTER background so the yellow fills behind the status bar area
+            .statusBarsPadding()
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         // Location and icons row

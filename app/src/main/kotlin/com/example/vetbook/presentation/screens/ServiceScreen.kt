@@ -2,15 +2,11 @@ package com.example.vetbook.presentation.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -25,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.ServiceCategory
+import com.example.vetbook.presentation.previews.PreviewNavScaffold
 
 @Composable
 fun ServiceScreen(
@@ -33,61 +30,25 @@ fun ServiceScreen(
     onBackClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
-        // Yellow header with back button from Figma
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .background(
-                    Color(0xFFFFD813), // Yellow from Figma
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                        bottomStart = 40.dp,
-                        bottomEnd = 40.dp
-                    )
-                )
-                .padding(vertical = 16.dp, horizontal = 20.dp)
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { onBackClick() },
-                    tint = Color.Black
+            items(
+                items = categories,
+                key = { it.id }
+            ) { category ->
+                CategoryGridCard(
+                    category = category,
+                    onClick = { onCategoryClick(category.id) }
                 )
-            }
-        }
-        
-        // White content area with grid
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-        ) {
-            
-            // Categories grid - matching Figma 2x2 layout
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                items(
-                    items = categories,
-                    key = { it.id }
-                ) { category ->
-                    CategoryGridCard(
-                        category = category,
-                        onClick = { onCategoryClick(category.id) }
-                    )
-                }
             }
         }
     }
@@ -134,6 +95,26 @@ fun CategoryGridCard(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.Black
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun ServiceScreenPreview() {
+    val categories = listOf(
+        ServiceCategory("cat_vet", "Veterinary Care", "Comprehensive pet care services", com.example.vetbook.R.drawable.services),
+        ServiceCategory("cat_hotel", "Pet Hotel", "Comfortable boarding for your pet", com.example.vetbook.R.drawable.services),
+        ServiceCategory("cat_groom", "Pet Grooming", "Professional grooming services", com.example.vetbook.R.drawable.services),
+        ServiceCategory("cat_train", "Pet Training", "Training sessions for your pet", com.example.vetbook.R.drawable.services)
+    )
+    PreviewNavScaffold { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            ServiceScreen(
+                categories = categories,
+                onCategoryClick = {},
+                onBackClick = {}
             )
         }
     }

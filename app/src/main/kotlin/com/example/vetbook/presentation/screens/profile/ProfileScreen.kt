@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.presentation.components.profile.MenuItemComponent
+import com.example.vetbook.presentation.models.ProfileUiState
+import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 
 @Composable
@@ -39,21 +41,43 @@ fun ProfileScreen(
     onLogout: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    ProfileScreenContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onEditProfileClick = onEditProfileClick,
+        onNotificationClick = onNotificationClick,
+        onLanguageClick = onLanguageClick,
+        onContactUsClick = onContactUsClick,
+        onPrivacyPolicyClick = onPrivacyPolicyClick,
+        onLogout = onLogout
+    )
+}
+
+@Composable
+fun ProfileScreenContent(
+    uiState: ProfileUiState,
+    onBackClick: () -> Unit = {},
+    onEditProfileClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
+    onLanguageClick: () -> Unit = {},
+    onContactUsClick: () -> Unit = {},
+    onPrivacyPolicyClick: () -> Unit = {},
+    onLogout: () -> Unit = {}
+) {
     var notificationsEnabled by remember { mutableStateOf(true) }
-    var selectedLanguage by remember { mutableStateOf("English") }
-    
+    var selectedLanguage by remember { mutableStateOf(uiState.selectedLanguage) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Yellow header with rounded bottom from Figma
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .background(
-                    Color(0xFFFFD813), // Yellow from Figma
+                    Color(0xFFFFD813),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(
                         bottomStart = 163.dp,
                         bottomEnd = 163.dp
@@ -75,13 +99,12 @@ fun ProfileScreen(
                 }
             }
         }
-        
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // User Information Section (Yellow background - part of header)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -96,13 +119,12 @@ fun ProfileScreen(
                             .size(120.dp)
                             .clip(CircleShape)
                     )
-                    // Edit icon overlay
                     IconButton(
                         onClick = onEditProfileClick,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .size(46.dp)
-                            .background(Color(0xFFCBAC10), CircleShape) // Darker yellow from Figma
+                            .background(Color(0xFFCBAC10), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
@@ -112,18 +134,18 @@ fun ProfileScreen(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text(
                     text = uiState.user?.name ?: "PHÙNG CANH MỘ",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
                     text = "${uiState.user?.email ?: "mail@gmail.com"} | ${uiState.user?.phoneNumber ?: "+01 234 567 89"}",
                     fontSize = 14.sp,
@@ -131,8 +153,7 @@ fun ProfileScreen(
                     fontWeight = FontWeight.Normal
                 )
             }
-            
-            // Menu Options (White background) - Matching Figma design
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,7 +161,6 @@ fun ProfileScreen(
                     .padding(horizontal = 15.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                // First card group
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -155,7 +175,7 @@ fun ProfileScreen(
                             label = "Edit profile information",
                             onClick = onEditProfileClick
                         )
-                        
+
                         MenuItemComponent(
                             icon = Icons.Default.Notifications,
                             label = "Notifications",
@@ -164,12 +184,12 @@ fun ProfileScreen(
                                 Text(
                                     text = if (notificationsEnabled) "ON" else "OFF",
                                     fontSize = 14.sp,
-                                    color = Color(0xFF1573FE), // Blue from Figma
+                                    color = Color(0xFF1573FE),
                                     fontWeight = FontWeight.Normal
                                 )
                             }
                         )
-                        
+
                         MenuItemComponent(
                             icon = Icons.Default.Language,
                             label = "Language",
@@ -178,17 +198,16 @@ fun ProfileScreen(
                                 Text(
                                     text = selectedLanguage,
                                     fontSize = 14.sp,
-                                    color = Color(0xFF1573FE), // Blue from Figma
+                                    color = Color(0xFF1573FE),
                                     fontWeight = FontWeight.Normal
                                 )
                             }
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
-                // Second card group
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -203,13 +222,13 @@ fun ProfileScreen(
                             label = "Edit profile information",
                             onClick = onEditProfileClick
                         )
-                        
+
                         MenuItemComponent(
                             icon = Icons.Default.Notifications,
                             label = "Notifications",
                             onClick = onNotificationClick
                         )
-                        
+
                         MenuItemComponent(
                             icon = Icons.Default.Language,
                             label = "Language",
@@ -217,10 +236,9 @@ fun ProfileScreen(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
-                // Single item card
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -241,6 +259,22 @@ fun ProfileScreen(
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
-    ProfileScreen()
+    val sampleState = ProfileUiState(
+        user = com.example.vetbook.domain.models.User(
+            id = "user_1",
+            name = "PHÙNG CANH MỘ",
+            email = "mail@gmail.com",
+            phoneNumber = "+01 234 567 89",
+            points = 120,
+            profileImage = com.example.vetbook.R.drawable.pawns
+        ),
+        pets = emptyList(),
+        isLoading = false
+    )
+    PreviewNavScaffold { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            ProfileScreenContent(uiState = sampleState)
+        }
+    }
 }
 
