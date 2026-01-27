@@ -36,6 +36,8 @@ fun ProfileScreen(
     onEditProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onLanguageClick: () -> Unit = {},
+    onSecurityClick: () -> Unit = {},
+    onHelpAndSupportClick: () -> Unit = {},
     onContactUsClick: () -> Unit = {},
     onPrivacyPolicyClick: () -> Unit = {},
     onLogout: () -> Unit = {}
@@ -47,6 +49,8 @@ fun ProfileScreen(
         onEditProfileClick = onEditProfileClick,
         onNotificationClick = onNotificationClick,
         onLanguageClick = onLanguageClick,
+        onSecurityClick = onSecurityClick,
+        onHelpAndSupportClick = onHelpAndSupportClick,
         onContactUsClick = onContactUsClick,
         onPrivacyPolicyClick = onPrivacyPolicyClick,
         onLogout = onLogout
@@ -60,6 +64,8 @@ fun ProfileScreenContent(
     onEditProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onLanguageClick: () -> Unit = {},
+    onSecurityClick: () -> Unit = {},
+    onHelpAndSupportClick: () -> Unit = {},
     onContactUsClick: () -> Unit = {},
     onPrivacyPolicyClick: () -> Unit = {},
     onLogout: () -> Unit = {}
@@ -159,8 +165,9 @@ fun ProfileScreenContent(
                     .fillMaxWidth()
                     .background(Color.White)
                     .padding(horizontal = 15.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Account settings card (Edit profile, Notifications, Language)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -206,8 +213,7 @@ fun ProfileScreenContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
+                // Security / Help & support / Contact / Privacy card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
@@ -218,38 +224,29 @@ fun ProfileScreenContent(
                         modifier = Modifier.padding(vertical = 8.dp)
                     ) {
                         MenuItemComponent(
-                            icon = Icons.Default.Person,
-                            label = "Edit profile information",
-                            onClick = onEditProfileClick
+                            icon = Icons.Default.Security,
+                            label = "Security",
+                            onClick = onSecurityClick
                         )
 
                         MenuItemComponent(
-                            icon = Icons.Default.Notifications,
-                            label = "Notifications",
-                            onClick = onNotificationClick
+                            icon = Icons.Default.Help,
+                            label = "Help & Support",
+                            onClick = onHelpAndSupportClick
                         )
 
                         MenuItemComponent(
-                            icon = Icons.Default.Language,
-                            label = "Language",
-                            onClick = onLanguageClick
+                            icon = Icons.Default.Phone,
+                            label = "Contact us",
+                            onClick = onContactUsClick
+                        )
+
+                        MenuItemComponent(
+                            icon = Icons.Default.PrivacyTip,
+                            label = "Privacy policy",
+                            onClick = onPrivacyPolicyClick
                         )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    MenuItemComponent(
-                        icon = Icons.Default.Person,
-                        label = "Edit profile information",
-                        onClick = onEditProfileClick
-                    )
                 }
             }
         }
