@@ -15,6 +15,7 @@ fun HomeTopBar(
     onCartClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    profileImageUrl: String? = null,
     searchPlaceholder: String = "Search for a service",
     searchValue: String = "",
     onSearchChange: (String) -> Unit = {}
@@ -25,6 +26,7 @@ fun HomeTopBar(
         onCartClick = onCartClick,
         onNotificationClick = onNotificationClick,
         onProfileClick = onProfileClick,
+        profileImageUrl = profileImageUrl,
         showSearchBar = true,
         searchPlaceholder = searchPlaceholder,
         onSearchChange = onSearchChange,

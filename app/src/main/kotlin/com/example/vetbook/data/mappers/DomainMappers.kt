@@ -5,12 +5,16 @@ import com.example.vetbook.domain.models.*
 
 // region User
 
-fun UserProfileDto.toDomain(points: Int = 0, profileImage: Int = 0): User =
+fun UserProfileDto.toDomain(
+    points: Int = 0,
+    profileImage: Int? = null
+): User =
     User(
         id = uid,
         name = fullName,
         email = email,
         points = points,
+        profileImageUrl = profileImageUrl,
         profileImage = profileImage
     )
 

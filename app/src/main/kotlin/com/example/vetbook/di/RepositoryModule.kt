@@ -52,8 +52,14 @@ object RepositoryModule {
     fun provideUserRepository(
         auth: FirebaseAuth,
         remoteUserDataSource: RemoteUserDataSource,
-        remotePetDataSource: RemotePetDataSource
+        remotePetDataSource: RemotePetDataSource,
+        cloudinaryService: com.example.vetbook.data.network.CloudinaryService
     ): UserRepository {
-        return FirebaseAuthUserRepository(auth, remoteUserDataSource, remotePetDataSource)
+        return FirebaseAuthUserRepository(
+            auth = auth,
+            remoteUserDataSource = remoteUserDataSource,
+            remotePetDataSource = remotePetDataSource,
+            cloudinaryService = cloudinaryService
+        )
     }
 }

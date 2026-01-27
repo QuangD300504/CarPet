@@ -3,6 +3,7 @@ package com.example.vetbook.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vetbook.domain.usecases.GetUserProfileUseCase
+import com.example.vetbook.domain.usecases.UpdateUserAvatarUseCase
 import com.example.vetbook.presentation.models.ProfileUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +13,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val getUserProfileUseCase: GetUserProfileUseCase
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val updateUserAvatarUseCase: UpdateUserAvatarUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
@@ -59,5 +61,24 @@ class ProfileViewModel @Inject constructor(
 
     fun logout() {
         _uiState.value = ProfileUiState()
+    }
+
+    fun uploadAvatar(imageBytes: ByteArray, onResult: (Result<String>) -> Unit) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            val result = updateUserAvatarUseCase(imageBytes)
+
+            result.onSuccess { url ->
+                val currentUser = _uiState.value.user
+                _uiState.value = _uiState.value.copy(
+                    user = currentUser?.copy(profileImageUrl = url),
+                    isLoading = false
+                )
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+
+            onResult(result)
+        }
     }
 }

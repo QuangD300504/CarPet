@@ -44,6 +44,13 @@ object UseCaseModule {
     }
 
     @Provides
+    fun provideUpdateUserAvatarUseCase(
+        repository: UserRepository
+    ): UpdateUserAvatarUseCase {
+        return UpdateUserAvatarUseCase(repository)
+    }
+
+    @Provides
     fun provideGetPetProfileUseCase(
         userRepository: UserRepository,
         @MockRepo communityRepository: CommunityRepository

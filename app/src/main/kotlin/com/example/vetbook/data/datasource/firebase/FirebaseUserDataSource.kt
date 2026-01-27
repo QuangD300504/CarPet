@@ -25,8 +25,11 @@ class FirebaseUserDataSource(
             fullName = snapshot.getString("fullName") ?: "",
             email = snapshot.getString("email") ?: "",
             phone = snapshot.getString("phone") ?: "",
+            profileImageUrl = snapshot.getString("profileImageUrl"),
             createdAt = snapshot.getLong("createdAt") ?: 0L,
-            isEmailVerified = snapshot.getBoolean("isEmailVerified") ?: false
+            updatedAt = snapshot.getLong("updatedAt"),
+            isEmailVerified = snapshot.getBoolean("isEmailVerified") ?: false,
+            lastLogin = snapshot.getLong("lastLogin")
         )
     }
 
@@ -36,9 +39,12 @@ class FirebaseUserDataSource(
             "fullName" to profile.fullName,
             "email" to profile.email,
             "phone" to profile.phone,
+            "profileImageUrl" to profile.profileImageUrl,
             "createdAt" to profile.createdAt,
-            "isEmailVerified" to profile.isEmailVerified
-        )
+            "updatedAt" to profile.updatedAt,
+            "isEmailVerified" to profile.isEmailVerified,
+            "lastLogin" to profile.lastLogin
+        ).filterValues { it != null }
 
         firestore
             .collection(USERS_COLLECTION)

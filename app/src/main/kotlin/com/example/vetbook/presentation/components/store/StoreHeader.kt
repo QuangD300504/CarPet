@@ -20,6 +20,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.example.vetbook.R
 
 @Composable
@@ -29,6 +31,7 @@ fun StoreHeader(
     onCartClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    profileImageUrl: String? = null,
     showSearchBar: Boolean = true,
     searchPlaceholder: String = "Search for your items",
     onSearchChange: (String) -> Unit = {},
@@ -139,21 +142,38 @@ fun StoreHeader(
                     )
                 }
                 
-                // Profile icon button
-                IconButton(
-                    onClick = onProfileClick,
+                // Profile avatar button with subtle border, sized to visually match other buttons
+                Box(
                     modifier = Modifier
-                        .size(42.dp)
-                        .background(
-                            Color.White.copy(alpha = 0.68f),
-                            CircleShape
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.68f))
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFFE0E0E0),
+                            shape = CircleShape
                         )
+                        .clickable { onProfileClick() },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.pawns),
-                        contentDescription = "Profile",
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (profileImageUrl != null) {
+                        AsyncImage(
+                            model = profileImageUrl,
+                            contentDescription = "Profile",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(R.drawable.pawns),
+                            contentDescription = "Profile",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                        )
+                    }
                 }
             }
         }

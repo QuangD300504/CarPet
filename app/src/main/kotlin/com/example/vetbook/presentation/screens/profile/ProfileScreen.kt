@@ -1,15 +1,14 @@
 package com.example.vetbook.presentation.screens.profile
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.Arrangement
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.presentation.components.profile.MenuItemComponent
@@ -33,6 +35,8 @@ import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
+    avatarOverride: Any? = null,
+    onAvatarClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onLanguageClick: () -> Unit = {},
@@ -46,6 +50,8 @@ fun ProfileScreen(
     ProfileScreenContent(
         uiState = uiState,
         onBackClick = onBackClick,
+        avatarOverride = avatarOverride,
+        onAvatarClick = onAvatarClick,
         onEditProfileClick = onEditProfileClick,
         onNotificationClick = onNotificationClick,
         onLanguageClick = onLanguageClick,
@@ -61,6 +67,8 @@ fun ProfileScreen(
 fun ProfileScreenContent(
     uiState: ProfileUiState,
     onBackClick: () -> Unit = {},
+    avatarOverride: Any? = null,
+    onAvatarClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onLanguageClick: () -> Unit = {},
@@ -77,40 +85,8 @@ fun ProfileScreenContent(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .verticalScroll(rememberScrollState())
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .background(
-                    Color(0xFFFFD813),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                        bottomStart = 163.dp,
-                        bottomEnd = 163.dp
-                    )
-                )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.Black
-                    )
-                }
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -118,15 +94,21 @@ fun ProfileScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box {
-                    Image(
-                        painter = painterResource(R.drawable.pawns),
+                    AsyncImage(
+                        model = avatarOverride ?: uiState.user?.profileImageUrl ?: R.drawable.pawns,
                         contentDescription = "Profile",
                         modifier = Modifier
                             .size(120.dp)
                             .clip(CircleShape)
+                            .border(
+                                width = 2.dp,
+                                color = Color(0xFFE0E0E0),
+                                shape = CircleShape
+                            ),
+                        contentScale = ContentScale.Crop
                     )
                     IconButton(
-                        onClick = onEditProfileClick,
+                        onClick = onAvatarClick,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .size(46.dp)
@@ -230,7 +212,7 @@ fun ProfileScreenContent(
                         )
 
                         MenuItemComponent(
-                            icon = Icons.Default.Help,
+                            icon = Icons.AutoMirrored.Filled.Help,
                             label = "Help & Support",
                             onClick = onHelpAndSupportClick
                         )
@@ -248,10 +230,30 @@ fun ProfileScreenContent(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onLogout,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF5555),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Log out",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
-}
+
 
 @Preview(showBackground = true)
 @Composable
@@ -263,6 +265,7 @@ fun ProfileScreenPreview() {
             email = "mail@gmail.com",
             phoneNumber = "+01 234 567 89",
             points = 120,
+            profileImageUrl = null,
             profileImage = com.example.vetbook.R.drawable.pawns
         ),
         pets = emptyList(),

@@ -9,11 +9,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -32,17 +39,22 @@ import com.example.vetbook.presentation.screens.profile.*
 import com.example.vetbook.presentation.screens.store.*
 import com.example.vetbook.presentation.screens.vetcare.*
 import com.example.vetbook.presentation.screens.accommodation.AccommodationScreen
+import com.example.vetbook.utils.compressImageForAvatar
 import com.example.vetbook.presentation.viewmodels.HomeViewModel
+import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 import com.example.vetbook.presentation.viewmodels.ServiceDetailViewModel
 
 @Composable
 fun MainScreen(onLogout: () -> Unit = {}) {
     val bottomNavController = rememberNavController()
     val homeViewModel: HomeViewModel = hiltViewModel()
+    val profileViewModel: ProfileViewModel = hiltViewModel()
     val categories by homeViewModel.categories.collectAsState()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val homeUiState by homeViewModel.uiState.collectAsState()
+    val profileUiState by profileViewModel.uiState.collectAsState()
+    val profileImageUrl = profileUiState.user?.profileImageUrl
 
     Scaffold(
         containerColor = Color.White,
@@ -62,6 +74,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onProfileClick = {
                             bottomNavController.navigate(Routes.Profile.route)
                         },
+                        profileImageUrl = profileImageUrl,
                         searchPlaceholder = "Search for a service",
                         searchValue = "",
                         onSearchChange = { /* no-op for now */ }
@@ -92,6 +105,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onProfileClick = {
                             bottomNavController.navigate(Routes.Profile.route)
                         },
+                        profileImageUrl = profileImageUrl,
                         showSearchBar = true,
                         searchPlaceholder = "Search for your items",
                         onSearchChange = { /* handled inside screen state for now */ },
@@ -119,6 +133,12 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 currentRoute == Routes.PrivacyPolicy.route -> {
                     SimpleTopBar(
                         title = "Privacy policy",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Profile.route -> {
+                    SimpleTopBar(
+                        title = "Profile",
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
@@ -284,25 +304,52 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             }
             
             composable(Routes.Profile.route) {
-                ProfileScreen(
-                    onBackClick = { bottomNavController.popBackStack() },
-                    onEditProfileClick = {
-                        bottomNavController.navigate(Routes.EditProfile.route)
-                    },
-                    onNotificationClick = {
-                        bottomNavController.navigate(Routes.Notifications.route)
-                    },
-                    onLanguageClick = {
-                        bottomNavController.navigate(Routes.Language.route)
-                    },
-                    onContactUsClick = {
-                        // Handle contact us
-                    },
-                    onPrivacyPolicyClick = {
-                        bottomNavController.navigate(Routes.PrivacyPolicy.route)
-                    },
-                    onLogout = onLogout
-                )
+                val context = LocalContext.current
+                var localAvatarUri by remember { mutableStateOf<Uri?>(null) }
+
+                val imagePicker = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent()
+                ) { uri: Uri? ->
+                    if (uri != null) {
+                        localAvatarUri = uri
+                        val bytes = compressImageForAvatar(context, uri)
+                        if (bytes != null) {
+                            profileViewModel.uploadAvatar(bytes) { result ->
+                                result.onSuccess {
+                                    // After server confirms, we can drop the temporary local override
+                                       localAvatarUri = null
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    ProfileScreen(
+                        viewModel = profileViewModel,
+                        onBackClick = { bottomNavController.popBackStack() },
+                        avatarOverride = localAvatarUri,
+                        onAvatarClick = {
+                            imagePicker.launch("image/*")
+                        },
+                        onEditProfileClick = {
+                            bottomNavController.navigate(Routes.EditProfile.route)
+                        },
+                        onNotificationClick = {
+                            bottomNavController.navigate(Routes.Notifications.route)
+                        },
+                        onLanguageClick = {
+                            bottomNavController.navigate(Routes.Language.route)
+                        },
+                        onContactUsClick = {
+                            // Handle contact us
+                        },
+                        onPrivacyPolicyClick = {
+                            bottomNavController.navigate(Routes.PrivacyPolicy.route)
+                        },
+                        onLogout = onLogout
+                    )
+                }
             }
 
             composable(Routes.Accommodation.route) {
