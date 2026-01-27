@@ -2,12 +2,16 @@ package com.example.vetbook.di
 
 import com.example.vetbook.data.datasource.RemoteCommunityDataSource
 import com.example.vetbook.data.datasource.RemotePetDataSource
+import com.example.vetbook.data.datasource.RemoteServiceDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.data.datasource.RemoteVaccinationDataSource
+import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseCommunityDataSource
 import com.example.vetbook.data.datasource.firebase.FirebasePetDataSource
+import com.example.vetbook.data.datasource.firebase.FirebaseServiceDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseUserDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseVaccinationDataSource
+import com.example.vetbook.data.datasource.firebase.FirebaseVeterinarianDataSource
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
@@ -42,6 +46,18 @@ object DataSourceModule {
     fun provideRemoteVaccinationDataSource(
         firestore: FirebaseFirestore
     ): RemoteVaccinationDataSource = FirebaseVaccinationDataSource(firestore)
+
+    @Provides
+    @Singleton
+    fun provideRemoteVeterinarianDataSource(
+        firestore: FirebaseFirestore
+    ): RemoteVeterinarianDataSource = FirebaseVeterinarianDataSource(firestore)
+
+    @Provides
+    @Singleton
+    fun provideRemoteServiceDataSource(
+        firestore: FirebaseFirestore
+    ): RemoteServiceDataSource = FirebaseServiceDataSource(firestore)
 }
 
 

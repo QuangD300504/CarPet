@@ -24,17 +24,17 @@ object UseCaseModule {
     }
 
     @Provides
-    fun provideGetCommunityDataUseCase(@MockRepo repository: CommunityRepository): GetCommunityDataUseCase {
+    fun provideGetCommunityDataUseCase(repository: CommunityRepository): GetCommunityDataUseCase {
         return GetCommunityDataUseCase(repository)
     }
 
     @Provides
-    fun provideGetVeterinariansUseCase(@MockRepo repository: VeterinarianRepository): GetVeterinariansUseCase {
+    fun provideGetVeterinariansUseCase(repository: VeterinarianRepository): GetVeterinariansUseCase {
         return GetVeterinariansUseCase(repository)
     }
 
     @Provides
-    fun provideGetServiceCategoriesUseCase(@MockRepo repository: ServiceRepository): GetServiceCategoriesUseCase {
+    fun provideGetServiceCategoriesUseCase(repository: ServiceRepository): GetServiceCategoriesUseCase {
         return GetServiceCategoriesUseCase(repository)
     }
 
@@ -46,7 +46,7 @@ object UseCaseModule {
     @Provides
     fun provideGetPetProfileUseCase(
         userRepository: UserRepository,
-        @MockRepo communityRepository: CommunityRepository
+        communityRepository: CommunityRepository
     ): GetPetProfileUseCase {
         return GetPetProfileUseCase(userRepository, communityRepository)
     }
