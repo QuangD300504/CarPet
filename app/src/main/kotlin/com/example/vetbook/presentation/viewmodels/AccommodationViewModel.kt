@@ -2,7 +2,7 @@ package com.example.vetbook.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.vetbook.data.repository.MockAccommodationRepository
+import com.example.vetbook.data.datasource.AccommodationDataSource
 import com.example.vetbook.presentation.models.Accommodation
 import com.example.vetbook.presentation.models.AccommodationCategory
 import com.example.vetbook.presentation.models.AccommodationUiState
@@ -17,7 +17,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AccommodationViewModel @Inject constructor() : ViewModel() {
-    private val repository = MockAccommodationRepository()
     
     private val _uiState = MutableStateFlow(AccommodationUiState())
     val uiState: StateFlow<AccommodationUiState> = _uiState.asStateFlow()
@@ -31,7 +30,7 @@ class AccommodationViewModel @Inject constructor() : ViewModel() {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
             try {
-                val accommodations = repository.getAccommodations()
+                val accommodations = AccommodationDataSource.getAccommodations()
                 _uiState.update { 
                     it.copy(
                         accommodations = accommodations,

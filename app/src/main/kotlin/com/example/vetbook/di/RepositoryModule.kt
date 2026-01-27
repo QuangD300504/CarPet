@@ -1,7 +1,10 @@
 package com.example.vetbook.di
 
+import com.example.vetbook.data.datasource.RemoteCommunityDataSource
 import com.example.vetbook.data.datasource.RemotePetDataSource
+import com.example.vetbook.data.datasource.RemoteServiceDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
+import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
 import com.example.vetbook.data.repository.*
 import com.example.vetbook.domain.repository.*
 import com.google.firebase.auth.FirebaseAuth
@@ -26,26 +29,27 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    @MockRepo
-    fun provideMockCommunityRepository(): CommunityRepository =
-        MockCommunityRepository()
+    fun provideCommunityRepository(
+        remoteCommunityDataSource: RemoteCommunityDataSource
+    ): CommunityRepository {
+        return FirebaseCommunityRepository(remoteCommunityDataSource)
+    }
 
     @Provides
     @Singleton
-    @MockRepo
-    fun provideVeterinarianRepository(): VeterinarianRepository =
-        MockVeterinarianRepository()
+    fun provideVeterinarianRepository(
+        remoteVeterinarianDataSource: RemoteVeterinarianDataSource
+    ): VeterinarianRepository {
+        return FirebaseVeterinarianRepository(remoteVeterinarianDataSource)
+    }
 
     @Provides
     @Singleton
-    @MockRepo
-    fun provideMockServiceRepository(): ServiceRepository =
-        MockServiceRepository()
-
-    @Provides
-    @Singleton
-    fun provideServiceRepository(): ServiceRepository =
-        MockServiceRepository()
+    fun provideServiceRepository(
+        remoteServiceDataSource: RemoteServiceDataSource
+    ): ServiceRepository {
+        return FirebaseServiceRepository(remoteServiceDataSource)
+    }
 
     @Provides
     @Singleton
