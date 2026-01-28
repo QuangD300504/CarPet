@@ -3,12 +3,14 @@ package com.example.vetbook.di
 import com.example.vetbook.data.datasource.RemoteCommunityDataSource
 import com.example.vetbook.data.datasource.RemotePetDataSource
 import com.example.vetbook.data.datasource.RemoteServiceDataSource
+import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.data.datasource.RemoteVaccinationDataSource
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseCommunityDataSource
 import com.example.vetbook.data.datasource.firebase.FirebasePetDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseServiceDataSource
+import com.example.vetbook.data.datasource.firebase.FirebaseStoreDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseUserDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseVaccinationDataSource
 import com.example.vetbook.data.datasource.firebase.FirebaseVeterinarianDataSource
@@ -58,6 +60,12 @@ object DataSourceModule {
     fun provideRemoteServiceDataSource(
         firestore: FirebaseFirestore
     ): RemoteServiceDataSource = FirebaseServiceDataSource(firestore)
+
+    @Provides
+    @Singleton
+    fun provideRemoteStoreDataSource(
+        firestore: FirebaseFirestore
+    ): RemoteStoreDataSource = FirebaseStoreDataSource(firestore)
 }
 
 

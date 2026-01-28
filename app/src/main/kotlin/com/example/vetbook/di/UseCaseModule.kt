@@ -57,4 +57,25 @@ object UseCaseModule {
     ): GetPetProfileUseCase {
         return GetPetProfileUseCase(userRepository, communityRepository)
     }
+
+    @Provides
+    fun provideGetStoreProductsUseCase(
+        repository: StoreRepository
+    ): GetStoreProductsUseCase {
+        return GetStoreProductsUseCase(repository)
+    }
+
+    @Provides
+    fun provideObserveCartUseCase(
+        repository: StoreRepository
+    ): ObserveCartUseCase {
+        return ObserveCartUseCase(repository)
+    }
+
+    @Provides
+    fun provideSetCartQuantityUseCase(
+        repository: StoreRepository
+    ): SetCartQuantityUseCase {
+        return SetCartQuantityUseCase(repository)
+    }
 }

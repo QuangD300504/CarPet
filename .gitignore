@@ -131,4 +131,21 @@ fastlane/test_output
 .idea/
 
 # Firebase
-google-services.json  "google-services.json" 
+google-services.json
+/tools/firestore-seed/serviceAccountKey.json
+
+# ===================================
+# Node.js (ADD THIS SECTION)
+# ===================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local

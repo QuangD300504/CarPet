@@ -13,9 +13,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.example.vetbook.R
 import com.example.vetbook.presentation.models.Product
 
 @Composable
@@ -37,10 +41,17 @@ fun ProductCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (showFavorite) 150.dp else 120.dp)
-                    .background(Color(0xFFF5F5F5)),
+                    .height(if (showFavorite) 150.dp else 120.dp),
                 contentAlignment = if (showFavorite) Alignment.TopEnd else Alignment.Center
             ) {
+                AsyncImage(
+                    model = product.imageUrl,
+                    contentDescription = product.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = R.drawable.ic_launcher_background),
+                    error = painterResource(id = R.drawable.ic_launcher_background)
+                )
                 if (showFavorite) {
                     IconButton(
                         onClick = { },
@@ -105,4 +116,3 @@ fun ProductCard(
         }
     }
 }
-

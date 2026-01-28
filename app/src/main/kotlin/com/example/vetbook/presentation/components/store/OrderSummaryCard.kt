@@ -42,7 +42,7 @@ fun OrderSummaryCard(
             Spacer(modifier = Modifier.height(8.dp))
             OrderSummaryRow("Delivery Charges", "$${orderSummary.deliveryCharges.toInt()}", Color.Gray)
             Spacer(modifier = Modifier.height(12.dp))
-            Divider()
+            HorizontalDivider()
             Spacer(modifier = Modifier.height(12.dp))
             OrderSummaryRow("Total", "$${orderSummary.total.toInt()}", Color.Black, FontWeight.Bold)
         }

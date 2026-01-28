@@ -20,6 +20,29 @@ fun UserProfileDto.toDomain(
 
 // endregion
 
+// region Store
+
+fun StoreProductDto.toDomain(): StoreProduct =
+    StoreProduct(
+        id = id,
+        name = name,
+        price = price,
+        imageUrl = imageUrl,
+        description = description,
+        category = category,
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
+
+fun CartLineDto.toDomain(): CartLine =
+    CartLine(
+        productId = productId,
+        quantity = quantity,
+        addedAt = addedAt
+    )
+
+// endregion
+
 // region Pets
 
 fun PetDto.toDomain(): Pet =

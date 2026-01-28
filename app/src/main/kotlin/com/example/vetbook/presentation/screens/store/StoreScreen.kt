@@ -21,13 +21,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.store.LocationDropdown
 import com.example.vetbook.presentation.components.store.ProductCard
-import com.example.vetbook.presentation.models.Product
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.viewmodels.StoreViewModel
 
 @Composable
 fun StoreScreen(
+    viewModel: StoreViewModel = hiltViewModel(),
     onProductsClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
@@ -37,6 +39,8 @@ fun StoreScreen(
     var showLocationDropdown by remember { mutableStateOf(false) }
     var currentLocation by remember { mutableStateOf("Ho Chi Minh City") }
     var searchValue by remember { mutableStateOf("") }
+
+    val uiState by viewModel.uiState.collectAsState()
     
     val cities = remember {
         listOf(
@@ -44,10 +48,6 @@ fun StoreScreen(
             "Long An", "Tien Giang", "Ben Tre", "Tra Vinh", "Vinh Long",
             "Dong Thap", "An Giang", "Kien Giang", "Can Tho", "Hau Giang"
         )
-    }
-    
-    val sampleProducts = remember {
-        (1..6).map { Product("$it", "Product $it", "${it * 10}") }
     }
     
     Column(
@@ -113,7 +113,11 @@ fun StoreScreen(
                         CategoryIcon(
                             label = label,
                             icon = icon,
-                            onClick = { onCategoryClick(label.lowercase()) }
+                            onClick = {
+                                val category = label.lowercase()
+                                viewModel.setCategory(category)
+                                onCategoryClick(category)
+                            }
                         )
                     }
                 }
@@ -142,6 +146,26 @@ fun StoreScreen(
             }
             
             item {
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFFFFD813))
+                    }
+                    return@item
+                }
+
+                if (uiState.errorMessage != null) {
+                    Text(
+                        text = uiState.errorMessage ?: "Failed to load products",
+                        color = Color.Red
+                    )
+                    return@item
+                }
+
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -149,12 +173,13 @@ fun StoreScreen(
                     modifier = Modifier.height(400.dp)
                 ) {
                     items(
-                        items = sampleProducts,
+                        items = uiState.products,
                         key = { it.id }
                     ) { product ->
                         ProductCard(
                             product = product,
-                            onClick = { onProductsClick() }
+                            onClick = { onProductsClick() },
+                            onAddToCart = { viewModel.addToCart(product.id) }
                         )
                     }
                 }

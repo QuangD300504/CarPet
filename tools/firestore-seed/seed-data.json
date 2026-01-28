@@ -1,0 +1,152 @@
+{
+  "categories": [
+    { "id": "foods", "label": "Foods" },
+    { "id": "toys", "label": "Toys" },
+    { "id": "accessories", "label": "Accessories" },
+    { "id": "hygiene", "label": "Hygiene" },
+    { "id": "kennel", "label": "Kennel" }
+  ],
+  "products": [
+    {
+      "name": "Pate for Dogs (Chicken)",
+      "price": 39.0,
+      "category": "foods",
+      "description": "High-protein chicken pate for adult dogs.",
+      "imageUrl": null
+    },
+    {
+      "name": "Pate for Cats (Tuna)",
+      "price": 35.0,
+      "category": "foods",
+      "description": "Grain-free tuna pate for cats.",
+      "imageUrl": null
+    },
+    {
+      "name": "Dry Kibble (Small Breed)",
+      "price": 79.0,
+      "category": "foods",
+      "description": "Balanced kibble for small-breed dogs.",
+      "imageUrl": null
+    },
+    {
+      "name": "Dental Chews (Pack of 12)",
+      "price": 22.5,
+      "category": "foods",
+      "description": "Helps reduce plaque and freshen breath.",
+      "imageUrl": null
+    },
+    {
+      "name": "Cat Toy Mouse (3-pack)",
+      "price": 12.0,
+      "category": "toys",
+      "description": "Soft mice with crinkle sound.",
+      "imageUrl": null
+    },
+    {
+      "name": "Interactive Feather Wand",
+      "price": 15.0,
+      "category": "toys",
+      "description": "Feather wand for active play sessions.",
+      "imageUrl": null
+    },
+    {
+      "name": "Dog Rope Toy (Large)",
+      "price": 14.0,
+      "category": "toys",
+      "description": "Durable rope toy for tug-of-war.",
+      "imageUrl": null
+    },
+    {
+      "name": "Squeaky Ball (Set of 2)",
+      "price": 10.0,
+      "category": "toys",
+      "description": "Bouncy squeaky balls for dogs.",
+      "imageUrl": null
+    },
+    {
+      "name": "Nylon Leash (2m)",
+      "price": 16.0,
+      "category": "accessories",
+      "description": "Strong leash with padded handle.",
+      "imageUrl": null
+    },
+    {
+      "name": "Reflective Collar (Medium)",
+      "price": 11.5,
+      "category": "accessories",
+      "description": "Reflective stitching for night walks.",
+      "imageUrl": null
+    },
+    {
+      "name": "Travel Water Bottle",
+      "price": 18.0,
+      "category": "accessories",
+      "description": "Portable bottle with flip-out bowl.",
+      "imageUrl": null
+    },
+    {
+      "name": "Food Bowl (Stainless Steel)",
+      "price": 13.0,
+      "category": "accessories",
+      "description": "Non-slip base, easy to clean.",
+      "imageUrl": null
+    },
+    {
+      "name": "Pet Shampoo (Sensitive Skin)",
+      "price": 19.0,
+      "category": "hygiene",
+      "description": "Gentle shampoo for itchy skin.",
+      "imageUrl": null
+    },
+    {
+      "name": "Flea & Tick Spray",
+      "price": 24.0,
+      "category": "hygiene",
+      "description": "Fast-acting flea and tick control.",
+      "imageUrl": null
+    },
+    {
+      "name": "Grooming Brush (Dual-Sided)",
+      "price": 17.0,
+      "category": "hygiene",
+      "description": "Detangles and removes loose fur.",
+      "imageUrl": null
+    },
+    {
+      "name": "Pet Wipes (80 count)",
+      "price": 9.5,
+      "category": "hygiene",
+      "description": "Quick clean for paws and coat.",
+      "imageUrl": null
+    },
+    {
+      "name": "Soft Kennel Bed (M)",
+      "price": 55.0,
+      "category": "kennel",
+      "description": "Cozy bed for small to medium pets.",
+      "imageUrl": null
+    },
+    {
+      "name": "Foldable Crate (M)",
+      "price": 120.0,
+      "category": "kennel",
+      "description": "Foldable metal crate for travel.",
+      "imageUrl": null
+    },
+    {
+      "name": "Cooling Mat",
+      "price": 28.0,
+      "category": "kennel",
+      "description": "Cooling mat for hot weather.",
+      "imageUrl": null
+    },
+    {
+      "name": "Blanket Throw (Soft Fleece)",
+      "price": 21.0,
+      "category": "kennel",
+      "description": "Soft fleece blanket for bedding.",
+      "imageUrl": null
+    }
+  ]
+}
+

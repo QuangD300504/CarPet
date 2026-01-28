@@ -3,6 +3,7 @@ package com.example.vetbook.di
 import com.example.vetbook.data.datasource.RemoteCommunityDataSource
 import com.example.vetbook.data.datasource.RemotePetDataSource
 import com.example.vetbook.data.datasource.RemoteServiceDataSource
+import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
 import com.example.vetbook.data.repository.*
@@ -49,6 +50,14 @@ object RepositoryModule {
         remoteServiceDataSource: RemoteServiceDataSource
     ): ServiceRepository {
         return FirebaseServiceRepository(remoteServiceDataSource)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStoreRepository(
+        remoteStoreDataSource: RemoteStoreDataSource
+    ): StoreRepository {
+        return FirebaseStoreRepository(remoteStoreDataSource)
     }
 
     @Provides

@@ -12,14 +12,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.store.LocationDropdown
 import com.example.vetbook.presentation.components.store.ProductCard
 import com.example.vetbook.presentation.components.store.StoreHeader
-import com.example.vetbook.presentation.models.Product
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.viewmodels.StoreViewModel
 
 @Composable
 fun ProductsScreen(
+    viewModel: StoreViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
@@ -28,17 +30,8 @@ fun ProductsScreen(
     var showLocationDropdown by remember { mutableStateOf(false) }
     var currentLocation by remember { mutableStateOf("Ho Chi Minh City") }
     var searchValue by remember { mutableStateOf("") }
-    
-    val products = remember {
-        listOf(
-            Product("1", "Pate", "40"),
-            Product("2", "Pate", "430"),
-            Product("3", "Pate", "330"),
-            Product("4", "Pate", "333"),
-            Product("5", "Pate", "50"),
-            Product("6", "Pate", "400")
-        )
-    }
+
+    val uiState by viewModel.uiState.collectAsState()
     
     Column(
         modifier = Modifier
@@ -52,7 +45,10 @@ fun ProductsScreen(
             onNotificationClick = onNotificationClick,
             onProfileClick = onProfileClick,
             searchValue = searchValue,
-            onSearchChange = { searchValue = it }
+            onSearchChange = {
+                searchValue = it
+                viewModel.setSearchQuery(it)
+            }
         )
         
         if (showLocationDropdown) {
@@ -95,13 +91,13 @@ fun ProductsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(
-                    items = products,
+                    items = uiState.products,
                     key = { it.id }
                 ) { product ->
                     ProductCard(
                         product = product,
                         showFavorite = true,
-                        onAddToCart = { }
+                        onAddToCart = { viewModel.addToCart(product.id) }
                     )
                 }
             }
