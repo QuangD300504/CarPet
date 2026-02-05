@@ -85,7 +85,7 @@ fun VetBookBottomBarPreview() {
         startDestination = Routes.Home.route
     ) {
         composable(Routes.Home.route) {}
-        composable(Routes.Service.route) {}
+        composable(Routes.Calendar.route) {}
         composable(Routes.Store.route) {}
         composable(Routes.Pet.route) {}
     }

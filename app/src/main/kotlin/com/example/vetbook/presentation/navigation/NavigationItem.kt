@@ -8,8 +8,8 @@ sealed class NavigationItem(val route: String, val label: String, val iconRes: I
         label = "Home",
         iconRes = R.drawable.home
     )
-    object Service : NavigationItem(
-        route = Routes.Service.route,
+    object Calendar : NavigationItem(
+        route = Routes.Calendar.route,
         label = "Calendar",
         iconRes = R.drawable.calender
     )
@@ -32,7 +32,7 @@ sealed class NavigationItem(val route: String, val label: String, val iconRes: I
 
 val bottomNavItems = listOf(
     NavigationItem.Home,
-    NavigationItem.Service,
+    NavigationItem.Calendar,
     NavigationItem.Store,
     NavigationItem.Pet
 )

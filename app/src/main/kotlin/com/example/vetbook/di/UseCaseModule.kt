@@ -52,10 +52,9 @@ object UseCaseModule {
 
     @Provides
     fun provideGetPetProfileUseCase(
-        userRepository: UserRepository,
-        communityRepository: CommunityRepository
+        userRepository: UserRepository
     ): GetPetProfileUseCase {
-        return GetPetProfileUseCase(userRepository, communityRepository)
+        return GetPetProfileUseCase(userRepository)
     }
 
     @Provides

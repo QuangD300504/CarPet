@@ -131,6 +131,45 @@ service cloud.firestore {
     }
     
     // ============================================
+    // Appointments Collection
+    // ============================================
+    match /appointments/{appointmentId} {
+      // Users can read only their own appointments
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Users can create only their own PENDING_PAYMENT appointments
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == "PENDING_PAYMENT" &&
+        request.resource.data.paymentStatus == "UNPAID";
+
+      // Users can update only safe fields on their own appointments (cannot mark paid/confirmed)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.veterinarianId == resource.data.veterinarianId &&
+        request.resource.data.appointmentAt == resource.data.appointmentAt &&
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.paymentStatus == resource.data.paymentStatus &&
+        request.resource.data.payos == resource.data.payos;
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // Slot locks (prevent double booking)
+    // ============================================
+    match /doctorSlotLocks/{lockId} {
+      // Read not required for clients
+      allow read: if false;
+
+      // Allow creating a lock (for this MVP) only by authenticated users
+      allow create: if isAuthenticated();
+
+      // Disallow updates/deletes from clients
+      allow update, delete: if false;
+    }
+
+    // ============================================
     // Veterinarians Collection
     // ============================================
     match /veterinarians/{vetId} {

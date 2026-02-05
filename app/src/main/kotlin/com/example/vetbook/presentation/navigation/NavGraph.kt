@@ -1,15 +1,23 @@
 package com.example.vetbook.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.vetbook.presentation.screens.MainScreen
+import com.example.vetbook.presentation.screens.auth.ContinueLoginPasswordScreen
+import com.example.vetbook.presentation.screens.auth.ContinueLoginScreen
+import com.example.vetbook.presentation.screens.auth.ContinueLoginStartScreen
 import com.example.vetbook.presentation.screens.auth.ForgotPasswordScreen
 import com.example.vetbook.presentation.screens.auth.LoginScreen
 import com.example.vetbook.presentation.screens.auth.SignUpScreen
 import com.example.vetbook.presentation.screens.auth.SplashScreen
+import com.example.vetbook.presentation.viewmodels.ContinueLoginViewModel
+import com.example.vetbook.presentation.viewmodels.LoginViewModel
 import com.example.vetbook.presentation.viewmodels.MainViewModel
 
 @Composable
@@ -25,14 +33,67 @@ fun VetBookNavGraph() {
             SplashScreen(
                 onAnimationFinished = {
                     val destination = if (mainViewModel.isUserLoggedIn()) {
-                        "main"
+                        Routes.ContinueLogin.route
                     } else {
                         Routes.Login.route
                     }
-                    
+
                     rootNavController.navigate(destination) {
                         popUpTo(Routes.Splash.route) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(Routes.ContinueLogin.route) {
+            ContinueLoginScreen(
+                onNext = {
+                    rootNavController.navigate(Routes.ContinueLoginStart.route)
+                }
+            )
+        }
+
+        composable(Routes.ContinueLoginStart.route) {
+            ContinueLoginStartScreen(
+                onNext = {
+                    rootNavController.navigate(Routes.ContinueLoginPassword.route)
+                }
+            )
+        }
+
+        composable(Routes.ContinueLoginPassword.route) {
+            val loginViewModel: LoginViewModel = hiltViewModel()
+            val continueLoginViewModel: ContinueLoginViewModel = hiltViewModel()
+
+            val loginUiState by loginViewModel.uiState.collectAsState()
+            val continueUiState by continueLoginViewModel.uiState.collectAsState()
+
+            // When continue-login loads user profile, prefill username for LoginViewModel
+            LaunchedEffect(continueUiState.email) {
+                if (continueUiState.email.isNotBlank()) {
+                    loginViewModel.onUsernameChange(continueUiState.email)
+                }
+            }
+
+            // Navigate on successful login
+            LaunchedEffect(loginUiState.isSuccess) {
+                if (loginUiState.isSuccess) {
+                    rootNavController.navigate("main") {
+                        popUpTo(Routes.ContinueLogin.route) { inclusive = true }
+                    }
+                }
+            }
+
+            ContinueLoginPasswordScreen(
+                onForgotPasswordClick = {
+                    rootNavController.navigate(Routes.ForgotPassword.route)
+                },
+                onLoginSuccess = {
+                    // handled by LaunchedEffect
+                },
+                onLoginClick = { password ->
+                    loginViewModel.onPasswordChange(password)
+                    loginViewModel.onLoginClick()
                 }
             )
         }

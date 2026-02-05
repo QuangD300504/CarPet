@@ -21,20 +21,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.presentation.components.store.OrderSummaryCard
 import com.example.vetbook.presentation.models.OrderSummary
 import com.example.vetbook.presentation.models.PaymentMethod
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
-import java.util.*
+import com.example.vetbook.presentation.viewmodels.CheckoutViewModel
+import java.util.Calendar
 
 @Composable
 fun PaymentScreen(
+    viewModel: CheckoutViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onCheckoutClick: () -> Unit = {}
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
     var selectedPaymentMethod by remember { mutableStateOf("credit_card") }
-    
+
     val paymentMethods = remember {
         listOf(
             PaymentMethod("paypal", "Paypal", Icons.Default.AccountBalance),
@@ -42,8 +47,7 @@ fun PaymentScreen(
             PaymentMethod("cash", "Cash", Icons.Default.Money)
         )
     }
-    
-    // Get current date and time - remember to avoid recalculation on recomposition
+
     val timeString = remember {
         val calendar = Calendar.getInstance()
         val dayOfWeek = when (calendar.get(Calendar.DAY_OF_WEEK)) {
@@ -62,16 +66,14 @@ fun PaymentScreen(
         val day = calendar.get(Calendar.DAY_OF_MONTH)
         "$hour:$minute $amPm, $dayOfWeek $day"
     }
-    
-    val orderSummary = remember {
-        OrderSummary(
-            itemCount = 3,
-            subtotal = 423.0,
-            discount = 4.0,
-            deliveryCharges = 2.0
-        )
-    }
-    
+
+    val orderSummary = OrderSummary(
+        itemCount = uiState.itemCount,
+        subtotal = uiState.subtotal,
+        discount = uiState.discount,
+        deliveryCharges = uiState.deliveryCharges
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,7 +98,7 @@ fun PaymentScreen(
                         tint = Color.Black
                     )
                 }
-                
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -128,9 +130,9 @@ fun PaymentScreen(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Location info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -155,7 +157,7 @@ fun PaymentScreen(
                     color = Color.Black.copy(alpha = 0.7f)
                 )
             }
-            
+
             // Time info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -175,89 +177,115 @@ fun PaymentScreen(
                 )
             }
         }
-        
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                OrderSummaryCard(orderSummary = orderSummary)
-            }
-            
-            item {
-                Text(
-                    text = "Choose payment method",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-            
-            items(
-                items = paymentMethods,
-                key = { it.id }
-            ) { method ->
-                PaymentMethodCard(
-                    method = method,
-                    isSelected = selectedPaymentMethod == method.id,
-                    onClick = { selectedPaymentMethod = method.id }
-                )
-            }
-            
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Add new payment method",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Black
-                        )
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add",
-                            tint = Color.Black
-                        )
-                    }
+                    CircularProgressIndicator(color = Color(0xFFFFD813))
                 }
             }
-            
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            
-            item {
-                Button(
-                    onClick = onCheckoutClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFEB3B)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+
+            uiState.errorMessage != null -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Check Out",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        text = uiState.errorMessage ?: "Failed to load checkout",
+                        color = Color.Red
                     )
+                }
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item {
+                        OrderSummaryCard(orderSummary = orderSummary)
+                    }
+
+                    item {
+                        Text(
+                            text = "Choose payment method",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
+                    items(
+                        items = paymentMethods,
+                        key = { it.id }
+                    ) { method ->
+                        PaymentMethodCard(
+                            method = method,
+                            isSelected = selectedPaymentMethod == method.id,
+                            onClick = { selectedPaymentMethod = method.id }
+                        )
+                    }
+
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Add new payment method",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Black
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add",
+                                    tint = Color.Black
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    item {
+                        Button(
+                            onClick = onCheckoutClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFEB3B)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = uiState.itemCount > 0
+                        ) {
+                            Text(
+                                text = "Check Out",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -306,7 +334,7 @@ fun PaymentMethodCard(
                     color = Color.Black
                 )
             }
-            
+
             if (isSelected) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,

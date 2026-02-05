@@ -1,7 +1,6 @@
 package com.example.vetbook.di
 
-import com.example.vetbook.data.network.CloudinaryConfig
-import com.example.vetbook.data.network.CloudinaryService
+import com.example.vetbook.data.network.PayosWorkerApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -15,29 +14,28 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object CloudinaryModule {
+object PayosWorkerModule {
+
+    private const val BASE_URL = "https://vetbook-payment-worker.duyq099.workers.dev/"
 
     @Provides
     @Singleton
-    @CloudinaryClient
-    fun provideCloudinaryOkHttpClient(): OkHttpClient =
+    @PayosWorkerClient
+    fun providePayosWorkerOkHttpClient(): OkHttpClient =
         OkHttpClient.Builder().build()
 
     @Provides
     @Singleton
-    fun provideCloudinaryService(
-        @CloudinaryClient okHttpClient: OkHttpClient
-    ): CloudinaryService {
+    fun providePayosWorkerApi(@PayosWorkerClient okHttpClient: OkHttpClient): PayosWorkerApi {
         val moshi = Moshi.Builder()
             .addLast(KotlinJsonAdapterFactory())
             .build()
 
         return Retrofit.Builder()
-            .baseUrl("https://api.cloudinary.com/v1_1/${CloudinaryConfig.CLOUD_NAME}/")
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
-            .create(CloudinaryService::class.java)
+            .create(PayosWorkerApi::class.java)
     }
 }
-

@@ -86,9 +86,15 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
-                currentRoute == Routes.Service.route -> {
+                currentRoute == Routes.Calendar.route -> {
                     SimpleTopBar(
                         title = "Calendar",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Services.route -> {
+                    SimpleTopBar(
+                        title = "Services",
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
@@ -166,7 +172,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     HomeScreen(
                         viewModel = homeViewModel,
                         onSeeAllClick = {
-                            bottomNavController.navigate(Routes.Service.route) {
+                            bottomNavController.navigate(Routes.Services.route) {
                                 popUpTo(bottomNavController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -183,11 +189,26 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             composable(Routes.Pet.route) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     PetScreen(
-                        onBackClick = { bottomNavController.popBackStack() }
+                        onBackClick = { bottomNavController.popBackStack() },
+                        onPetClick = { petId ->
+                            bottomNavController.navigate(Routes.PetProfile.createRoute(petId))
+                        },
+                        onCartClick = {
+                            bottomNavController.navigate(Routes.Cart.route)
+                        },
+                        onNotificationClick = {
+                            bottomNavController.navigate(Routes.Notifications.route)
+                        },
+                        onProfileClick = {
+                            bottomNavController.navigate(Routes.Profile.route)
+                        },
+                        onAddPetClick = {
+                            bottomNavController.navigate(Routes.AddPet.route)
+                        }
                     )
                 }
             }
-            composable(Routes.Service.route) {
+            composable(Routes.Services.route) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     ServiceScreen(
                         categories = categories,
@@ -196,6 +217,12 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         },
                         onBackClick = { bottomNavController.popBackStack() }
                     )
+                }
+            }
+
+            composable(Routes.Calendar.route) {
+                Box(modifier = Modifier.padding(top = topBarPadding)) {
+                    com.example.vetbook.presentation.screens.calendar.CalendarScreen()
                 }
             }
 
@@ -361,6 +388,15 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 )
             }
 
+            composable(Routes.AddPet.route) {
+                com.example.vetbook.presentation.screens.pets.AddPetScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onSaved = {
+                        bottomNavController.popBackStack()
+                    }
+                )
+            }
+
             composable(
                 route = Routes.PetProfile.route,
                 arguments = listOf(navArgument("petId") { type = NavType.StringType })
@@ -401,11 +437,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
                 BookAppointmentScreen(
                     doctorId = doctorId,
-                    onBackClick = { bottomNavController.popBackStack() },
-                    onConfirmClick = {
-                        // Handle appointment confirmation
-                        bottomNavController.popBackStack(Routes.Home.route, inclusive = false)
-                    }
+                    onBackClick = { bottomNavController.popBackStack() }
                 )
             }
         }

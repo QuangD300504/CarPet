@@ -6,7 +6,8 @@ sealed class Routes(val route: String) {
     object SignUp : Routes("signup")
     object ForgotPassword : Routes("forgot_password")
     object Home : Routes("home")
-    object Service : Routes("service")
+    object Services : Routes("services")
+    object Calendar : Routes("calendar")
     object Community : Routes("community")
     object Profile : Routes("profile")
     object Veterinarians : Routes("veterinarians")
@@ -33,4 +34,9 @@ sealed class Routes(val route: String) {
     object PrivacyPolicy : Routes("privacy_policy")
     object Accommodation : Routes("accommodation")
     object Pet : Routes("pet")
+    object AddPet : Routes("add_pet")
+
+    object ContinueLogin : Routes("continue_login")
+    object ContinueLoginStart : Routes("continue_login_start")
+    object ContinueLoginPassword : Routes("continue_login_password")
 }

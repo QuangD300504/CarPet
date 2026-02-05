@@ -6,9 +6,11 @@ import com.example.vetbook.data.datasource.RemoteServiceDataSource
 import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
+import com.example.vetbook.data.network.PayosWorkerApi
 import com.example.vetbook.data.repository.*
 import com.example.vetbook.domain.repository.*
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -73,6 +75,20 @@ object RepositoryModule {
             remoteUserDataSource = remoteUserDataSource,
             remotePetDataSource = remotePetDataSource,
             cloudinaryService = cloudinaryService
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideBookingRepository(
+        firestore: FirebaseFirestore,
+        auth: FirebaseAuth,
+        payosWorkerApi: PayosWorkerApi
+    ): BookingRepository {
+        return BookingRepositoryImpl(
+            firestore = firestore,
+            auth = auth,
+            payosWorkerApi = payosWorkerApi
         )
     }
 }

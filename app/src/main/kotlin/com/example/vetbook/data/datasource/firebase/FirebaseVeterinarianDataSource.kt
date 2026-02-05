@@ -115,6 +115,7 @@ class FirebaseVeterinarianDataSource(
             imageUrl = getString("imageUrl"),
             email = getString("email") ?: "",
             phone = getString("phone") ?: "",
+            clinicId = getString("clinicId"),
             clinic = getClinic(),
             availability = getAvailability(),
             isActive = getBoolean("isActive") ?: true,
@@ -190,6 +191,7 @@ class FirebaseVeterinarianDataSource(
             "imageUrl" to imageUrl,
             "email" to email,
             "phone" to phone,
+            "clinicId" to clinicId,
             "clinic" to clinic?.let { clinic ->
                 hashMapOf(
                     "name" to clinic.name,

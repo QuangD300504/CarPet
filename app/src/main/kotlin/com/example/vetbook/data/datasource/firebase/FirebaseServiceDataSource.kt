@@ -120,11 +120,13 @@ class FirebaseServiceDataSource(
 
     override suspend fun createServiceCategory(service: ServiceCategoryDto): Result<ServiceCategoryDto> {
         return try {
-            val docRef = if (service.id.isBlank()) {
-                firestore.collection(SERVICES_COLLECTION).document()
-            } else {
-                firestore.collection(SERVICES_COLLECTION).document(service.id)
+            if (service.id.isBlank()) {
+                return Result.failure(
+                    IllegalArgumentException("Service category id must be provided (uses custom id, not auto-generated)")
+                )
             }
+
+            val docRef = firestore.collection(SERVICES_COLLECTION).document(service.id)
 
             val now = System.currentTimeMillis()
             val serviceWithTimestamps = service.copy(
@@ -159,19 +161,13 @@ class FirebaseServiceDataSource(
                 )
             }
 
-            val docRef = if (`package`.id.isBlank()) {
-                firestore
-                    .collection(SERVICES_COLLECTION)
-                    .document(categoryId)
-                    .collection(PACKAGES_SUBCOLLECTION)
-                    .document()
-            } else {
-                firestore
-                    .collection(SERVICES_COLLECTION)
-                    .document(categoryId)
-                    .collection(PACKAGES_SUBCOLLECTION)
-                    .document(`package`.id)
-            }
+            // Packages/products should use auto-generated document IDs.
+            // We ignore any client-provided id to keep the source of truth in Firestore.
+            val docRef = firestore
+                .collection(SERVICES_COLLECTION)
+                .document(categoryId)
+                .collection(PACKAGES_SUBCOLLECTION)
+                .document()
 
             val now = System.currentTimeMillis()
             val packageWithTimestamps = `package`.copy(

@@ -1,0 +1,12 @@
+name = "vetbook-payment-worker"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "vetbookexe"
+
+# Secrets to set in Cloudflare dashboard (Type=Secret):
+# - PAYOS_CLIENT_ID
+# - PAYOS_API_KEY
+# - PAYOS_CHECKSUM_KEY
+# - FIREBASE_SERVICE_ACCOUNT_JSON

@@ -1,17 +1,13 @@
 package com.example.vetbook.domain.usecases
 
 import com.example.vetbook.domain.models.Pet
-import com.example.vetbook.domain.repository.CommunityRepository
 import com.example.vetbook.domain.repository.UserRepository
-import kotlinx.coroutines.flow.first
 
 /**
- * Use case for retrieving pet profile by searching in user's pets first,
- * then in community adoption pets if not found.
+ * Use case for retrieving pet profile from the current user's pets only.
  */
 class GetPetProfileUseCase(
-    private val userRepository: UserRepository,
-    private val communityRepository: CommunityRepository
+    private val userRepository: UserRepository
 ) {
     /**
      * Executes the use case to find a pet by ID.
@@ -19,16 +15,8 @@ class GetPetProfileUseCase(
      * @return The found Pet, or null if not found
      */
     suspend operator fun invoke(petId: String): Pet? {
-        // 1. First, search in User's pets
-        val currentUser = userRepository.getCurrentUser()
-        if (currentUser != null) {
-            val userPet = userRepository.getUserPets(currentUser.id).find { it.id == petId }
-            if (userPet != null) return userPet
-        }
-
-        // 2. If not found, search in Community adoption pets
-        val adoptionPets = communityRepository.getAdoptionPets().first()
-        return adoptionPets.find { it.id == petId }
+        val currentUser = userRepository.getCurrentUser() ?: return null
+        return userRepository.getUserPets(currentUser.id).find { it.id == petId }
     }
 }
 

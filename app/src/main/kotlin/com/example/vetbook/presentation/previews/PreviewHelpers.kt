@@ -32,7 +32,7 @@ fun PreviewNavScaffold(
             startDestination = Routes.Home.route
         ) {
             composable(Routes.Home.route) {}
-            composable(Routes.Service.route) {}
+            composable(Routes.Calendar.route) {}
             composable(Routes.Store.route) {}
             composable(Routes.Profile.route) {}
             composable(Routes.Pet.route) {}

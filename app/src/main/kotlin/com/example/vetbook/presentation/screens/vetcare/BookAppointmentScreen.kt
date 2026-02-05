@@ -1,5 +1,7 @@
 package com.example.vetbook.presentation.screens.vetcare
 
+import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,13 +11,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,35 +26,109 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.domain.models.Veterinarian
+import com.example.vetbook.presentation.viewmodels.BookAppointmentViewModel
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
+import java.util.Calendar
+import java.util.Date
+
+private const val MVP_FIXED_PRICE_VND = 100000.0
 
 @Composable
 fun BookAppointmentScreen(
     doctorId: String,
-    viewModel: VeterinariansViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {},
-    onConfirmClick: () -> Unit = {}
+    vetsViewModel: VeterinariansViewModel = hiltViewModel(),
+    bookingViewModel: BookAppointmentViewModel = hiltViewModel(),
+    onBackClick: () -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by vetsViewModel.uiState.collectAsState()
     val doctor = uiState.veterinarians.find { it.id == doctorId }
+
+    val bookingState by bookingViewModel.uiState.collectAsState()
+
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
     var selectedDate by remember { mutableStateOf(2) } // Index of selected date
     var selectedTime by remember { mutableStateOf(0) } // Index of selected time
 
-    if (doctor != null) {
-        BookAppointmentContent(
-            doctor = doctor,
-            selectedDate = selectedDate,
-            selectedTime = selectedTime,
-            onDateSelect = { selectedDate = it },
-            onTimeSelect = { selectedTime = it },
-            onBackClick = onBackClick,
-            onConfirmClick = onConfirmClick
-        )
-    } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "Doctor not found")
+    LaunchedEffect(bookingState) {
+        when (val state = bookingState) {
+            is BookAppointmentViewModel.UiState.Error -> {
+                snackbarHostState.showSnackbar(state.message)
+                bookingViewModel.reset()
+            }
+            is BookAppointmentViewModel.UiState.PaymentReady -> {
+                val intent = CustomTabsIntent.Builder().build()
+                intent.launchUrl(context, Uri.parse(state.checkoutUrl))
+                bookingViewModel.reset()
+            }
+            else -> Unit
         }
     }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.White
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            if (doctor != null) {
+                BookAppointmentContent(
+                    doctor = doctor,
+                    selectedDate = selectedDate,
+                    selectedTime = selectedTime,
+                    onDateSelect = { selectedDate = it },
+                    onTimeSelect = { selectedTime = it },
+                    onBackClick = onBackClick,
+                    onConfirmClick = {
+                        val appointmentAt = buildAppointmentDate(selectedDate, selectedTime)
+                        bookingViewModel.confirmAndPay(
+                            veterinarianId = doctorId,
+                            appointmentAt = appointmentAt,
+                            totalPrice = MVP_FIXED_PRICE_VND,
+                            durationMinutes = 30,
+                            notes = null
+                        )
+                    }
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Doctor not found")
+                }
+            }
+
+            if (bookingState is BookAppointmentViewModel.UiState.Loading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+}
+
+private fun buildAppointmentDate(selectedDateIndex: Int, selectedTimeIndex: Int): Date {
+    // MVP: generate a date in the near future.
+    // - selectedDateIndex maps to next N days
+    // - selectedTimeIndex maps to 9:00, 9:30, 10:00, 10:30
+    val calendar = Calendar.getInstance()
+
+    // Ensure future date
+    calendar.add(Calendar.DAY_OF_YEAR, maxOf(1, selectedDateIndex))
+
+    val baseHour = 9
+    val halfHour = selectedTimeIndex % 2
+    val hourOffset = selectedTimeIndex / 2
+
+    calendar.set(Calendar.HOUR_OF_DAY, baseHour + hourOffset)
+    calendar.set(Calendar.MINUTE, if (halfHour == 0) 0 else 30)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+
+    return calendar.time
 }
 
 @Composable
@@ -82,7 +158,7 @@ fun BookAppointmentContent(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            
+
             // Back button
             IconButton(
                 onClick = onBackClick,
@@ -96,7 +172,7 @@ fun BookAppointmentContent(
                     tint = Color.Black
                 )
             }
-            
+
             // Yellow overlay card
             Card(
                 modifier = Modifier
@@ -123,21 +199,20 @@ fun BookAppointmentContent(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Mirpur Medical College and Hospital", // Could be added to model
+                        text = "Mirpur Medical College and Hospital",
                         fontSize = 12.sp,
                         color = Color.Black.copy(alpha = 0.6f)
                     )
                 }
             }
         }
-        
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Appointment section
             Text(
                 text = "Appointment",
                 fontSize = 20.sp,
@@ -145,13 +220,12 @@ fun BookAppointmentContent(
                 color = Color.Black,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
-            // Calendar view
+
             val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
             val dates = listOf(3, 4, 5, 6, 7, 8, 9) // Example dates
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -165,10 +239,9 @@ fun BookAppointmentContent(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
-            // Available Time section
+
             Text(
                 text = "Available Time",
                 fontSize = 20.sp,
@@ -176,12 +249,11 @@ fun BookAppointmentContent(
                 color = Color.Black,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
-            // Time slots
+
             val timeSlots = listOf("9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM")
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -195,17 +267,16 @@ fun BookAppointmentContent(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
-            // Confirm button
+
             Button(
                 onClick = onConfirmClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFEB3B) // Yellow
+                    containerColor = Color(0xFFFFEB3B)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -216,7 +287,7 @@ fun BookAppointmentContent(
                     color = Color.Black
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -304,4 +375,3 @@ fun BookAppointmentScreenPreview() {
         onConfirmClick = {}
     )
 }
-

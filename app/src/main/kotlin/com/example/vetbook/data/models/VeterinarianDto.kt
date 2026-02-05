@@ -15,6 +15,7 @@ data class VeterinarianDto(
     val imageUrl: String? = null,
     val email: String = "",
     val phone: String = "",
+    val clinicId: String? = null,
     val clinic: Clinic? = null,
     val availability: Availability? = null,
     val isActive: Boolean = true,

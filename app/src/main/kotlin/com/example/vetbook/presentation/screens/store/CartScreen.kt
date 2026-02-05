@@ -2,7 +2,6 @@ package com.example.vetbook.presentation.screens.store
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,7 +11,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,38 +22,41 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.presentation.components.store.OrderSummaryCard
 import com.example.vetbook.presentation.models.CartItem
 import com.example.vetbook.presentation.models.OrderSummary
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.viewmodels.CheckoutViewModel
 
 @Composable
 fun CartScreen(
+    viewModel: CheckoutViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onCheckoutClick: () -> Unit = {}
 ) {
-    var quantities by remember {
-        mutableStateOf(mapOf("1" to 1, "2" to 1, "3" to 1))
-    }
-    
-    val cartItems = remember {
-        listOf(
-            CartItem("1", "Petvet Shop", "Pate Cột Đèn Hải Phòng cho cún", "Phân loại", 1, "36", "1"),
-            CartItem("2", "Petvet Shop", "Pate Cột Đèn Hải Phòng cho cún", "Phân loại", 1, "36", "2"),
-            CartItem("3", "Petvet Shop", "Pate Cột Đèn Hải Phòng cho cún", "Phân loại", 1, "36", "3")
+    val uiState by viewModel.uiState.collectAsState()
+
+    val cartItems = uiState.lines.map { line ->
+        CartItem(
+            id = line.product.id,
+            shopName = "Petvet Shop",
+            productName = line.product.name,
+            category = line.product.category ?: "",
+            quantity = line.quantity,
+            price = line.product.price.toString(),
+            productId = line.product.id
         )
     }
-    
-    val orderSummary = remember {
-        OrderSummary(
-            itemCount = cartItems.size,
-            subtotal = 423.0,
-            discount = 4.0,
-            deliveryCharges = 2.0
-        )
-    }
-    
+
+    val orderSummary = OrderSummary(
+        itemCount = uiState.itemCount,
+        subtotal = uiState.subtotal,
+        discount = uiState.discount,
+        deliveryCharges = uiState.deliveryCharges
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -74,7 +78,7 @@ fun CartScreen(
                     tint = Color.Black
                 )
             }
-            
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -106,64 +110,90 @@ fun CartScreen(
                 )
             }
         }
-        
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Text(
-                    text = "Giỏ hàng",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFFFD813))
+                }
             }
-            
-            items(
-                items = cartItems,
-                key = { it.id }
-            ) { item ->
-                CartItemCard(
-                    item = item,
-                    quantity = quantities[item.id] ?: 1,
-                    onQuantityChange = { newQty ->
-                        quantities = quantities + (item.id to newQty)
-                    }
-                )
-            }
-            
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            
-            item {
-                OrderSummaryCard(orderSummary = orderSummary)
-            }
-            
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            
-            item {
-                Button(
-                    onClick = onCheckoutClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFEB3B)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+
+            uiState.errorMessage != null -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Check Out",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        text = uiState.errorMessage ?: "Failed to load cart",
+                        color = Color.Red
                     )
+                }
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "Giỏ hàng",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
+                    items(
+                        items = cartItems,
+                        key = { it.id }
+                    ) { item ->
+                        CartItemCard(
+                            item = item,
+                            quantity = item.quantity,
+                            onQuantityChange = { newQty ->
+                                viewModel.setQuantity(item.productId, newQty)
+                            }
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    item {
+                        OrderSummaryCard(orderSummary = orderSummary)
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    item {
+                        Button(
+                            onClick = onCheckoutClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFEB3B)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = uiState.itemCount > 0
+                        ) {
+                            Text(
+                                text = "Check Out",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -204,9 +234,9 @@ fun CartItemCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -216,7 +246,7 @@ fun CartItemCard(
                         .size(80.dp)
                         .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
                 )
-                
+
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -226,9 +256,9 @@ fun CartItemCard(
                         fontWeight = FontWeight.Medium,
                         color = Color.Black
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     OutlinedButton(
                         onClick = { },
                         modifier = Modifier.height(32.dp),
@@ -246,9 +276,9 @@ fun CartItemCard(
                             modifier = Modifier.size(16.dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -283,7 +313,7 @@ fun CartItemCard(
                         }
                     }
                 }
-                
+
                 Text(
                     text = "${item.price}$",
                     fontSize = 18.sp,

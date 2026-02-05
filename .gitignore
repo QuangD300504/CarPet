@@ -1,3 +1,12 @@
+# Ignore editor and AI helper tool folders
+# Whitelist essential dot-folders
+!.github/
+!.gradle/
+!.idea/
+
+# Ignore all other top-level dot-folders
+.*/
+
 # Built application files
 *.apk
 *.ap_
