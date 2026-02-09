@@ -1,5 +1,15 @@
 package com.example.vetbook.presentation.screens
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -21,6 +31,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -43,6 +54,206 @@ import com.example.vetbook.utils.compressImageForAvatar
 import com.example.vetbook.presentation.viewmodels.HomeViewModel
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 import com.example.vetbook.presentation.viewmodels.ServiceDetailViewModel
+
+// ==================== ANIMATION CONFIGURATION ====================
+
+// Tab order for smart horizontal sliding
+private val tabOrder = listOf(
+    Routes.Home.route,
+    Routes.Calendar.route,
+    Routes.Store.route,
+    Routes.Pet.route
+)
+
+// Modal screens that slide up from bottom
+private val modalRoutes = setOf(
+    Routes.AddPet.route,
+    Routes.Cart.route,
+    Routes.Payment.route,
+    Routes.Notifications.route
+)
+
+// Animation durations
+private const val ANIM_DURATION_FAST = 250
+private const val ANIM_DURATION_STANDARD = 300
+
+/**
+ * Determines the direction of tab navigation
+ * Returns: -1 (left), 0 (no tab change), 1 (right)
+ */
+private fun getTabDirection(from: String?, to: String?): Int {
+    val fromIndex = tabOrder.indexOf(from)
+    val toIndex = tabOrder.indexOf(to)
+    return when {
+        fromIndex == -1 || toIndex == -1 -> 0 // Not a tab navigation
+        fromIndex < toIndex -> 1 // Moving right
+        fromIndex > toIndex -> -1 // Moving left
+        else -> 0 // Same tab
+    }
+}
+
+/**
+ * Check if route is a modal screen
+ */
+private fun isModalRoute(route: String?): Boolean {
+    return route in modalRoutes
+}
+
+/**
+ * Get base route without parameters (e.g., "doctor_profile/{id}" -> "doctor_profile")
+ */
+private fun getBaseRoute(route: String?): String? {
+    return route?.split("/")?.firstOrNull()
+}
+
+// ==================== ANIMATION BUILDERS ====================
+
+/**
+ * Smart tab slide animation - slides left or right based on tab order
+ */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.tabSlideEnter(): EnterTransition {
+    val direction = getTabDirection(
+        from = initialState.destination.route,
+        to = targetState.destination.route
+    )
+    return when (direction) {
+        1 -> slideInHorizontally(
+            initialOffsetX = { it },
+            animationSpec = tween(ANIM_DURATION_FAST)
+        ) + fadeIn(tween(ANIM_DURATION_FAST))
+        -1 -> slideInHorizontally(
+            initialOffsetX = { -it },
+            animationSpec = tween(ANIM_DURATION_FAST)
+        ) + fadeIn(tween(ANIM_DURATION_FAST))
+        else -> fadeIn(tween(ANIM_DURATION_FAST))
+    }
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.tabSlideExit(): ExitTransition {
+    val direction = getTabDirection(
+        from = initialState.destination.route,
+        to = targetState.destination.route
+    )
+    return when (direction) {
+        1 -> slideOutHorizontally(
+            targetOffsetX = { -it / 3 }, // Parallax effect
+            animationSpec = tween(ANIM_DURATION_FAST)
+        ) + fadeOut(tween(ANIM_DURATION_FAST))
+        -1 -> slideOutHorizontally(
+            targetOffsetX = { it / 3 }, // Parallax effect
+            animationSpec = tween(ANIM_DURATION_FAST)
+        ) + fadeOut(tween(ANIM_DURATION_FAST))
+        else -> fadeOut(tween(ANIM_DURATION_FAST))
+    }
+}
+
+/**
+ * Modal slide from bottom animation
+ */
+private fun modalSlideEnter(): EnterTransition {
+    return slideInVertically(
+        initialOffsetY = { it },
+        animationSpec = tween(ANIM_DURATION_STANDARD)
+    ) + fadeIn(tween(ANIM_DURATION_STANDARD))
+}
+
+private fun modalSlideExit(): ExitTransition {
+    return slideOutVertically(
+        targetOffsetY = { it },
+        animationSpec = tween(ANIM_DURATION_STANDARD)
+    ) + fadeOut(tween(ANIM_DURATION_STANDARD))
+}
+
+private fun modalBackgroundFade(): ExitTransition {
+    return fadeOut(tween(ANIM_DURATION_STANDARD / 2))
+}
+
+/**
+ * Standard push/pop horizontal slide animation
+ */
+private fun standardPushEnter(): EnterTransition {
+    return slideInHorizontally(
+        initialOffsetX = { it },
+        animationSpec = tween(ANIM_DURATION_STANDARD)
+    ) + fadeIn(tween(ANIM_DURATION_STANDARD))
+}
+
+private fun standardPushExit(): ExitTransition {
+    return slideOutHorizontally(
+        targetOffsetX = { -it / 4 }, // Slight parallax
+        animationSpec = tween(ANIM_DURATION_STANDARD)
+    ) + fadeOut(tween(ANIM_DURATION_STANDARD))
+}
+
+private fun standardPopEnter(): EnterTransition {
+    return slideInHorizontally(
+        initialOffsetX = { -it / 4 }, // Slight parallax
+        animationSpec = tween(ANIM_DURATION_STANDARD)
+    ) + fadeIn(tween(ANIM_DURATION_STANDARD))
+}
+
+private fun standardPopExit(): ExitTransition {
+    return slideOutHorizontally(
+        targetOffsetX = { it },
+        animationSpec = tween(ANIM_DURATION_STANDARD)
+    ) + fadeOut(tween(ANIM_DURATION_STANDARD))
+}
+
+/**
+ * Determines appropriate animations based on route context
+ */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.getEnterTransition(): EnterTransition {
+    val targetRoute = getBaseRoute(targetState.destination.route)
+    val initialRoute = getBaseRoute(initialState.destination.route)
+    
+    return when {
+        // Modal screens
+        isModalRoute(targetRoute) -> modalSlideEnter()
+        // Tab navigation
+        targetRoute in tabOrder && initialRoute in tabOrder -> tabSlideEnter()
+        // Standard navigation
+        else -> standardPushEnter()
+    }
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.getExitTransition(): ExitTransition {
+    val targetRoute = getBaseRoute(targetState.destination.route)
+    val initialRoute = getBaseRoute(initialState.destination.route)
+    
+    return when {
+        // Exiting to modal (background fades)
+        isModalRoute(targetRoute) -> modalBackgroundFade()
+        // Tab navigation
+        targetRoute in tabOrder && initialRoute in tabOrder -> tabSlideExit()
+        // Standard navigation
+        else -> standardPushExit()
+    }
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.getPopEnterTransition(): EnterTransition {
+    val targetRoute = getBaseRoute(targetState.destination.route)
+    val initialRoute = getBaseRoute(initialState.destination.route)
+    
+    return when {
+        // Returning from modal (background reappears)
+        isModalRoute(initialRoute) -> fadeIn(tween(ANIM_DURATION_STANDARD))
+        // Standard back navigation
+        else -> standardPopEnter()
+    }
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.getPopExitTransition(): ExitTransition {
+    val initialRoute = getBaseRoute(initialState.destination.route)
+    
+    return when {
+        // Modal closing
+        isModalRoute(initialRoute) -> modalSlideExit()
+        // Standard back navigation
+        else -> standardPopExit()
+    }
+}
+
+// ==================== MAIN SCREEN ====================
 
 @Composable
 fun MainScreen(onLogout: () -> Unit = {}) {
@@ -167,7 +378,15 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             startDestination = Routes.Home.route,
             modifier = contentModifier
         ) {
-            composable(Routes.Home.route) {
+            // ==================== BOTTOM NAV TABS ====================
+
+            composable(
+                route = Routes.Home.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     HomeScreen(
                         viewModel = homeViewModel,
@@ -186,7 +405,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     )
                 }
             }
-            composable(Routes.Pet.route) {
+
+            composable(
+                route = Routes.Pet.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     PetScreen(
                         onBackClick = { bottomNavController.popBackStack() },
@@ -208,7 +434,16 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     )
                 }
             }
-            composable(Routes.Services.route) {
+
+            // ==================== SUB-SCREENS ====================
+
+            composable(
+                route = Routes.Services.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     ServiceScreen(
                         categories = categories,
@@ -220,7 +455,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 }
             }
 
-            composable(Routes.Calendar.route) {
+            composable(
+                route = Routes.Calendar.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     com.example.vetbook.presentation.screens.calendar.CalendarScreen()
                 }
@@ -228,7 +469,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 
             composable(
                 route = Routes.ServiceDetail.route,
-                arguments = listOf(navArgument("serviceId") { type = NavType.StringType })
+                arguments = listOf(navArgument("serviceId") { type = NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
             ) {
                 val detailViewModel: ServiceDetailViewModel = hiltViewModel()
                 val detailCategory by detailViewModel.category.collectAsState()
@@ -242,8 +487,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     )
                 }
             }
-            
-            composable(Routes.Store.route) {
+
+            composable(
+                route = Routes.Store.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     StoreScreen(
                         onProductsClick = {
@@ -261,14 +512,30 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     )
                 }
             }
-            composable(Routes.Notifications.route) {
+
+            // ==================== MODAL SCREENS ====================
+
+            composable(
+                route = Routes.Notifications.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     NotificationScreen(
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
             }
-            composable(Routes.EditProfile.route) {
+
+            composable(
+                route = Routes.EditProfile.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     EditProfileScreen(
                         onBackClick = { bottomNavController.popBackStack() },
@@ -278,7 +545,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     )
                 }
             }
-            composable(Routes.Language.route) {
+
+            composable(
+                route = Routes.Language.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     LanguageScreen(
                         onBackClick = { bottomNavController.popBackStack() },
@@ -288,15 +562,28 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     )
                 }
             }
-            composable(Routes.PrivacyPolicy.route) {
+
+            composable(
+                route = Routes.PrivacyPolicy.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     PrivacyPolicyScreen(
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
             }
-            
-            composable(Routes.Products.route) {
+
+            composable(
+                route = Routes.Products.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 ProductsScreen(
                     onBackClick = { bottomNavController.popBackStack() },
                     onCartClick = {
@@ -310,8 +597,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     }
                 )
             }
-            
-            composable(Routes.Cart.route) {
+
+            composable(
+                route = Routes.Cart.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 CartScreen(
                     onBackClick = { bottomNavController.popBackStack() },
                     onCheckoutClick = {
@@ -319,8 +612,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     }
                 )
             }
-            
-            composable(Routes.Payment.route) {
+
+            composable(
+                route = Routes.Payment.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 PaymentScreen(
                     onBackClick = { bottomNavController.popBackStack() },
                     onCheckoutClick = {
@@ -329,8 +628,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     }
                 )
             }
-            
-            composable(Routes.Profile.route) {
+
+            composable(
+                route = Routes.Profile.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 val context = LocalContext.current
                 var localAvatarUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -379,7 +684,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 }
             }
 
-            composable(Routes.Accommodation.route) {
+            composable(
+                route = Routes.Accommodation.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 AccommodationScreen(
                     onBackClick = { bottomNavController.popBackStack() },
                     onAccommodationClick = { accommodationId ->
@@ -388,7 +699,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 )
             }
 
-            composable(Routes.AddPet.route) {
+            composable(
+                route = Routes.AddPet.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 com.example.vetbook.presentation.screens.pets.AddPetScreen(
                     onBackClick = { bottomNavController.popBackStack() },
                     onSaved = {
@@ -399,7 +716,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 
             composable(
                 route = Routes.PetProfile.route,
-                arguments = listOf(navArgument("petId") { type = NavType.StringType })
+                arguments = listOf(navArgument("petId") { type = NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
             ) { backStackEntry ->
                 val petId = backStackEntry.arguments?.getString("petId") ?: ""
                 PetProfileScreen(
@@ -408,7 +729,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 )
             }
 
-            composable(Routes.Veterinarians.route) {
+            composable(
+                route = Routes.Veterinarians.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
                 VeterinariansScreen(
                     onVetClick = { doctorId ->
                         bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
@@ -418,7 +745,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 
             composable(
                 route = Routes.DoctorProfile.route,
-                arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
+                arguments = listOf(navArgument("doctorId") { type = NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
             ) { backStackEntry ->
                 val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
                 DoctorProfileScreen(
@@ -429,10 +760,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     }
                 )
             }
-            
+
             composable(
                 route = Routes.BookAppointment.route,
-                arguments = listOf(navArgument("doctorId") { type = NavType.StringType })
+                arguments = listOf(navArgument("doctorId") { type = NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
             ) { backStackEntry ->
                 val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
                 BookAppointmentScreen(
