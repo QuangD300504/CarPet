@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,7 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -25,13 +28,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 
+/**
+ * Legacy Sign-In Input Row component (using BasicTextField).
+ * 
+ * Note: Consider migrating to CustomTextField for better consistency.
+ * This component has been updated to fix:
+ * 1. Dark text color forced for light background
+ * 2. IME Actions support (Next/Done)
+ */
 @Composable
 fun SignInInputRow(
     label: String,
     value: String,
     placeholder: String,
     isPassword: Boolean = false,
-    onValueChange: (String) -> Unit
+    imeAction: ImeAction = ImeAction.Default,
+    onValueChange: (String) -> Unit,
+    onImeAction: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -60,15 +73,27 @@ fun SignInInputRow(
             contentAlignment = Alignment.CenterStart
         ) {
             if (value.isEmpty()) {
-                Text(text = placeholder, color = Color.LightGray, fontSize = 14.sp)
+                Text(text = placeholder, color = Color(0xFF9CA3AF), fontSize = 14.sp)
             }
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
-                textStyle = TextStyle(fontSize = 14.sp, color = Color.Gray),
+                textStyle = TextStyle(
+                    fontSize = 14.sp, 
+                    color = Color.Black // FIXED: Force black text for light background
+                ),
+                cursorBrush = SolidColor(Color.Black), // FIXED: Black cursor
                 singleLine = true,
                 visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-                keyboardOptions = if (isPassword) KeyboardOptions(keyboardType = KeyboardType.Password) else KeyboardOptions.Default,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text,
+                    imeAction = imeAction
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { onImeAction?.invoke() },
+                    onDone = { onImeAction?.invoke() },
+                    onGo = { onImeAction?.invoke() }
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
         }

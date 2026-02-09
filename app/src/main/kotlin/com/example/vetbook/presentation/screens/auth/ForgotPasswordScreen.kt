@@ -12,10 +12,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.components.EmailVerificationContent
 import com.example.vetbook.presentation.viewmodels.SignUpViewModel
 import kotlinx.coroutines.delay
@@ -77,6 +81,7 @@ fun EnterEmailContent(
     onResetClick: () -> Unit,
     onBack: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
     val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 
     Column(
@@ -122,19 +127,16 @@ fun EnterEmailContent(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        OutlinedTextField(
+        CustomTextField(
             value = email,
             onValueChange = onEmailChange,
-            placeholder = { Text("Nhập email", fontSize = 14.sp) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent
-            )
+            placeholder = "Nhập email",
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Done,
+            onImeAction = {
+                focusManager.clearFocus()
+                if (isEmailValid) onResetClick()
+            }
         )
 
         Spacer(modifier = Modifier.height(32.dp))

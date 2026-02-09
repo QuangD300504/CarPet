@@ -1,5 +1,7 @@
 package com.example.vetbook.presentation.screens.auth
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -18,49 +20,116 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.viewmodels.ContinueLoginViewModel
+import kotlinx.coroutines.delay
 
+/**
+ * First intro screen - Auto-transitions after 1 second (or tap to skip)
+ * This screen initializes the auth check in the background
+ */
 @Composable
 fun ContinueLoginScreen(
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    viewModel: ContinueLoginViewModel = hiltViewModel()
 ) {
+    val alpha = remember { Animatable(0f) }
+    
+    // Start fade-in animation
+    LaunchedEffect(Unit) {
+        alpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 400)
+        )
+    }
+    
+    // Preload user data in background (viewModel.init already calls load())
+    // This ensures data is ready by the time we reach the password screen
+    
+    // Auto-transition after 1 second (user can click to skip)
+    LaunchedEffect(Unit) {
+        delay(1000)
+        onNext()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFFD700))
-            .clickable { onNext() }
+            .alpha(alpha.value)
+            .clickable { onNext() } // Allow tap to skip
     )
 }
 
+/**
+ * Second intro screen - Auto-transitions after 0.8 seconds (or tap to skip)
+ * Shows an animated circle scaling up
+ */
 @Composable
 fun ContinueLoginStartScreen(
     onNext: () -> Unit
 ) {
+    val scale = remember { Animatable(0.7f) }
+    val alpha = remember { Animatable(0f) }
+    
+    // Animations
+    LaunchedEffect(Unit) {
+        // Fade in
+        alpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 300)
+        )
+        // Scale up circle
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 500)
+        )
+    }
+    
+    // Auto-transition after 0.8 seconds
+    LaunchedEffect(Unit) {
+        delay(800)
+        onNext()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(Color.White)
+            .alpha(alpha.value),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(120.dp)
+                .scale(scale.value)
                 .background(Color(0xFFBDBDBD), CircleShape)
-                .clickable { onNext() }
+                .clickable { onNext() } // Allow tap to skip
         )
     }
 }
@@ -73,6 +142,7 @@ fun ContinueLoginPasswordScreen(
     onLoginClick: (password: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -109,28 +179,26 @@ fun ContinueLoginPasswordScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        OutlinedTextField(
+        CustomTextField(
             value = password,
             onValueChange = { password = it },
-            placeholder = { Text("At least 8 characters", fontSize = 14.sp) },
-            modifier = Modifier.fillMaxWidth(),
+            placeholder = "At least 8 characters",
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                Text(
-                    text = if (passwordVisible) "Hide" else "Show",
-                    modifier = Modifier.clickable { passwordVisible = !passwordVisible },
-                    color = Color(0xFF2563EB),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done,
+            onImeAction = {
+                focusManager.clearFocus()
+                onLoginClick(password)
             },
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFF1F5F9),
-                unfocusedContainerColor = Color(0xFFF1F5F9),
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent
-            )
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                        tint = Color.Black
+                    )
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(10.dp))

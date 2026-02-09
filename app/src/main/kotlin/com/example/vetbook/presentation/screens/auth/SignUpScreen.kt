@@ -20,13 +20,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.components.EmailVerificationContent
 import com.example.vetbook.presentation.models.SignUpUiState
 import com.example.vetbook.presentation.theme.VetBookTheme
@@ -118,6 +124,7 @@ fun SignUpDetailsContent(
     onNext: () -> Unit,
     onLoginClick: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -144,13 +151,51 @@ fun SignUpDetailsContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        SignUpTextField(value = fullName, onValueChange = onFullNameChange, label = "Tên đầy đủ", icon = Icons.Default.Person)
+        CustomTextField(
+            value = fullName,
+            onValueChange = onFullNameChange,
+            placeholder = "Tên đầy đủ",
+            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray) },
+            imeAction = ImeAction.Next,
+            onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
+        )
         Spacer(modifier = Modifier.height(12.dp))
-        SignUpTextField(value = email, onValueChange = onEmailChange, label = "Địa chỉ Email", icon = Icons.Default.Mail)
+        
+        CustomTextField(
+            value = email,
+            onValueChange = onEmailChange,
+            placeholder = "Địa chỉ Email",
+            leadingIcon = { Icon(Icons.Default.Mail, contentDescription = null, tint = Color.Gray) },
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next,
+            onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
+        )
         Spacer(modifier = Modifier.height(12.dp))
-        SignUpTextField(value = phoneNumber, onValueChange = onPhoneChange, label = "Số điện thoại", icon = Icons.Default.Phone)
+        
+        CustomTextField(
+            value = phoneNumber,
+            onValueChange = onPhoneChange,
+            placeholder = "Số điện thoại",
+            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = Color.Gray) },
+            keyboardType = KeyboardType.Phone,
+            imeAction = ImeAction.Next,
+            onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
+        )
         Spacer(modifier = Modifier.height(12.dp))
-        SignUpTextField(value = password, onValueChange = onPasswordChange, label = "Mật khẩu", icon = Icons.Default.Lock, isPassword = true)
+        
+        CustomTextField(
+            value = password,
+            onValueChange = onPasswordChange,
+            placeholder = "Mật khẩu",
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.Gray) },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done,
+            onImeAction = {
+                focusManager.clearFocus()
+                if (isTermsAccepted) onNext()
+            }
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
         
@@ -365,30 +410,7 @@ fun IntroductionContent(onFinished: () -> Unit) {
     }
 }
 
-@Composable
-fun SignUpTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    icon: ImageVector,
-    isPassword: Boolean = false
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        placeholder = { Text(label, fontSize = 14.sp) },
-        trailingIcon = { Icon(icon, contentDescription = null, tint = Color.LightGray) },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        visualTransformation = if (isPassword) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent
-        )
-    )
-}
+// Legacy SignUpTextField removed - now using CustomTextField globally
 
 @Preview(showBackground = true)
 @Composable

@@ -36,11 +36,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.viewmodels.AddPetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +56,7 @@ fun AddPetScreen(
     onSaved: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     var typeExpanded by remember { mutableStateOf(false) }
     var genderExpanded by remember { mutableStateOf(false) }
@@ -109,17 +115,12 @@ fun AddPetScreen(
                     .padding(top = 16.dp, bottom = 110.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedTextField(
+                CustomTextField(
                     value = uiState.name,
                     onValueChange = viewModel::setName,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Name") },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFE0E0E0),
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    placeholder = "Name",
+                    imeAction = ImeAction.Next,
+                    onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
                 )
 
                 // Type dropdown
@@ -129,11 +130,15 @@ fun AddPetScreen(
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
                         readOnly = true,
-                        placeholder = { Text("Type") },
-                        trailingIcon = { Text("▼") },
+                        placeholder = { Text("Type", color = Color(0xFF9CA3AF)) },
+                        trailingIcon = { Text("▼", color = Color.Black) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFE0E0E0),
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
+                            focusedContainerColor = Color(0xFFF1F5F9),
+                            unfocusedContainerColor = Color(0xFFF1F5F9),
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -232,17 +237,12 @@ fun AddPetScreen(
                     }
                 }
 
-                OutlinedTextField(
+                CustomTextField(
                     value = uiState.breed,
                     onValueChange = viewModel::setBreed,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Breed") },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFE0E0E0),
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    placeholder = "Breed",
+                    imeAction = ImeAction.Next,
+                    onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
                 )
 
                 // Gender dropdown
@@ -252,11 +252,15 @@ fun AddPetScreen(
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
                         readOnly = true,
-                        placeholder = { Text("Gender") },
-                        trailingIcon = { Text("▼") },
+                        placeholder = { Text("Gender", color = Color(0xFF9CA3AF)) },
+                        trailingIcon = { Text("▼", color = Color.Black) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFE0E0E0),
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
+                            focusedContainerColor = Color(0xFFF1F5F9),
+                            unfocusedContainerColor = Color(0xFFF1F5F9),
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -283,57 +287,46 @@ fun AddPetScreen(
 
                 // Age + weight
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    CustomTextField(
                         value = uiState.ageYears,
                         onValueChange = viewModel::setAgeYears,
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Years") },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFE0E0E0),
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        placeholder = "Years",
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next,
+                        onImeAction = { focusManager.moveFocus(FocusDirection.Right) }
                     )
-                    OutlinedTextField(
+                    CustomTextField(
                         value = uiState.ageMonths,
                         onValueChange = viewModel::setAgeMonths,
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Months") },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFE0E0E0),
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        placeholder = "Months",
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next,
+                        onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
                     )
                 }
 
-                OutlinedTextField(
+                CustomTextField(
                     value = uiState.weightKg,
                     onValueChange = viewModel::setWeightKg,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Weight (kg)") },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFE0E0E0),
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    placeholder = "Weight (kg)",
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                    onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
                 )
 
-                OutlinedTextField(
+                CustomTextField(
                     value = uiState.note,
                     onValueChange = viewModel::setNote,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
-                    placeholder = { Text("Note") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFE0E0E0),
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    placeholder = "Note",
+                    singleLine = false,
+                    maxLines = 5,
+                    imeAction = ImeAction.Done,
+                    onImeAction = { focusManager.clearFocus() }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
