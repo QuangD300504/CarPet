@@ -42,14 +42,13 @@ fun BookAppointmentScreen(
 ) {
     val uiState by vetsViewModel.uiState.collectAsState()
     val doctor = uiState.veterinarians.find { it.id == doctorId }
-
     val bookingState by bookingViewModel.uiState.collectAsState()
 
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var selectedDate by remember { mutableStateOf(2) } // Index of selected date
-    var selectedTime by remember { mutableStateOf(0) } // Index of selected time
+    var selectedDate by remember { mutableStateOf(2) }
+    var selectedTime by remember { mutableStateOf(0) }
 
     LaunchedEffect(bookingState) {
         when (val state = bookingState) {
@@ -66,229 +65,183 @@ fun BookAppointmentScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.White
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            if (doctor != null) {
-                BookAppointmentContent(
-                    doctor = doctor,
-                    selectedDate = selectedDate,
-                    selectedTime = selectedTime,
-                    onDateSelect = { selectedDate = it },
-                    onTimeSelect = { selectedTime = it },
-                    onBackClick = onBackClick,
-                    onConfirmClick = {
-                        val appointmentAt = buildAppointmentDate(selectedDate, selectedTime)
-                        bookingViewModel.confirmAndPay(
-                            veterinarianId = doctorId,
-                            appointmentAt = appointmentAt,
-                            totalPrice = MVP_FIXED_PRICE_VND,
-                            durationMinutes = 30,
-                            notes = null
-                        )
-                    }
+    if (doctor != null) {
+        BookAppointmentContent(
+            doctor = doctor,
+            selectedDate = selectedDate,
+            selectedTime = selectedTime,
+            bookingState = bookingState,
+            snackbarHostState = snackbarHostState,
+            onDateSelect = { selectedDate = it },
+            onTimeSelect = { selectedTime = it },
+            onConfirmClick = {
+                val appointmentAt = buildAppointmentDate(selectedDate, selectedTime)
+                bookingViewModel.confirmAndPay(
+                    veterinarianId = doctorId,
+                    appointmentAt = appointmentAt,
+                    totalPrice = MVP_FIXED_PRICE_VND,
+                    durationMinutes = 30,
+                    notes = null
                 )
-            } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "Doctor not found")
-                }
             }
-
-            if (bookingState is BookAppointmentViewModel.UiState.Loading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+        )
+    } else {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(color = Color(0xFFFFEB3B))
+            } else {
+                Text(text = "Doctor not found")
             }
         }
     }
 }
 
-private fun buildAppointmentDate(selectedDateIndex: Int, selectedTimeIndex: Int): Date {
-    // MVP: generate a date in the near future.
-    // - selectedDateIndex maps to next N days
-    // - selectedTimeIndex maps to 9:00, 9:30, 10:00, 10:30
-    val calendar = Calendar.getInstance()
-
-    // Ensure future date
-    calendar.add(Calendar.DAY_OF_YEAR, maxOf(1, selectedDateIndex))
-
-    val baseHour = 9
-    val halfHour = selectedTimeIndex % 2
-    val hourOffset = selectedTimeIndex / 2
-
-    calendar.set(Calendar.HOUR_OF_DAY, baseHour + hourOffset)
-    calendar.set(Calendar.MINUTE, if (halfHour == 0) 0 else 30)
-    calendar.set(Calendar.SECOND, 0)
-    calendar.set(Calendar.MILLISECOND, 0)
-
-    return calendar.time
-}
-
 @Composable
-fun BookAppointmentContent(
+private fun BookAppointmentContent(
     doctor: Veterinarian,
     selectedDate: Int,
     selectedTime: Int,
+    bookingState: BookAppointmentViewModel.UiState,
+    snackbarHostState: SnackbarHostState,
     onDateSelect: (Int) -> Unit,
     onTimeSelect: (Int) -> Unit,
-    onBackClick: () -> Unit,
     onConfirmClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        // Doctor image with overlay
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.pawns), // Placeholder
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-
-            // Back button
-            IconButton(
-                onClick = onBackClick,
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.White
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            Column(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.Black
-                )
-            }
-
-            // Yellow overlay card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEB3B))
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+                // Doctor image area (no internal back button)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
                 ) {
+                    Image(
+                        painter = painterResource(R.drawable.pawns),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    // Yellow overlay card info
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEB3B))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = doctor.name,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = doctor.specialty,
+                                fontSize = 14.sp,
+                                color = Color.Black.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = doctor.name,
+                        text = "Appointment",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = Color.Black,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+                    val dates = listOf(3, 4, 5, 6, 7, 8, 9)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        days.take(5).forEachIndexed { index, day ->
+                            CalendarDayItem(
+                                day = day,
+                                date = dates[index],
+                                isSelected = selectedDate == index,
+                                onClick = { onDateSelect(index) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
                     Text(
-                        text = doctor.specialty,
-                        fontSize = 14.sp,
-                        color = Color.Black.copy(alpha = 0.7f)
+                        text = "Available Time",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Mirpur Medical College and Hospital",
-                        fontSize = 12.sp,
-                        color = Color.Black.copy(alpha = 0.6f)
-                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val timeSlots = listOf("9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        timeSlots.forEachIndexed { index, time ->
+                            TimeSlotItem(
+                                time = time,
+                                isSelected = selectedTime == index,
+                                onClick = { onTimeSelect(index) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = onConfirmClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEB3B)),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = bookingState !is BookAppointmentViewModel.UiState.Loading
+                    ) {
+                        if (bookingState is BookAppointmentViewModel.UiState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.Black,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Confirm",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Appointment",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-            val dates = listOf(3, 4, 5, 6, 7, 8, 9) // Example dates
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                days.take(5).forEachIndexed { index, day ->
-                    CalendarDayItem(
-                        day = day,
-                        date = dates[index],
-                        isSelected = selectedDate == index,
-                        onClick = { onDateSelect(index) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Available Time",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val timeSlots = listOf("9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM")
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                timeSlots.forEachIndexed { index, time ->
-                    TimeSlotItem(
-                        time = time,
-                        isSelected = selectedTime == index,
-                        onClick = { onTimeSelect(index) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = onConfirmClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFEB3B)
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Confirm",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

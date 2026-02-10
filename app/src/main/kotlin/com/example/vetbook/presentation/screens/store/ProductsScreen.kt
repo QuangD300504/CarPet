@@ -13,7 +13,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.vetbook.presentation.components.store.LocationDropdown
 import com.example.vetbook.presentation.components.store.ProductCard
 import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
@@ -27,54 +26,72 @@ fun ProductsScreen(
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    var showLocationDropdown by remember { mutableStateOf(false) }
-    var currentLocation by remember { mutableStateOf("Ho Chi Minh City") }
-    var searchValue by remember { mutableStateOf("") }
-
     val uiState by viewModel.uiState.collectAsState()
-    
+    var searchQuery by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        com.example.vetbook.presentation.components.store.StoreHeader(
+            currentLocation = "Ho Chi Minh City",
+            onLocationClick = { },
+            onCartClick = onCartClick,
+            onNotificationClick = onNotificationClick,
+            onProfileClick = onProfileClick,
+            profileImageUrl = null,
+            showSearchBar = false
+        )
+
+        ProductsContent(
+            uiState = uiState,
+            searchQuery = searchQuery,
+            onSearchChange = {
+                searchQuery = it
+                viewModel.setSearchQuery(it)
+            },
+            onAddToCart = viewModel::addToCart
+        )
+    }
+}
+
+@Composable
+private fun ProductsContent(
+    uiState: com.example.vetbook.presentation.models.StoreUiState,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    onAddToCart: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        StoreHeader(
-            currentLocation = currentLocation,
-            onLocationClick = { showLocationDropdown = !showLocationDropdown },
-            onCartClick = onCartClick,
-            onNotificationClick = onNotificationClick,
-            onProfileClick = onProfileClick,
-            searchValue = searchValue,
-            onSearchChange = {
-                searchValue = it
-                viewModel.setSearchQuery(it)
-            }
-        )
-        
-        if (showLocationDropdown) {
-            val cities = remember {
-                listOf(
-                    "Ho Chi Minh City", "Binh Duong", "Dong Nai", "Ba Ria-Vung Tau",
-                    "Long An", "Tien Giang", "Ben Tre", "Tra Vinh", "Vinh Long",
-                    "Dong Thap", "An Giang", "Kien Giang", "Can Tho", "Hau Giang"
-                )
-            }
-            LocationDropdown(
-                cities = cities,
-                selectedCity = currentLocation,
-                onCitySelected = { 
-                    currentLocation = it
-                    showLocationDropdown = false
-                },
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-        }
-        
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchChange,
+                placeholder = { Text("Search products...") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search"
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFF5F5F5),
+                    unfocusedContainerColor = Color(0xFFF5F5F5),
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = "Products",
                 fontSize = 24.sp,
@@ -82,23 +99,38 @@ fun ProductsScreen(
                 color = Color.Black,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(
-                    items = uiState.products,
-                    key = { it.id }
-                ) { product ->
-                    ProductCard(
-                        product = product,
-                        showFavorite = true,
-                        onAddToCart = { viewModel.addToCart(product.id) }
-                    )
+
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFFFD813))
+                }
+            } else if (uiState.errorMessage != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = uiState.errorMessage ?: "Error loading products", color = Color.Red)
+                }
+            } else if (uiState.products.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "No products found", color = Color.Gray)
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(
+                        items = uiState.products,
+                        key = { it.id }
+                    ) { product ->
+                        ProductCard(
+                            product = product,
+                            showFavorite = true,
+                            onAddToCart = { onAddToCart(product.id) }
+                        )
+                    }
                 }
             }
         }

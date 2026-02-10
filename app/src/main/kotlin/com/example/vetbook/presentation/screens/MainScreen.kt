@@ -267,6 +267,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val profileUiState by profileViewModel.uiState.collectAsState()
     val profileImageUrl = profileUiState.user?.profileImageUrl
 
+    var showStoreLocationDropdown by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = Color.White,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -312,7 +314,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 currentRoute == Routes.Store.route -> {
                     StoreHeader(
                         currentLocation = "Ho Chi Minh City",
-                        onLocationClick = { /* toggle handled in screen state later */ },
+                        onLocationClick = { 
+                            showStoreLocationDropdown = !showStoreLocationDropdown
+                        },
                         onCartClick = {
                             bottomNavController.navigate(Routes.Cart.route)
                         },
@@ -359,11 +363,52 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
+                currentRoute == Routes.Cart.route -> {
+                    SimpleTopBar(
+                        title = "Cart",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Payment.route -> {
+                    SimpleTopBar(
+                        title = "Payment",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute == Routes.Veterinarians.route -> {
+                    SimpleTopBar(
+                        title = "Veterinary Care",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute?.startsWith("doctor_profile/") == true -> {
+                    SimpleTopBar(
+                        title = "Doctor Profile",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
+                currentRoute?.startsWith("book_appointment/") == true -> {
+                    SimpleTopBar(
+                        title = "Book Appointment",
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
                 else -> { }
             }
         },
         bottomBar = {
-            VetBookBottomBar(navController = bottomNavController)
+            val hideBottomBarRoutes = setOf(
+                Routes.Veterinarians.route,
+                Routes.DoctorProfile.route,
+                Routes.BookAppointment.route,
+                Routes.Products.route,
+                Routes.Cart.route,
+                Routes.Payment.route
+            )
+
+            if (currentRoute !in hideBottomBarRoutes) {
+                VetBookBottomBar(navController = bottomNavController)
+            }
         }
     ) { innerPadding ->
         val topBarPadding = innerPadding.calculateTopPadding()
@@ -497,6 +542,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     StoreScreen(
+                        showLocationDropdown = showStoreLocationDropdown,
+                        onLocationDropdownDismiss = { showStoreLocationDropdown = false },
                         onProductsClick = {
                             bottomNavController.navigate(Routes.Products.route)
                         },

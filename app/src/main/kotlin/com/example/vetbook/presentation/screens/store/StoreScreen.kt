@@ -30,18 +30,44 @@ import com.example.vetbook.presentation.viewmodels.StoreViewModel
 @Composable
 fun StoreScreen(
     viewModel: StoreViewModel = hiltViewModel(),
+    showLocationDropdown: Boolean = false,
+    onLocationDropdownDismiss: () -> Unit = {},
     onProductsClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    var showLocationDropdown by remember { mutableStateOf(false) }
-    var currentLocation by remember { mutableStateOf("Ho Chi Minh City") }
-    var searchValue by remember { mutableStateOf("") }
-
     val uiState by viewModel.uiState.collectAsState()
-    
+    var currentLocation by remember { mutableStateOf("Ho Chi Minh City") }
+
+    StoreContent(
+        uiState = uiState,
+        showLocationDropdown = showLocationDropdown,
+        currentLocation = currentLocation,
+        onLocationDropdownDismiss = onLocationDropdownDismiss,
+        onCitySelected = { currentLocation = it },
+        onProductsClick = onProductsClick,
+        onCategoryClick = { label ->
+            val category = label.lowercase()
+            viewModel.setCategory(category)
+            onCategoryClick(category)
+        },
+        onAddToCart = viewModel::addToCart
+    )
+}
+
+@Composable
+private fun StoreContent(
+    uiState: com.example.vetbook.presentation.models.StoreUiState,
+    showLocationDropdown: Boolean,
+    currentLocation: String,
+    onLocationDropdownDismiss: () -> Unit,
+    onCitySelected: (String) -> Unit,
+    onProductsClick: () -> Unit,
+    onCategoryClick: (String) -> Unit,
+    onAddToCart: (String) -> Unit
+) {
     val cities = remember {
         listOf(
             "Ho Chi Minh City", "Binh Duong", "Dong Nai", "Ba Ria-Vung Tau",
@@ -49,7 +75,7 @@ fun StoreScreen(
             "Dong Thap", "An Giang", "Kien Giang", "Can Tho", "Hau Giang"
         )
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -59,14 +85,14 @@ fun StoreScreen(
             LocationDropdown(
                 cities = cities,
                 selectedCity = currentLocation,
-                onCitySelected = { 
-                    currentLocation = it
-                    showLocationDropdown = false
+                onCitySelected = {
+                    onCitySelected(it)
+                    onLocationDropdownDismiss()
                 },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
-        
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -83,7 +109,7 @@ fun StoreScreen(
                         )
                 )
             }
-            
+
             item {
                 Text(
                     text = "Explore Categories",
@@ -92,12 +118,11 @@ fun StoreScreen(
                     color = Color.Black
                 )
             }
-            
+
             item {
-                // Category filters from Figma: Foods, Toys, Accessories, Hygiene, Kennel
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 0.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(26.dp)
                 ) {
                     items(
@@ -113,16 +138,12 @@ fun StoreScreen(
                         CategoryIcon(
                             label = label,
                             icon = icon,
-                            onClick = {
-                                val category = label.lowercase()
-                                viewModel.setCategory(category)
-                                onCategoryClick(category)
-                            }
+                            onClick = { onCategoryClick(label) }
                         )
                     }
                 }
             }
-            
+
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -144,9 +165,9 @@ fun StoreScreen(
                     )
                 }
             }
-            
-            item {
-                if (uiState.isLoading) {
+
+            if (uiState.isLoading) {
+                item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -155,32 +176,34 @@ fun StoreScreen(
                     ) {
                         CircularProgressIndicator(color = Color(0xFFFFD813))
                     }
-                    return@item
                 }
-
-                if (uiState.errorMessage != null) {
+            } else if (uiState.errorMessage != null) {
+                item {
                     Text(
                         text = uiState.errorMessage ?: "Failed to load products",
-                        color = Color.Red
+                        color = Color.Red,
+                        modifier = Modifier.padding(vertical = 16.dp)
                     )
-                    return@item
                 }
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.height(400.dp)
-                ) {
-                    items(
-                        items = uiState.products,
-                        key = { it.id }
-                    ) { product ->
-                        ProductCard(
-                            product = product,
-                            onClick = { onProductsClick() },
-                            onAddToCart = { viewModel.addToCart(product.id) }
-                        )
+            } else {
+                item {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(
+                            items = uiState.products,
+                            key = { it.id }
+                        ) { product ->
+                            Box(modifier = Modifier.width(160.dp)) {
+                                ProductCard(
+                                    product = product,
+                                    onClick = { onProductsClick() },
+                                    onAddToCart = { onAddToCart(product.id) }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -189,7 +212,7 @@ fun StoreScreen(
 }
 
 @Composable
-fun CategoryIcon(
+private fun CategoryIcon(
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit
@@ -200,22 +223,22 @@ fun CategoryIcon(
     ) {
         Box(
             modifier = Modifier
-                .size(123.dp)
+                .size(80.dp) // Adjusted size for better visual balance
                 .background(Color(0xFFF5F5F5), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color(0xFFFFD813), // Yellow from Figma
-                modifier = Modifier.size(48.dp)
+                tint = Color(0xFFFFD813),
+                modifier = Modifier.size(32.dp)
             )
         }
-        Spacer(modifier = Modifier.height(9.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = label,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
             color = Color.Black
         )
     }

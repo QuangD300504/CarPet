@@ -1,6 +1,8 @@
 package com.example.vetbook.domain.repository
 
+import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.domain.models.PaymentLink
+import kotlinx.coroutines.flow.Flow
 import java.util.Date
 
 interface BookingRepository {
@@ -18,4 +20,6 @@ interface BookingRepository {
     ): CreateAppointmentResult
 
     suspend fun createPayosPaymentLink(appointmentId: String): PaymentLink
+
+    fun getUserAppointments(userId: String): Flow<List<Appointment>>
 }

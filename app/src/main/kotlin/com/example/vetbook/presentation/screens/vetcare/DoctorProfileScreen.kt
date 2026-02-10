@@ -38,18 +38,24 @@ fun DoctorProfileScreen(
     val doctor = uiState.veterinarians.find { it.id == doctorId }
 
     if (doctor != null) {
-        DoctorProfileContent(doctor = doctor, onBackClick = onBackClick, onBookClick = onBookClick)
+        DoctorProfileContent(
+            doctor = doctor,
+            onBookClick = onBookClick
+        )
     } else {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "Doctor not found")
+            if (uiState.isLoading) {
+                CircularProgressIndicator(color = Color(0xFFFFEB3B))
+            } else {
+                Text(text = "Doctor not found")
+            }
         }
     }
 }
 
 @Composable
-fun DoctorProfileContent(
+private fun DoctorProfileContent(
     doctor: Veterinarian,
-    onBackClick: () -> Unit,
     onBookClick: () -> Unit
 ) {
     Column(
@@ -57,143 +63,130 @@ fun DoctorProfileContent(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Doctor image at top
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.pawns), // Placeholder - should be doctor image
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            
-            // Back button overlay
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .padding(16.dp)
-                    .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.Black
-                )
-            }
-        }
-        
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
         ) {
-            // Doctor name and info
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Doctor image at top
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
             ) {
-                Column {
-                    Text(
-                        text = doctor.name,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                Image(
+                    painter = painterResource(R.drawable.pawns), // Placeholder
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Doctor name and info
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = doctor.name,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = doctor.specialty,
+                            fontSize = 16.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFC107),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${doctor.rating} (${doctor.reviewsCount} reviews)",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Statistics row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    StatCard(
+                        icon = Icons.Default.Person,
+                        value = "116+",
+                        label = "Patients"
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = doctor.specialty,
-                        fontSize = 16.sp,
-                        color = Color.Gray
+                    StatCard(
+                        icon = Icons.Default.CheckCircle,
+                        value = "3+",
+                        label = "Years"
+                    )
+                    StatCard(
+                        icon = Icons.Default.Star,
+                        value = doctor.rating,
+                        label = "Rating"
                     )
                 }
                 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = Color(0xFFFFC107),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${doctor.rating} (${doctor.reviewsCount} reviews)",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.Black
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Statistics row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatCard(
-                    icon = Icons.Default.Person,
-                    value = "116+",
-                    label = "Patients"
-                )
-                StatCard(
-                    icon = Icons.Default.CheckCircle,
-                    value = "3+",
-                    label = "Years"
-                )
-                StatCard(
-                    icon = Icons.Default.Star,
-                    value = doctor.rating,
-                    label = "Rating"
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // About Me section
-            Text(
-                text = "About Me",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Text(
-                text = doctor.bio.ifEmpty { "Experienced veterinarian with a passion for providing the best care for your pets. Specialized in ${doctor.specialty} with ${doctor.experience}." },
-                fontSize = 14.sp,
-                color = Color.Gray,
-                lineHeight = 22.sp
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Book Appointment button
-            Button(
-                onClick = onBookClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFEB3B) // Yellow
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // About Me section
                 Text(
-                    text = "Book Appointment",
-                    fontSize = 18.sp,
+                    text = "About Me",
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = doctor.bio.ifEmpty { "Experienced veterinarian with a passion for providing the best care for your pets. Specialized in ${doctor.specialty} with ${doctor.experience}." },
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    lineHeight = 22.sp
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Book Appointment button
+                Button(
+                    onClick = onBookClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFEB3B) // Yellow
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Book Appointment",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

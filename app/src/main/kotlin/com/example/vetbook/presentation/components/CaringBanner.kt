@@ -53,13 +53,16 @@ fun CaringBanner(
                         containerColor = Color.White
                     ),
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.height(32.dp)
+                    modifier = Modifier
+                        .height(32.dp)
+                        .defaultMinSize(minWidth = 92.dp)
                 ) {
                     Text(
                         text = "Explore",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        maxLines = 1
                     )
                 }
             }

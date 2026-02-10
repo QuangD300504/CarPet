@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -34,12 +35,14 @@ import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
 @Composable
 fun VeterinariansScreen(
     viewModel: VeterinariansViewModel = hiltViewModel(),
+    onBackClick: () -> Unit = {},
     onVetClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     VeterinariansContent(
         uiState = uiState,
+        onBackClick = onBackClick,
         onVetClick = onVetClick
     )
 }
@@ -47,25 +50,40 @@ fun VeterinariansScreen(
 @Composable
 fun VeterinariansContent(
     uiState: VeterinariansUiState,
+    onBackClick: () -> Unit,
     onVetClick: (String) -> Unit
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredVets = remember(uiState.veterinarians, searchQuery) {
+        val query = searchQuery.trim()
+        if (query.isBlank()) {
+            uiState.veterinarians
+        } else {
+            uiState.veterinarians.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                    it.specialty.contains(query, ignoreCase = true)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Yellow top section
+        // Yellow top section with search
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFFFFEB3B))
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
+                .padding(vertical = 16.dp)
         ) {
-            // Search bar
             OutlinedTextField(
-                value = "",
-                onValueChange = { },
-                placeholder = { Text("Q Doctor, Hospital...") },
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search doctor, hospital...") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -79,19 +97,19 @@ fun VeterinariansContent(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
-            // SOS Button
+
             Button(
                 onClick = { },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE53935) // Red
+                    containerColor = Color(0xFFE53935)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -100,30 +118,6 @@ fun VeterinariansContent(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Navigation icons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                NavigationIcon(
-                    icon = Icons.Default.Home,
-                    label = "Home",
-                    onClick = { }
-                )
-                NavigationIcon(
-                    icon = Icons.Default.Business,
-                    label = "Hospital",
-                    onClick = { }
-                )
-                NavigationIcon(
-                    icon = Icons.Default.Person,
-                    label = "Online",
-                    onClick = { }
                 )
             }
         }
@@ -301,6 +295,7 @@ fun VeterinariansScreenPreview() {
                 Veterinarian("2", "Dr. Alina Fatima", "Cardiologist", "8 years experience", rating = "5.0", reviewsCount = 15, initials = "DAF")
             )
         ),
+        onBackClick = {},
         onVetClick = {}
     )
 }

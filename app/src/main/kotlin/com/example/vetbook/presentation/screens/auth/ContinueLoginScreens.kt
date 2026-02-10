@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.viewmodels.ContinueLoginViewModel
+import com.example.vetbook.presentation.viewmodels.LoginViewModel
 import kotlinx.coroutines.delay
 
 /**
@@ -136,12 +137,14 @@ fun ContinueLoginStartScreen(
 
 @Composable
 fun ContinueLoginPasswordScreen(
-    viewModel: ContinueLoginViewModel = hiltViewModel(),
+    loginViewModel: LoginViewModel = hiltViewModel(),
+    continueLoginViewModel: ContinueLoginViewModel = hiltViewModel(),
     onForgotPasswordClick: () -> Unit,
     onLoginSuccess: () -> Unit,
     onLoginClick: (password: String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val loginUiState by loginViewModel.uiState.collectAsState()
+    val continueUiState by continueLoginViewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -164,9 +167,9 @@ fun ContinueLoginPasswordScreen(
         Spacer(modifier = Modifier.height(18.dp))
 
         val nameText = when {
-            uiState.isLoading -> "..."
-            uiState.fullName.isNotBlank() -> uiState.fullName
-            uiState.email.isNotBlank() -> uiState.email
+            continueUiState.isLoading -> "..."
+            continueUiState.fullName.isNotBlank() -> continueUiState.fullName
+            continueUiState.email.isNotBlank() -> continueUiState.email
             else -> ""
         }
 
@@ -233,7 +236,7 @@ fun ContinueLoginPasswordScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (uiState.isLoading) {
+        if (loginUiState.isLoading) {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Color.Black)
             }
@@ -243,7 +246,7 @@ fun ContinueLoginPasswordScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = uiState.error ?: "",
+            text = loginUiState.error ?: "",
             color = Color.Red,
             fontSize = 12.sp,
             modifier = Modifier.fillMaxWidth()

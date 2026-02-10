@@ -1,29 +1,44 @@
 package com.example.vetbook.presentation.screens.store
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.vetbook.R
 import com.example.vetbook.presentation.components.store.OrderSummaryCard
 import com.example.vetbook.presentation.models.CartItem
 import com.example.vetbook.presentation.models.OrderSummary
@@ -57,142 +72,107 @@ fun CartScreen(
         deliveryCharges = uiState.deliveryCharges
     )
 
+    CartContent(
+        uiState = uiState,
+        cartItems = cartItems,
+        orderSummary = orderSummary,
+        onQuantityChange = { productId, qty -> viewModel.setQuantity(productId, qty) },
+        onCheckoutClick = onCheckoutClick
+    )
+}
+
+@Composable
+private fun CartContent(
+    uiState: com.example.vetbook.presentation.viewmodels.CheckoutUiState,
+    cartItems: List<CartItem>,
+    orderSummary: OrderSummary,
+    onQuantityChange: (String, Int) -> Unit,
+    onCheckoutClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Yellow top bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFFFEB3B))
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.Black
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                IconButton(onClick = { }) {
-                    Icon(
-                        Icons.Default.ShoppingCart,
-                        contentDescription = "Cart",
-                        tint = Color.Black
-                    )
-                }
-                IconButton(onClick = { }) {
-                    BadgedBox(
-                        badge = { Badge() }
-                    ) {
-                        Icon(
-                            Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = Color.Black
-                        )
-                    }
-                }
-                Image(
-                    painter = painterResource(R.drawable.pawns),
-                    contentDescription = "Profile",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
+                CircularProgressIndicator(color = Color(0xFFFFD813))
+            }
+        } else if (uiState.errorMessage != null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = uiState.errorMessage ?: "Failed to load cart",
+                    color = Color.Red
                 )
             }
-        }
-
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFFFFD813))
-                }
+        } else if (cartItems.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Giỏ hàng trống",
+                    color = Color.Gray,
+                    fontSize = 16.sp
+                )
             }
-
-            uiState.errorMessage != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
                     Text(
-                        text = uiState.errorMessage ?: "Failed to load cart",
-                        color = Color.Red
+                        text = "Giỏ hàng",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-            }
 
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "Giỏ hàng",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
-
-                    items(
-                        items = cartItems,
-                        key = { it.id }
-                    ) { item ->
-                        CartItemCard(
-                            item = item,
-                            quantity = item.quantity,
-                            onQuantityChange = { newQty ->
-                                viewModel.setQuantity(item.productId, newQty)
-                            }
-                        )
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    item {
-                        OrderSummaryCard(orderSummary = orderSummary)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    item {
-                        Button(
-                            onClick = onCheckoutClick,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFFEB3B)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            enabled = uiState.itemCount > 0
-                        ) {
-                            Text(
-                                text = "Check Out",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black
-                            )
+                items(
+                    items = cartItems,
+                    key = { it.id }
+                ) { item ->
+                    CartItemCard(
+                        item = item,
+                        quantity = item.quantity,
+                        onQuantityChange = { newQty ->
+                            onQuantityChange(item.productId, newQty)
                         }
+                    )
+                }
+
+                item {
+                    OrderSummaryCard(orderSummary = orderSummary)
+                }
+
+                item {
+                    Button(
+                        onClick = onCheckoutClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFEB3B)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = uiState.itemCount > 0
+                    ) {
+                        Text(
+                            text = "Check Out",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
                     }
                 }
             }
@@ -201,7 +181,7 @@ fun CartScreen(
 }
 
 @Composable
-fun CartItemCard(
+private fun CartItemCard(
     item: CartItem,
     quantity: Int,
     onQuantityChange: (Int) -> Unit

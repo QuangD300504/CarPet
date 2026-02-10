@@ -12,6 +12,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -83,18 +84,33 @@ fun CategoryGridCard(
                     .background(Color.White, RoundedCornerShape(15.dp)),
                 contentAlignment = Alignment.Center
             ) {
+                val tintedCategoryIds = remember {
+                    setOf(
+                        "cat_vet",
+                        "cat_spa",
+                        "cat_training",
+                        "cat_funeral"
+                    )
+                }
+
                 Image(
                     painter = painterResource(category.iconRes),
                     contentDescription = category.title,
                     modifier = Modifier.size(35.dp),
-                    colorFilter = ColorFilter.tint(Color(0xFFFFD813)) // Yellow from Figma
+                    colorFilter = if (category.id in tintedCategoryIds) {
+                        ColorFilter.tint(Color(0xFFFFD813))
+                    } else {
+                        null
+                    }
                 )
             }
             Text(
                 text = category.title,
+                modifier = Modifier.weight(1f),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = Color.Black,
+                maxLines = 2
             )
         }
     }

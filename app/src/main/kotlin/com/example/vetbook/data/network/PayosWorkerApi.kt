@@ -5,7 +5,10 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface PayosWorkerApi {
-    data class CreatePaymentLinkRequest(val appointmentId: String)
+    data class CreatePaymentLinkRequest(
+        val kind: String, // "APPOINTMENT" or "STORE_ORDER"
+        val referenceId: String
+    )
     data class CreatePaymentLinkResponse(
         val checkoutUrl: String,
         val orderCode: Long,

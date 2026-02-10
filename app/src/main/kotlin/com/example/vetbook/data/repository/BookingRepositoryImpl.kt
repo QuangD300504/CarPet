@@ -1,12 +1,19 @@
 package com.example.vetbook.data.repository
 
+import com.example.vetbook.data.mappers.toDomain
 import com.example.vetbook.data.models.AppointmentDto
 import com.example.vetbook.data.network.PayosWorkerApi
+import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.domain.models.PaymentLink
 import com.example.vetbook.domain.repository.BookingRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -93,12 +100,32 @@ class BookingRepositoryImpl @Inject constructor(
         val token = auth.currentUser?.getIdToken(false)?.await()?.token ?: error("Missing ID token")
         val resp = payosWorkerApi.createPaymentLink(
             authorization = "Bearer $token",
-            body = PayosWorkerApi.CreatePaymentLinkRequest(appointmentId)
+            body = PayosWorkerApi.CreatePaymentLinkRequest(
+                kind = "APPOINTMENT",
+                referenceId = appointmentId
+            )
         )
         return PaymentLink(
             checkoutUrl = resp.checkoutUrl,
             orderCode = resp.orderCode,
             paymentLinkId = resp.paymentLinkId
         )
+    }
+
+    override fun getUserAppointments(userId: String): Flow<List<Appointment>> = callbackFlow {
+        val subscription = firestore.collection("appointments")
+            .whereEqualTo("userId", userId)
+            .orderBy("appointmentAt", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    val appointments = snapshot.toObjects(AppointmentDto::class.java).map { it.toDomain() }
+                    trySend(appointments)
+                }
+            }
+        awaitClose { subscription.remove() }
     }
 }
