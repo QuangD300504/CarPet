@@ -19,7 +19,7 @@ interface BookingRepository {
         notes: String? = null
     ): CreateAppointmentResult
 
-    suspend fun createPayosPaymentLink(appointmentId: String): PaymentLink
+    suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink
 
     fun getUserAppointments(userId: String): Flow<List<Appointment>>
 }

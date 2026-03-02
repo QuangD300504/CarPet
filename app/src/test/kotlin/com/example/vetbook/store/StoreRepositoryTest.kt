@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 private class FakeRemoteStoreDataSource(
@@ -17,6 +18,8 @@ private class FakeRemoteStoreDataSource(
 ) : RemoteStoreDataSource {
     private val productsFlow = MutableStateFlow(initialProducts)
     private val cartFlow = MutableStateFlow(initialCart)
+    var cartCleared = false
+        private set
 
     override fun observeProducts(): Flow<List<StoreProductDto>> = productsFlow
 
@@ -27,6 +30,12 @@ private class FakeRemoteStoreDataSource(
     override fun observeUserCart(uid: String): Flow<List<CartLineDto>> = cartFlow
 
     override suspend fun setCartQuantity(uid: String, productId: String, quantity: Int): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override suspend fun clearCart(uid: String): Result<Unit> {
+        cartFlow.value = emptyList()
+        cartCleared = true
         return Result.success(Unit)
     }
 }
@@ -48,6 +57,23 @@ class StoreRepositoryTest {
         assertEquals("Pate", items[0].name)
         assertEquals(40.0, items[0].price, 0.0001)
         assertEquals("foods", items[0].category)
+    }
+
+    @Test
+    fun `clearCart delegates to data source and returns success`() = runTest {
+        val ds = FakeRemoteStoreDataSource(
+            initialCart = listOf(
+                CartLineDto(productId = "p1", quantity = 2),
+                CartLineDto(productId = "p2", quantity = 1)
+            )
+        )
+        val repo = FirebaseStoreRepository(ds)
+
+        val result = repo.clearCart("uid123")
+
+        assertTrue(result.isSuccess)
+        assertTrue(ds.cartCleared)
+        assertEquals(emptyList<CartLineDto>(), ds.observeUserCart("uid123").first())
     }
 }
 

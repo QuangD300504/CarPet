@@ -399,11 +399,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         bottomBar = {
             val hideBottomBarRoutes = setOf(
                 Routes.Veterinarians.route,
-                Routes.DoctorProfile.route,
                 Routes.BookAppointment.route,
+                Routes.PaymentResult.route,
                 Routes.Products.route,
                 Routes.Cart.route,
-                Routes.Payment.route
             )
 
             if (currentRoute !in hideBottomBarRoutes) {
@@ -669,9 +668,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) {
                 PaymentScreen(
                     onBackClick = { bottomNavController.popBackStack() },
-                    onCheckoutClick = {
-                        // Handle final checkout
-                        bottomNavController.popBackStack(Routes.Home.route, inclusive = false)
+                    onCheckoutFinished = { isSuccess ->
+                        bottomNavController.navigate(Routes.PaymentResult.createRoute(isSuccess)) {
+                            popUpTo(Routes.Store.route) { inclusive = false }
+                        }
                     }
                 )
             }
@@ -819,7 +819,33 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
                 BookAppointmentScreen(
                     doctorId = doctorId,
-                    onBackClick = { bottomNavController.popBackStack() }
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onPaymentReady = { isSuccessString ->
+                        val isSuccess = isSuccessString.toBoolean()
+                        bottomNavController.navigate(Routes.PaymentResult.createRoute(isSuccess)) {
+                            popUpTo(Routes.Home.route) { inclusive = false }
+                        }
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.PaymentResult.route,
+                arguments = listOf(navArgument("isSuccess") { type = NavType.BoolType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) { backStackEntry ->
+                val isSuccess = backStackEntry.arguments?.getBoolean("isSuccess") ?: false
+                PaymentResultScreen(
+                    isSuccess = isSuccess,
+                    onContinueShoppingClick = {
+                        bottomNavController.popBackStack(Routes.Store.route, inclusive = false)
+                    },
+                    onHomeClick = {
+                        bottomNavController.popBackStack(Routes.Home.route, inclusive = false)
+                    }
                 )
             }
         }

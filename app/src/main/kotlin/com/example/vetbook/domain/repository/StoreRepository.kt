@@ -8,5 +8,6 @@ interface StoreRepository {
     fun observeProducts(category: String? = null): Flow<List<StoreProduct>>
     fun observeCart(uid: String): Flow<List<CartLine>>
     suspend fun setCartQuantity(uid: String, productId: String, quantity: Int): Result<Unit>
+    suspend fun clearCart(uid: String): Result<Unit>
 }
 

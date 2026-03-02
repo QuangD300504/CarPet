@@ -26,7 +26,8 @@ data class StoreUiState(
     val errorMessage: String? = null,
     val selectedCategory: String? = null,
     val searchQuery: String = "",
-    val cartCount: Int = 0
+    val cartCount: Int = 0,
+    val message: String? = null
 )
 
 @HiltViewModel
@@ -48,6 +49,10 @@ class StoreViewModel @Inject constructor(
         observeStore()
     }
 
+    fun clearMessage() {
+        _uiState.value = _uiState.value.copy(message = null)
+    }
+
     fun setCategory(category: String?) {
         selectedCategory.value = category
     }
@@ -57,10 +62,19 @@ class StoreViewModel @Inject constructor(
     }
 
     fun addToCart(productId: String) {
-        val uid = auth.currentUser?.uid ?: return
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            _uiState.value = _uiState.value.copy(message = "Please login to add to cart")
+            return
+        }
         viewModelScope.launch {
             val current = lastCartQuantities.value[productId] ?: 0
-            setCartQuantityUseCase(uid, productId, current + 1)
+            val result = setCartQuantityUseCase(uid, productId, current + 1)
+            if (result.isSuccess) {
+                _uiState.value = _uiState.value.copy(message = "Added to cart")
+            } else {
+                _uiState.value = _uiState.value.copy(message = "Failed to add to cart")
+            }
         }
     }
 

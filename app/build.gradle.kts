@@ -47,6 +47,12 @@ android {
     }
 }
 
+// Exclude legacy Android Support Library pulled in by the local VNPAY SDK .aar,
+// which conflicts with the project's AndroidX dependencies.
+configurations.all {
+    exclude(group = "com.android.support")
+}
+
 dependencies {
     // Import the BOM
     implementation(platform(libs.androidx.compose.bom))
@@ -76,7 +82,6 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-    implementation(libs.androidx.foundation.layout)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -89,7 +94,6 @@ dependencies {
 
     // Navigation & Images
     implementation("androidx.navigation:navigation-compose:2.8.5")
-    implementation("androidx.browser:browser:1.8.0")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
 

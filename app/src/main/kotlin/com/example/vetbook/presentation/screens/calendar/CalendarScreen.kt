@@ -527,7 +527,7 @@ private fun ReminderRow(
         )
 
         Icon(
-            imageVector = Icons.Default.ArrowForward,
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = null,
             tint = Color(0xFF6F6F6F),
             modifier = Modifier.size(16.dp)

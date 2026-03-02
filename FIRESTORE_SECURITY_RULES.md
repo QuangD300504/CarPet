@@ -30,6 +30,11 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
+
+      // Cart subcollection
+      match /cart/{productId} {
+        allow read, write: if isOwner(userId);
+      }
     }
     
     // ============================================
@@ -158,14 +163,17 @@ service cloud.firestore {
     // ============================================
     // Slot locks (prevent double booking)
     // ============================================
+    // ============================================
+    // Doctor Slot Locks (Used for Transactional Booking)
+    // ============================================
     match /doctorSlotLocks/{lockId} {
-      // Read not required for clients
-      allow read: if false;
+      // Read is REQUIRED for transactions to check if slot is already locked
+      allow read: if isAuthenticated();
 
-      // Allow creating a lock (for this MVP) only by authenticated users
+      // Allow creating a lock only by authenticated users
       allow create: if isAuthenticated();
 
-      // Disallow updates/deletes from clients
+      // Disallow updates/deletes from clients (locks should expire or be handled by backend)
       allow update, delete: if false;
     }
 

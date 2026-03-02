@@ -20,5 +20,7 @@ interface RemoteStoreDataSource {
     fun observeUserCart(uid: String): Flow<List<CartLineDto>>
 
     suspend fun setCartQuantity(uid: String, productId: String, quantity: Int): Result<Unit>
+
+    suspend fun clearCart(uid: String): Result<Unit>
 }
 

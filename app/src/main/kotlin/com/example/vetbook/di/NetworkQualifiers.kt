@@ -8,4 +8,4 @@ annotation class CloudinaryClient
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class PayosWorkerClient
+annotation class PaymentWorkerClient

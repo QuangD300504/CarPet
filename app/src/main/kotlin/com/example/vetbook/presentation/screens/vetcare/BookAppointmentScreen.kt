@@ -1,7 +1,5 @@
 package com.example.vetbook.presentation.screens.vetcare
 
-import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,17 +36,19 @@ fun BookAppointmentScreen(
     doctorId: String,
     vetsViewModel: VeterinariansViewModel = hiltViewModel(),
     bookingViewModel: BookAppointmentViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onPaymentReady: (checkoutUrl: String) -> Unit = {}
 ) {
     val uiState by vetsViewModel.uiState.collectAsState()
     val doctor = uiState.veterinarians.find { it.id == doctorId }
     val bookingState by bookingViewModel.uiState.collectAsState()
 
-    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     var selectedDate by remember { mutableStateOf(2) }
     var selectedTime by remember { mutableStateOf(0) }
+
+    val context = LocalContext.current
 
     LaunchedEffect(bookingState) {
         when (val state = bookingState) {
@@ -57,8 +57,24 @@ fun BookAppointmentScreen(
                 bookingViewModel.reset()
             }
             is BookAppointmentViewModel.UiState.PaymentReady -> {
-                val intent = CustomTabsIntent.Builder().build()
-                intent.launchUrl(context, Uri.parse(state.checkoutUrl))
+                try {
+                    val intent = android.content.Intent(context, com.vnpay.authentication.VNP_AuthenticationActivity::class.java)
+                    intent.putExtra("url", state.checkoutUrl)
+                    intent.putExtra("tmn_code", "W8JDF86Z")
+                    intent.putExtra("scheme", "vetbook-vnpay")
+                    intent.putExtra("is_sandbox", true)
+
+                    com.vnpay.authentication.VNP_AuthenticationActivity.setSdkCompletedCallback(object : com.vnpay.authentication.VNP_SdkCompletedCallback {
+                        override fun sdkAction(action: String) {
+                            android.util.Log.d("VNPAY", "Action: $action")
+                            val isSuccess = action == "SuccessBackAction"
+                            onPaymentReady(isSuccess.toString()) // Passing "true" or "false" string to handle generic result
+                        }
+                    })
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    android.util.Log.e("VNPAY", "Launch failed: ${e.message}")
+                }
                 bookingViewModel.reset()
             }
             else -> Unit
@@ -306,9 +322,26 @@ fun TimeSlotItem(
     }
 }
 
+/** Build a Date from selected day-of-week index (0=Sun) and time slot index. */
+private fun buildAppointmentDate(dayIndex: Int, timeIndex: Int): java.util.Date {
+    val calendar = Calendar.getInstance()
+    val todayDow = calendar.get(Calendar.DAY_OF_WEEK) - 1
+    var daysAhead = (dayIndex - todayDow + 7) % 7
+    if (daysAhead == 0) daysAhead = 7
+    calendar.add(Calendar.DAY_OF_YEAR, daysAhead)
+    val hourMinute = listOf(9 to 0, 9 to 30, 10 to 0, 10 to 30)
+    val (hour, minute) = hourMinute.getOrElse(timeIndex) { 9 to 0 }
+    calendar.set(Calendar.HOUR_OF_DAY, hour)
+    calendar.set(Calendar.MINUTE, minute)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+    return calendar.time
+}
+
 @Preview(showBackground = true)
 @Composable
 fun BookAppointmentScreenPreview() {
+    val snackbarHostState = remember { SnackbarHostState() }
     BookAppointmentContent(
         doctor = Veterinarian(
             id = "1",
@@ -322,9 +355,10 @@ fun BookAppointmentScreenPreview() {
         ),
         selectedDate = 2,
         selectedTime = 0,
+        bookingState = BookAppointmentViewModel.UiState.Idle,
+        snackbarHostState = snackbarHostState,
         onDateSelect = {},
         onTimeSelect = {},
-        onBackClick = {},
         onConfirmClick = {}
     )
 }

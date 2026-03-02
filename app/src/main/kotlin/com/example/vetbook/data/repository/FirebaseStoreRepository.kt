@@ -28,5 +28,9 @@ class FirebaseStoreRepository(
     override suspend fun setCartQuantity(uid: String, productId: String, quantity: Int): Result<Unit> {
         return remoteStoreDataSource.setCartQuantity(uid, productId, quantity)
     }
+
+    override suspend fun clearCart(uid: String): Result<Unit> {
+        return remoteStoreDataSource.clearCart(uid)
+    }
 }
 

@@ -97,19 +97,19 @@ fun ProductCard(
                 )
                 IconButton(
                     onClick = onAddToCart,
-                    modifier = Modifier.size(if (showFavorite) 36.dp else 32.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add to cart",
-                        tint = if (showFavorite) Color.White else Color(0xFFFFEB3B),
+                        tint = Color.White,
                         modifier = Modifier
-                            .size(if (showFavorite) 28.dp else 24.dp)
+                            .size(28.dp)
                             .background(
-                                Color(if (showFavorite) 0xFFFFEB3B else 0xFFFFEB3B),
+                                Color(0xFFFFD813), // Yellow from StoreScreen
                                 CircleShape
                             )
-                            .padding(if (showFavorite) 6.dp else 4.dp)
+                            .padding(6.dp)
                     )
                 }
             }

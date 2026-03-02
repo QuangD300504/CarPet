@@ -28,6 +28,9 @@ sealed class Routes(val route: String) {
     object Products : Routes("products")
     object Cart : Routes("cart")
     object Payment : Routes("payment")
+    object PaymentResult : Routes("payment_result/{isSuccess}") {
+        fun createRoute(isSuccess: Boolean) = "payment_result/$isSuccess"
+    }
     object Notifications : Routes("notifications")
     object EditProfile : Routes("edit_profile")
     object Language : Routes("language")

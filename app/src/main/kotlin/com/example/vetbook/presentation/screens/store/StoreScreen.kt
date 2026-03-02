@@ -26,6 +26,7 @@ import com.example.vetbook.presentation.components.store.LocationDropdown
 import com.example.vetbook.presentation.components.store.ProductCard
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.StoreViewModel
+import com.example.vetbook.presentation.viewmodels.StoreUiState
 
 @Composable
 fun StoreScreen(
@@ -40,26 +41,41 @@ fun StoreScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var currentLocation by remember { mutableStateOf("Ho Chi Minh City") }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    StoreContent(
-        uiState = uiState,
-        showLocationDropdown = showLocationDropdown,
-        currentLocation = currentLocation,
-        onLocationDropdownDismiss = onLocationDropdownDismiss,
-        onCitySelected = { currentLocation = it },
-        onProductsClick = onProductsClick,
-        onCategoryClick = { label ->
-            val category = label.lowercase()
-            viewModel.setCategory(category)
-            onCategoryClick(category)
-        },
-        onAddToCart = viewModel::addToCart
-    )
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessage()
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.White
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            StoreContent(
+                uiState = uiState,
+                showLocationDropdown = showLocationDropdown,
+                currentLocation = currentLocation,
+                onLocationDropdownDismiss = onLocationDropdownDismiss,
+                onCitySelected = { currentLocation = it },
+                onProductsClick = onProductsClick,
+                onCategoryClick = { label ->
+                    val category = label.lowercase()
+                    viewModel.setCategory(category)
+                    onCategoryClick(category)
+                },
+                onAddToCart = viewModel::addToCart
+            )
+        }
+    }
 }
 
 @Composable
 private fun StoreContent(
-    uiState: com.example.vetbook.presentation.models.StoreUiState,
+    uiState: StoreUiState,
     showLocationDropdown: Boolean,
     currentLocation: String,
     onLocationDropdownDismiss: () -> Unit,
@@ -77,9 +93,7 @@ private fun StoreContent(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
+        modifier = Modifier.fillMaxSize()
     ) {
         if (showLocationDropdown) {
             LocationDropdown(

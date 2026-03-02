@@ -77,4 +77,11 @@ object UseCaseModule {
     ): SetCartQuantityUseCase {
         return SetCartQuantityUseCase(repository)
     }
+
+    @Provides
+    fun provideClearCartUseCase(
+        repository: StoreRepository
+    ): ClearCartUseCase {
+        return ClearCartUseCase(repository)
+    }
 }

@@ -16,5 +16,8 @@
     "@cloudflare/workers-types": "^4.20240512.0",
     "typescript": "^5.4.5",
     "wrangler": "^3.57.0"
+  },
+  "optionalDependencies": {
+    "@cloudflare/workerd-windows-64": "^1.20260301.1"
   }
 }

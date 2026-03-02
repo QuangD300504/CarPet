@@ -83,7 +83,7 @@ fun CartScreen(
 
 @Composable
 private fun CartContent(
-    uiState: com.example.vetbook.presentation.viewmodels.CheckoutUiState,
+    uiState: CheckoutViewModel.UiState,
     cartItems: List<CartItem>,
     orderSummary: OrderSummary,
     onQuantityChange: (String, Int) -> Unit,

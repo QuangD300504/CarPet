@@ -7,6 +7,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -17,6 +21,7 @@ import com.example.vetbook.presentation.components.store.ProductCard
 import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.StoreViewModel
+import com.example.vetbook.presentation.viewmodels.StoreUiState
 
 @Composable
 fun ProductsScreen(
@@ -28,41 +33,56 @@ fun ProductsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        com.example.vetbook.presentation.components.store.StoreHeader(
-            currentLocation = "Ho Chi Minh City",
-            onLocationClick = { },
-            onCartClick = onCartClick,
-            onNotificationClick = onNotificationClick,
-            onProfileClick = onProfileClick,
-            profileImageUrl = null,
-            showSearchBar = false
-        )
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessage()
+        }
+    }
 
-        ProductsContent(
-            uiState = uiState,
-            searchQuery = searchQuery,
-            onSearchChange = {
-                searchQuery = it
-                viewModel.setSearchQuery(it)
-            },
-            onAddToCart = viewModel::addToCart
-        )
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.White
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            com.example.vetbook.presentation.components.store.StoreHeader(
+                currentLocation = "Ho Chi Minh City",
+                onLocationClick = { },
+                onCartClick = onCartClick,
+                onNotificationClick = onNotificationClick,
+                onProfileClick = onProfileClick,
+                profileImageUrl = null,
+                showSearchBar = false
+            )
+
+            ProductsContent(
+                uiState = uiState,
+                searchQuery = searchQuery,
+                onSearchChange = {
+                    searchQuery = it
+                    viewModel.setSearchQuery(it)
+                },
+                onAddToCart = viewModel::addToCart
+            )
+        }
     }
 }
 
 @Composable
 private fun ProductsContent(
-    uiState: com.example.vetbook.presentation.models.StoreUiState,
+    uiState: StoreUiState,
     searchQuery: String,
     onSearchChange: (String) -> Unit,
     onAddToCart: (String) -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier

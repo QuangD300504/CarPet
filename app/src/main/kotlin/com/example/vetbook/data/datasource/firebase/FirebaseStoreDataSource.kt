@@ -131,5 +131,26 @@ class FirebaseStoreDataSource(
             Result.failure(e)
         }
     }
+
+    override suspend fun clearCart(uid: String): Result<Unit> {
+        return try {
+            val cartRef = firestore
+                .collection(USERS_COLLECTION)
+                .document(uid)
+                .collection(CART_SUBCOLLECTION)
+
+            val docs = cartRef.get().await()
+            if (docs.isEmpty) return Result.success(Unit)
+
+            val batch = firestore.batch()
+            docs.documents.forEach { batch.delete(it.reference) }
+            batch.commit().await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
+
 

@@ -242,7 +242,6 @@ fun DoctorProfileScreenPreview() {
             initials = "DAU",
             bio = "Experienced cardiologist and surgeon with expertise in treating various cardiac conditions in pets. Committed to providing compassionate care."
         ),
-        onBackClick = {},
         onBookClick = {}
     )
 }

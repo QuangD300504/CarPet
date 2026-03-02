@@ -44,7 +44,7 @@ class BookAppointmentViewModel @Inject constructor(
                     notes = notes
                 )
 
-                val payment = bookingRepository.createPayosPaymentLink(created.appointmentId)
+                val payment = bookingRepository.createPaymentLinkForAppointment(created.appointmentId)
                 _uiState.value = UiState.PaymentReady(
                     appointmentId = created.appointmentId,
                     checkoutUrl = payment.checkoutUrl

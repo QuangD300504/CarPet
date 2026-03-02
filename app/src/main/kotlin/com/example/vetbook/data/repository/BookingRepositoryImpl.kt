@@ -2,7 +2,7 @@ package com.example.vetbook.data.repository
 
 import com.example.vetbook.data.mappers.toDomain
 import com.example.vetbook.data.models.AppointmentDto
-import com.example.vetbook.data.network.PayosWorkerApi
+import com.example.vetbook.data.network.PaymentWorkerApi
 import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.domain.models.PaymentLink
 import com.example.vetbook.domain.repository.BookingRepository
@@ -26,7 +26,7 @@ import javax.inject.Singleton
 class BookingRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth,
-    private val payosWorkerApi: PayosWorkerApi
+    private val paymentWorkerApi: PaymentWorkerApi
 ) : BookingRepository {
 
     private fun makeLockId(veterinarianId: String, appointmentAt: Date): String {
@@ -96,13 +96,14 @@ class BookingRepositoryImpl @Inject constructor(
         return BookingRepository.CreateAppointmentResult(appointmentId = appointmentRef.id, lockId = lockId)
     }
 
-    override suspend fun createPayosPaymentLink(appointmentId: String): PaymentLink {
+    override suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink {
         val token = auth.currentUser?.getIdToken(false)?.await()?.token ?: error("Missing ID token")
-        val resp = payosWorkerApi.createPaymentLink(
+        val resp = paymentWorkerApi.createPaymentLink(
             authorization = "Bearer $token",
-            body = PayosWorkerApi.CreatePaymentLinkRequest(
+            body = PaymentWorkerApi.CreatePaymentLinkRequest(
                 kind = "APPOINTMENT",
-                referenceId = appointmentId
+                referenceId = appointmentId,
+                appointmentId = appointmentId // Support both names for compatibility
             )
         )
         return PaymentLink(

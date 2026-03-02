@@ -6,7 +6,7 @@ import com.example.vetbook.data.datasource.RemoteServiceDataSource
 import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
-import com.example.vetbook.data.network.PayosWorkerApi
+import com.example.vetbook.data.network.PaymentWorkerApi
 import com.example.vetbook.data.repository.*
 import com.example.vetbook.domain.repository.*
 import com.google.firebase.auth.FirebaseAuth
@@ -83,12 +83,13 @@ object RepositoryModule {
     fun provideBookingRepository(
         firestore: FirebaseFirestore,
         auth: FirebaseAuth,
-        payosWorkerApi: PayosWorkerApi
+        paymentWorkerApi: PaymentWorkerApi
     ): BookingRepository {
         return BookingRepositoryImpl(
             firestore = firestore,
             auth = auth,
-            payosWorkerApi = payosWorkerApi
+            paymentWorkerApi = paymentWorkerApi
         )
     }
+
 }
