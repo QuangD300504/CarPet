@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.example.vetbook.presentation.theme.Brand
 import kotlinx.coroutines.delay
 
 @Composable
@@ -113,7 +114,7 @@ fun DiagonalHalfPanel(
                 }
             }
             .clip(diagonalShape)
-            .background(Color(0xFFFFD700))
+            .background(Brand)
             .border(1.dp, Color.Black.copy(alpha = 0.1f), diagonalShape)
     )
 }

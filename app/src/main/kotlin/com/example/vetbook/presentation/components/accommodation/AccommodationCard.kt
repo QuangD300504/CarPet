@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.models.Accommodation
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun AccommodationCard(
@@ -111,11 +112,7 @@ fun AccommodationCard(
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = null,
-                            tint = if (index < ratingInt) {
-                                Color(0xFFFFC107)
-                            } else {
-                                Color.Gray.copy(alpha = 0.3f)
-                            },
+                            tint = if (index < ratingInt) Brand else Color.Gray.copy(alpha = 0.3f),
                             modifier = Modifier.size(16.dp)
                         )
                     }

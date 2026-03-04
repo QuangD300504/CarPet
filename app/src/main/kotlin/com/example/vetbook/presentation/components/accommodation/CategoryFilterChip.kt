@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.models.AccommodationCategory
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun CategoryFilterChip(
@@ -52,16 +53,16 @@ fun CategoryFilterChip(
             }
         },
         colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = Color(0xFFFFEB3B),
-            selectedLabelColor = Color.Black,
-            containerColor = Color(0xFFF5F5F5),
-            labelColor = Color.Black
+            selectedContainerColor = Brand,
+            selectedLabelColor     = MaterialTheme.colorScheme.onPrimary,
+            containerColor         = MaterialTheme.colorScheme.surfaceVariant,
+            labelColor             = MaterialTheme.colorScheme.onSurface
         ),
         border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = isSelected,
-            borderColor = if (isSelected) Color(0xFFFFEB3B) else Color.Transparent,
-            selectedBorderColor = Color(0xFFFFEB3B)
+            enabled             = true,
+            selected            = isSelected,
+            borderColor         = if (isSelected) Brand else androidx.compose.ui.graphics.Color.Transparent,
+            selectedBorderColor = Brand
         ),
         modifier = modifier
     )

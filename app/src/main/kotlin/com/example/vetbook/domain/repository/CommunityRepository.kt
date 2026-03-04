@@ -9,4 +9,5 @@ interface CommunityRepository {
     fun getPosts(): Flow<List<Post>>
     fun getAdoptionPets(): Flow<List<Pet>>
     fun getEvents(): Flow<List<PetEvent>>
+    suspend fun toggleLike(postId: String, isCurrentlyLiked: Boolean): Result<Unit>
 }

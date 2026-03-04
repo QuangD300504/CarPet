@@ -10,4 +10,6 @@ class GetCommunityDataUseCase(private val repository: CommunityRepository) {
     fun getPosts(): Flow<List<Post>> = repository.getPosts()
     fun getAdoptionPets(): Flow<List<Pet>> = repository.getAdoptionPets()
     fun getEvents(): Flow<List<PetEvent>> = repository.getEvents()
+    suspend fun toggleLike(postId: String, isCurrentlyLiked: Boolean): Result<Unit> =
+        repository.toggleLike(postId, isCurrentlyLiked)
 }

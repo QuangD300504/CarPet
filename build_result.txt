@@ -1,0 +1,17 @@
+﻿
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild 
+UP-TO-DATE
+Note: D:\Android\Project\app\build
+\generated\hilt\component_sources\
+debug\com\example\vetbook\Hilt_Vet
+BookApplication.java uses or 
+overrides a deprecated API.
+> Task :app:dexBuilderDebug
+[Incubating] Problems report is 
+available at: file:///D:/Android/P
+roject/build/reports/problems/prob
+lems-report.html
+BUILD SUCCESSFUL in 21s
+
+

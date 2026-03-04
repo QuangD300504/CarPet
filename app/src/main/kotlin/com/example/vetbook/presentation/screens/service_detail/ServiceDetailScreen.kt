@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.PetServiceDetail
 import com.example.vetbook.domain.models.ServiceCategory
 import com.example.vetbook.domain.models.ServicePackage
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun ServicePriceItem(servicePackage: ServicePackage) {
@@ -49,7 +50,7 @@ fun ServicePriceItem(servicePackage: ServicePackage) {
                 text = "$${servicePackage.price.toInt()}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFFF9A825) // Màu cam vàng cho giá tiền
+                color = Brand // Price highlight
             )
         }
     }
@@ -103,7 +104,7 @@ fun ServiceDetailScreen(
                     )
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB74D))
+                        Icon(Icons.Default.Star, contentDescription = null, tint = Brand)
                         Text(text = " ${detail.rating} ", fontWeight = FontWeight.Bold)
                         Text(text = "(${detail.reviewCount})", color = Color.Gray)
                     }
@@ -139,10 +140,10 @@ fun ServiceDetailScreen(
                         ) { time ->
                             OutlinedButton(
                                 onClick = { /* Chọn giờ */ },
-                                border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+                                border = BorderStroke(1.dp, Brand),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text(time, color = Color(0xFFFFB74D))
+                                Text(time, color = Brand)
                             }
                         }
                     }
@@ -161,7 +162,10 @@ fun ServiceDetailScreen(
                 .padding(bottom = 80.dp)
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB74D))
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Brand,
+                contentColor   = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text("Book Now", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }

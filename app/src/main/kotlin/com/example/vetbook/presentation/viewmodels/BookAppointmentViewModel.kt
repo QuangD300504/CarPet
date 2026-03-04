@@ -20,8 +20,11 @@ class BookAppointmentViewModel @Inject constructor(
         data object Idle : UiState()
         data object Loading : UiState()
         data class Error(val message: String) : UiState()
-        data class PaymentReady(val appointmentId: String, val checkoutUrl: String) : UiState()
+        data class PaymentReady(val appointmentId: String, val lockId: String, val checkoutUrl: String) : UiState()
     }
+
+    private var pendingAppointmentId: String? = null
+    private var pendingLockId: String? = null
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -43,10 +46,13 @@ class BookAppointmentViewModel @Inject constructor(
                     durationMinutes = durationMinutes,
                     notes = notes
                 )
+                pendingAppointmentId = created.appointmentId
+                pendingLockId = created.lockId
 
                 val payment = bookingRepository.createPaymentLinkForAppointment(created.appointmentId)
                 _uiState.value = UiState.PaymentReady(
                     appointmentId = created.appointmentId,
+                    lockId = created.lockId,
                     checkoutUrl = payment.checkoutUrl
                 )
             } catch (e: Exception) {
@@ -55,7 +61,33 @@ class BookAppointmentViewModel @Inject constructor(
         }
     }
 
+    fun clearPendingUnlock() {
+        pendingAppointmentId = null
+        pendingLockId = null
+    }
+
+    fun cancelAppointment(appointmentId: String, lockId: String) {
+        clearPendingUnlock()
+        @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                bookingRepository.cancelAppointment(appointmentId, lockId)
+            } catch (e: Exception) {
+                // Log or ignore since user cancelled anyway
+            }
+        }
+    }
+
     fun reset() {
         _uiState.value = UiState.Idle
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        val apptId = pendingAppointmentId
+        val lockId = pendingLockId
+        if (apptId != null && lockId != null) {
+            cancelAppointment(apptId, lockId)
+        }
     }
 }

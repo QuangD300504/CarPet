@@ -22,6 +22,7 @@ import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.StoreViewModel
 import com.example.vetbook.presentation.viewmodels.StoreUiState
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun ProductsScreen(
@@ -124,7 +125,7 @@ private fun ProductsContent(
 
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFFFFD813))
+                    CircularProgressIndicator(color = Brand)
                 }
             } else if (uiState.errorMessage != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

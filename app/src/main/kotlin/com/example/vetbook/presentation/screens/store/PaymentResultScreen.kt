@@ -17,6 +17,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
+import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.Success
+import com.example.vetbook.presentation.theme.Error as ErrorColor
 
 @Composable
 fun PaymentResultScreen(
@@ -53,7 +56,7 @@ fun PaymentResultScreen(
                 Icon(
                     imageVector = if (isSuccess) Icons.Default.Check else Icons.Default.Close,
                     contentDescription = if (isSuccess) "Success" else "Failed",
-                    tint = if (isSuccess) Color(0xFF4CAF50) else Color(0xFFF44336),
+                    tint = if (isSuccess) Success else ErrorColor,
                     modifier = Modifier.size(64.dp)
                 )
             }
@@ -88,7 +91,8 @@ fun PaymentResultScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFD813)
+                    containerColor = Brand,
+                    contentColor   = MaterialTheme.colorScheme.onPrimary
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {

@@ -17,7 +17,8 @@ data class UserProfileDto(
     val lastLogin: Long? = null,
     val points: Int = 0,
     val address: Address? = null,
-    val preferences: Preferences? = null
+    val preferences: Preferences? = null,
+    val isAdmin: Boolean = false
 ) {
     data class Address(
         val street: String = "",

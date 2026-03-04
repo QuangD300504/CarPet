@@ -2,11 +2,9 @@ package com.example.vetbook.presentation.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,17 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -37,7 +32,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -49,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.data.models.PetDto
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.viewmodels.PetListViewModel
 
 @Composable
@@ -61,9 +56,6 @@ fun PetScreen(
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    val headerYellow = Color(0xFFFFEB3B)
-    val headerYellowDark = Color(0xFFFFD54F)
-
     val uiState by viewModel.uiState.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -80,75 +72,11 @@ fun PetScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Figma-like top yellow header
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(170.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(headerYellowDark, headerYellow)
-                        ),
-                        RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-                    )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.Black
-                        )
-                    }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        HeaderActionButton(onClick = onCartClick) {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingCart,
-                                contentDescription = "Cart",
-                                tint = Color.Black
-                            )
-                        }
-                        HeaderActionButton(onClick = onNotificationClick) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications",
-                                tint = Color.Black
-                            )
-                        }
-                        // Profile placeholder
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color.White)
-                                .clickable { onProfileClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.pawns),
-                                contentDescription = "Profile",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             when {
                 uiState.isLoading -> {
@@ -158,7 +86,7 @@ fun PetScreen(
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Color(0xFFFFD813))
+                        CircularProgressIndicator(color = Brand)
                     }
                 }
 
@@ -219,8 +147,8 @@ fun PetScreen(
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = 96.dp)
                 .size(52.dp),
-            containerColor = Color(0xFFFFEB3B),
-            contentColor = Color.Black,
+            containerColor = Brand,
+            contentColor   = MaterialTheme.colorScheme.onPrimary,
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp)
         ) {
             Icon(
@@ -232,23 +160,6 @@ fun PetScreen(
 }
 
 @Composable
-private fun HeaderActionButton(
-    onClick: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(34.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color.White)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        content()
-    }
-}
-
-@Composable
 private fun PetHeroCard(
     pet: PetDto,
     onClick: () -> Unit
@@ -256,8 +167,8 @@ private fun PetHeroCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp)
-            .clickable { onClick() },
+            .height(210.dp),
+        onClick = onClick,
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -287,7 +198,9 @@ private fun PetHeroCard(
                     text = pet.name,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 

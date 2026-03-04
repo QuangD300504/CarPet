@@ -26,6 +26,7 @@ import com.example.vetbook.presentation.models.OrderSummary
 import com.example.vetbook.presentation.models.PaymentMethod
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.CheckoutViewModel
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun PaymentScreen(
@@ -106,7 +107,7 @@ fun PaymentScreen(
                 modifier = Modifier.fillMaxSize().padding(scaffoldPadding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color(0xFFFFD813))
+                CircularProgressIndicator(color = Brand)
             }
         }
 
@@ -164,16 +165,16 @@ fun PaymentScreen(
                             .fillMaxWidth()
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFFEB3B)
+                            containerColor = Brand,
+                            contentColor   = MaterialTheme.colorScheme.onPrimary
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape   = RoundedCornerShape(14.dp),
                         enabled = uiState.itemCount > 0
                     ) {
                         Text(
-                            text = "Check Out",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            text       = "Check Out",
+                            style      = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -196,7 +197,7 @@ fun PaymentMethodCard(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = if (isSelected) {
-            androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFFFEB3B))
+            androidx.compose.foundation.BorderStroke(2.dp, Brand)
         } else {
             null
         }
@@ -215,7 +216,7 @@ fun PaymentMethodCard(
                 Icon(
                     imageVector = method.icon,
                     contentDescription = method.name,
-                    tint = Color(0xFFFF9800),
+                    tint = Brand,
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
@@ -230,7 +231,7 @@ fun PaymentMethodCard(
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Selected",
-                    tint = Color(0xFFFFEB3B),
+                    tint = Brand,
                     modifier = Modifier.size(24.dp)
                 )
             }

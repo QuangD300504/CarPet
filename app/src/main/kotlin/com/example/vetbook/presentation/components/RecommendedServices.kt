@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.ServiceCategory
+import com.example.vetbook.presentation.theme.Link
 
 @Composable
 fun RecommendedServices(
@@ -51,13 +52,13 @@ fun RecommendedServices(
                     text = "View all",
                     fontWeight = FontWeight.Medium,
                     fontSize = 15.sp,
-                    color = Color(0xFF0000FF), // Blue from Figma
+                    color = Link,
                 )
                 Icon(
                     imageVector = androidx.compose.material.icons.Icons.Default.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.size(19.dp),
-                    tint = Color(0xFF0000FF)
+                    tint = Link
                 )
             }
         }

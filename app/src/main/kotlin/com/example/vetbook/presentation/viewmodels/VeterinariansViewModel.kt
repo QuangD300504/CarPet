@@ -39,27 +39,20 @@ class VeterinariansViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             
             try {
-                // Add timeout to prevent infinite loading
-                withTimeout(10000L) { // 10 second timeout
-                    getVeterinariansUseCase().collect { vets ->
-                        _uiState.update {
-                            it.copy(
-                                veterinarians = vets,
-                                isLoading = false,
-                                error = null
-                            )
-                        }
+                getVeterinariansUseCase().collect { vets ->
+                    _uiState.update {
+                        it.copy(
+                            veterinarians = vets,
+                            isLoading = false,
+                            error = null
+                        )
                     }
                 }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = if (e.message?.contains("timeout") == true) {
-                            "Connection timeout. Please check your internet connection."
-                        } else {
-                            e.message ?: "Failed to load veterinarians"
-                        }
+                        error = e.message ?: "Failed to load veterinarians"
                     )
                 }
             }

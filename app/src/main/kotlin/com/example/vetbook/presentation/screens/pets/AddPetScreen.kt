@@ -25,6 +25,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -46,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.CustomTextField
+import com.example.vetbook.presentation.components.topbars.SimpleTopBar
+import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.viewmodels.AddPetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,29 +85,10 @@ fun AddPetScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Simple top bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFFFEB3B))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.Black
-                )
-            }
-            Text(
-                text = "Add pet",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(start = 6.dp)
-            )
-        }
+        SimpleTopBar(
+            title       = "Add Pet",
+            onBackClick = onBackClick
+        )
 
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -341,21 +325,23 @@ fun AddPetScreen(
                     .padding(bottom = 24.dp)
                     .height(56.dp),
                 enabled = !uiState.isSaving,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEB3B)),
-                shape = RoundedCornerShape(12.dp)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Brand,
+                    contentColor   = androidx.compose.ui.graphics.Color.White
+                ),
+                shape = RoundedCornerShape(14.dp)
             ) {
                 if (uiState.isSaving) {
                     CircularProgressIndicator(
-                        modifier = Modifier.height(18.dp),
-                        color = Color.Black,
+                        modifier    = Modifier.height(18.dp),
+                        color       = androidx.compose.ui.graphics.Color.White,
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text(
                         text = "Save",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

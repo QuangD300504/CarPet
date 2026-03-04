@@ -43,6 +43,13 @@ interface RemoteCommunityDataSource {
      * @return Result containing the created event or error
      */
     suspend fun createEvent(event: PetEventDto): Result<PetEventDto>
+
+    /**
+     * Toggle like on a post. Increments likesCount if not yet liked; decrements if already liked.
+     * @param postId The post document ID
+     * @param isCurrentlyLiked Whether the user has already liked this post
+     */
+    suspend fun toggleLike(postId: String, isCurrentlyLiked: Boolean): Result<Unit>
 }
 
 

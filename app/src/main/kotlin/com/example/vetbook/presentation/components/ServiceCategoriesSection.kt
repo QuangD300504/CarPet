@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.ServiceCategory
+import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.Link
 
 @Composable
 fun ServiceCategoriesSection(
@@ -55,13 +57,13 @@ fun ServiceCategoriesSection(
                     text = "View all",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF0000FF) // Blue color from Figma
+                    color = Link
                 )
                 Icon(
                     imageVector = androidx.compose.material.icons.Icons.Default.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.size(19.dp),
-                    tint = Color(0xFF0000FF)
+                    tint = Link
                 )
             }
         }
@@ -133,18 +135,20 @@ fun CategoryCard(
                     .background(Color.White, RoundedCornerShape(15.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(category.iconRes),
+                Icon(
+                    imageVector = com.example.vetbook.presentation.utils.getCategoryIcon(category.id),
                     contentDescription = category.title,
-                    modifier = Modifier.size(35.dp),
-                    colorFilter = ColorFilter.tint(Color(0xFFFFD813)) // Yellow icon
+                    modifier = Modifier.size(32.dp),
+                    tint = Brand // Brand gold icon
                 )
             }
             Text(
                 text = category.title,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = Color.Black,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
     }

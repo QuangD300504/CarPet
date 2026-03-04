@@ -21,6 +21,10 @@ class CommunityViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CommunityUiState())
     val uiState: StateFlow<CommunityUiState> = _uiState.asStateFlow()
 
+    // Track which post IDs the current user has liked (local optimistic state)
+    private val _likedPostIds = MutableStateFlow<Set<String>>(emptySet())
+    val likedPostIds: StateFlow<Set<String>> = _likedPostIds.asStateFlow()
+
     init {
         loadData()
     }
@@ -53,5 +57,46 @@ class CommunityViewModel @Inject constructor(
 
     fun onTabSelected(tab: CommunityTab) {
         _uiState.update { it.copy(selectedTab = tab) }
+    }
+
+    /**
+     * Optimistically toggle like on a post, then write to Firestore.
+     */
+    fun toggleLike(postId: String) {
+        val alreadyLiked = _likedPostIds.value.contains(postId)
+
+        // Optimistic local update
+        _likedPostIds.update { current ->
+            if (alreadyLiked) current - postId else current + postId
+        }
+        _uiState.update { state ->
+            state.copy(
+                posts = state.posts.map { post ->
+                    if (post.id == postId) {
+                        post.copy(likesCount = post.likesCount + if (alreadyLiked) -1 else 1)
+                    } else post
+                }
+            )
+        }
+
+        // Persist to Firestore in background
+        viewModelScope.launch {
+            getCommunityDataUseCase.toggleLike(postId, alreadyLiked)
+                .onFailure {
+                    // Revert optimistic update on failure
+                    _likedPostIds.update { current ->
+                        if (alreadyLiked) current + postId else current - postId
+                    }
+                    _uiState.update { state ->
+                        state.copy(
+                            posts = state.posts.map { post ->
+                                if (post.id == postId) {
+                                    post.copy(likesCount = post.likesCount + if (alreadyLiked) 1 else -1)
+                                } else post
+                            }
+                        )
+                    }
+                }
+        }
     }
 }

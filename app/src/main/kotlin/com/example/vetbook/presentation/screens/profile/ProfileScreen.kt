@@ -29,6 +29,9 @@ import com.example.vetbook.R
 import com.example.vetbook.presentation.components.profile.MenuItemComponent
 import com.example.vetbook.presentation.models.ProfileUiState
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.Error
+import com.example.vetbook.presentation.theme.Link
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 
 @Composable
@@ -108,11 +111,11 @@ fun ProfileScreenContent(
                         contentScale = ContentScale.Crop
                     )
                     IconButton(
-                        onClick = onAvatarClick,
+                        onClick  = onAvatarClick,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .size(46.dp)
-                            .background(Color(0xFFCBAC10), CircleShape)
+                            .background(Brand, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
@@ -129,7 +132,9 @@ fun ProfileScreenContent(
                     text = uiState.user?.name ?: "PHÙNG CANH MỘ",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -138,7 +143,9 @@ fun ProfileScreenContent(
                     text = "${uiState.user?.email ?: "mail@gmail.com"} | ${uiState.user?.phoneNumber ?: "+01 234 567 89"}",
                     fontSize = 14.sp,
                     color = Color.Black,
-                    fontWeight = FontWeight.Normal
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
 
@@ -173,7 +180,7 @@ fun ProfileScreenContent(
                                 Text(
                                     text = if (notificationsEnabled) "ON" else "OFF",
                                     fontSize = 14.sp,
-                                    color = Color(0xFF1573FE),
+                                    color = Link,
                                     fontWeight = FontWeight.Normal
                                 )
                             }
@@ -187,7 +194,7 @@ fun ProfileScreenContent(
                                 Text(
                                     text = selectedLanguage,
                                     fontSize = 14.sp,
-                                    color = Color(0xFF1573FE),
+                                    color = Link,
                                     fontWeight = FontWeight.Normal
                                 )
                             }
@@ -234,15 +241,13 @@ fun ProfileScreenContent(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = onLogout,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF5555),
-                        contentColor = Color.White
+                    onClick  = onLogout,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors   = ButtonDefaults.buttonColors(
+                        containerColor = Error,
+                        contentColor   = Color.White
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
                         text = "Log out",

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import com.example.vetbook.R
+import com.example.vetbook.presentation.theme.Error
 
 @Composable
 fun StoreHeader(
@@ -36,19 +37,19 @@ fun StoreHeader(
     searchPlaceholder: String = "Search for your items",
     onSearchChange: (String) -> Unit = {},
     searchValue: String = "",
+    hasUnreadNotifications: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                Color(0xFFFFD813), // Yellow from Figma
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                MaterialTheme.colorScheme.primary, // Brand gold from theme
+                shape = RoundedCornerShape(
                     bottomStart = 40.dp,
-                    bottomEnd = 40.dp
+                    bottomEnd   = 40.dp
                 )
             )
-            // Apply padding AFTER background so the yellow fills behind the status bar area
             .statusBarsPadding()
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
@@ -66,7 +67,7 @@ fun StoreHeader(
                 Icon(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = "Location",
-                    tint = Color.Black,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -134,12 +135,14 @@ fun StoreHeader(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(9.dp)
-                            .background(Color.Red, CircleShape)
-                    )
+                    if (hasUnreadNotifications) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(9.dp)
+                                .background(Error, CircleShape)
+                        )
+                    }
                 }
                 
                 // Profile avatar button with subtle border, sized to visually match other buttons
@@ -204,6 +207,7 @@ fun StoreHeader(
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent
                     ),
+                    singleLine = true,
                     shape = RoundedCornerShape(15.dp)
                 )
                 

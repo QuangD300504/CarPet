@@ -36,6 +36,9 @@ sealed class Routes(val route: String) {
     object Language : Routes("language")
     object PrivacyPolicy : Routes("privacy_policy")
     object Accommodation : Routes("accommodation")
+    object AccommodationDetail : Routes("accommodation_detail/{accommodationId}") {
+        fun createRoute(accommodationId: String) = "accommodation_detail/$accommodationId"
+    }
     object Pet : Routes("pet")
     object AddPet : Routes("add_pet")
 

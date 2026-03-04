@@ -21,5 +21,10 @@ interface BookingRepository {
 
     suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink
 
+    suspend fun cancelAppointment(appointmentId: String, lockId: String)
+
     fun getUserAppointments(userId: String): Flow<List<Appointment>>
+
+    /** Admin only — observe every appointment across all users */
+    fun getAllAppointments(): Flow<List<Appointment>>
 }

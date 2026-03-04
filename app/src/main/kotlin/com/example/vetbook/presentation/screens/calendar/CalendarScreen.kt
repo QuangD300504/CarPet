@@ -52,6 +52,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.presentation.viewmodels.CalendarUiState
 import com.example.vetbook.presentation.viewmodels.CalendarViewModel
+import com.example.vetbook.presentation.theme.Brand
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -82,7 +83,7 @@ private fun CalendarContent(
     onSelectDay: (LocalDate) -> Unit,
     getAppointmentsForDate: (LocalDate) -> List<Appointment>
 ) {
-    val yellow = Color(0xFFFFEB3B)
+    val yellow = Brand
     var showReminder by remember { mutableStateOf(false) }
 
     Box(
@@ -214,7 +215,7 @@ private fun CalendarContent(
 
 @Composable
 private fun AppointmentItem(appointment: Appointment) {
-    val yellow = Color(0xFFFFEB3B)
+    val yellow = Brand
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -336,7 +337,7 @@ private fun CalendarMonthGrid(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         color = Color.Black
                                     )
-                                    if (hasAppointments && !isSelected) {
+                                    if (hasAppointments) {
                                         Box(
                                             modifier = Modifier
                                                 .size(4.dp)
@@ -358,7 +359,7 @@ private fun ReminderSheetContent(
     onClose: () -> Unit
 ) {
     val dividerColor = Color(0xFFEAEAEA)
-    val yellow = Color(0xFFFFEB3B)
+    val yellow = Brand
 
     var serviceExpanded by remember { mutableStateOf(false) }
     var selectedService by remember { mutableStateOf("Service") }

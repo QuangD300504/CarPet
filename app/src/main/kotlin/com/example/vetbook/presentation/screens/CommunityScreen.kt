@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
@@ -32,6 +33,7 @@ import com.example.vetbook.domain.models.PetEvent
 import com.example.vetbook.domain.models.Post
 import com.example.vetbook.presentation.models.CommunityTab
 import com.example.vetbook.presentation.viewmodels.CommunityViewModel
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun CommunityScreen(
@@ -40,6 +42,7 @@ fun CommunityScreen(
     onAdoptClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val likedPostIds by viewModel.likedPostIds.collectAsState()
 
     Column(
         modifier = modifier
@@ -87,7 +90,8 @@ fun CommunityScreen(
         when (uiState.selectedTab) {
             CommunityTab.Feed -> FeedList(
                 posts = uiState.posts,
-                onLikeClick = { },
+                likedPostIds = likedPostIds,
+                onLikeClick = { post -> viewModel.toggleLike(post.id) },
                 onCommentClick = { },
                 onShareClick = { }
             )
@@ -128,6 +132,7 @@ fun CommunityTabItem(
 @Composable
 fun FeedList(
     posts: List<Post>,
+    likedPostIds: Set<String> = emptySet(),
     onLikeClick: (Post) -> Unit,
     onCommentClick: (Post) -> Unit,
     onShareClick: (Post) -> Unit
@@ -143,6 +148,7 @@ fun FeedList(
         ) { post ->
             PostCard(
                 post = post,
+                isLiked = post.id in likedPostIds,
                 onLikeClick = { onLikeClick(post) },
                 onCommentClick = { onCommentClick(post) },
                 onShareClick = { onShareClick(post) }
@@ -154,6 +160,7 @@ fun FeedList(
 @Composable
 fun PostCard(
     post: Post,
+    isLiked: Boolean = false,
     onLikeClick: () -> Unit = {},
     onCommentClick: () -> Unit = {},
     onShareClick: () -> Unit = {}
@@ -214,13 +221,13 @@ fun PostCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.FavoriteBorder,
+                            imageVector = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
                             contentDescription = "Like",
                             modifier = Modifier.size(20.dp),
-                            tint = Color.Gray
+                            tint = if (isLiked) Brand else Color.Gray
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = post.likesCount.toString(), fontSize = 12.sp, color = Color.Gray)
+                        Text(text = post.likesCount.toString(), fontSize = 12.sp, color = if (isLiked) Brand else Color.Gray)
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
@@ -315,7 +322,7 @@ fun AdoptionCard(
                 Button(
                     onClick = onAdoptClick,
                     modifier = Modifier.height(36.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Brand),
                     shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                 ) {
@@ -363,7 +370,7 @@ fun EventCard(event: PetEvent) {
             Button(
                 onClick = { },
                 modifier = Modifier.height(40.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
+                colors = ButtonDefaults.buttonColors(containerColor = Brand),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text(text = "Join Event", fontWeight = FontWeight.Bold)

@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.domain.models.Pet
 import com.example.vetbook.presentation.viewmodels.PetProfileViewModel
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun PetProfileScreen(
@@ -43,7 +44,7 @@ fun PetProfileScreen(
             uiState.isLoading -> {
                 androidx.compose.material3.CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFFFFD813)
+                    color = Brand
                 )
             }
 

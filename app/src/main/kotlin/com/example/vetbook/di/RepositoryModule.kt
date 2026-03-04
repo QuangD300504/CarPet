@@ -92,4 +92,20 @@ object RepositoryModule {
         )
     }
 
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        notificationDataSource: com.example.vetbook.data.datasource.NotificationDataSource
+    ): com.example.vetbook.domain.repository.NotificationRepository {
+        return com.example.vetbook.data.repository.NotificationRepositoryImpl(notificationDataSource)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBannerRepository(
+        firestore: FirebaseFirestore
+    ): BannerRepository {
+        return FirebaseBannerRepository(firestore)
+    }
+
 }

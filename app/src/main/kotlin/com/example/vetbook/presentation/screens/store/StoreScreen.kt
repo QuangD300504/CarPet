@@ -25,6 +25,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.store.LocationDropdown
 import com.example.vetbook.presentation.components.store.ProductCard
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.BrandSurface
 import com.example.vetbook.presentation.viewmodels.StoreViewModel
 import com.example.vetbook.presentation.viewmodels.StoreUiState
 
@@ -137,7 +139,7 @@ private fun StoreContent(
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(26.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(
                         items = listOf(
@@ -171,10 +173,10 @@ private fun StoreContent(
                         color = Color.Black
                     )
                     Text(
-                        text = "View all >",
-                        fontSize = 14.sp,
+                        text     = "View all >",
+                        style    = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFFFF9800),
+                        color    = Brand,
                         modifier = Modifier.clickable { onProductsClick() }
                     )
                 }
@@ -188,7 +190,7 @@ private fun StoreContent(
                             .height(200.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Color(0xFFFFD813))
+                        CircularProgressIndicator(color = Brand)
                     }
                 }
             } else if (uiState.errorMessage != null) {
@@ -236,16 +238,16 @@ private fun CategoryIcon(
         modifier = Modifier.clickable { onClick() }
     ) {
         Box(
-            modifier = Modifier
-                .size(80.dp) // Adjusted size for better visual balance
-                .background(Color(0xFFF5F5F5), CircleShape),
+            modifier         = Modifier
+                .size(64.dp)
+                .background(BrandSurface, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = icon,
+                imageVector        = icon,
                 contentDescription = label,
-                tint = Color(0xFFFFD813),
-                modifier = Modifier.size(32.dp)
+                tint               = Brand,
+                modifier           = Modifier.size(28.dp)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))

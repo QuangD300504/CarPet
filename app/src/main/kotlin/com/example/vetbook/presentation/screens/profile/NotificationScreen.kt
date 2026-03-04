@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,70 +18,69 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.vetbook.presentation.models.Notification
-import com.example.vetbook.presentation.models.NotificationType
-import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.vetbook.domain.models.NotificationType
+import com.example.vetbook.presentation.viewmodels.NotificationUiItem
+import com.example.vetbook.presentation.viewmodels.NotificationViewModel
+import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 
 @Composable
 fun NotificationScreen(
     onBackClick: () -> Unit = {},
-    onNotificationDismiss: (String) -> Unit = {}
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    notificationViewModel: NotificationViewModel = hiltViewModel()
 ) {
-    var notifications by remember {
-        mutableStateOf(
-            listOf(
-                Notification(
-                    id = "1",
-                    appName = "APP NAME",
-                    timeAgo = "NOW",
-                    title = "New notification",
-                    description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-                    type = NotificationType.INFO,
-                    isRead = false
-                ),
-                Notification(
-                    id = "2",
-                    appName = "APP NAME",
-                    timeAgo = "3 MIN AGO",
-                    title = "Incident - High severity",
-                    description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-                    type = NotificationType.INCIDENT,
-                    isRead = false
-                ),
-                Notification(
-                    id = "3",
-                    appName = "APP NAME",
-                    timeAgo = "NOW",
-                    title = "Jane Doe replied to your post about so and so",
-                    description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.",
-                    type = NotificationType.REPLY,
-                    isRead = false
-                )
-            )
-        )
+    val uiState by profileViewModel.uiState.collectAsState()
+    val currentUserId = uiState.user?.id
+    val notifications by notificationViewModel.notifications.collectAsState()
+
+    LaunchedEffect(currentUserId) {
+        if (currentUserId != null) {
+            notificationViewModel.loadNotifications(currentUserId)
+        }
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(
-                items = notifications,
-                key = { it.id }
-            ) { notification ->
-                NotificationCard(
-                    notification = notification,
-                    onDismiss = {
-                        notifications = notifications.filter { it.id != notification.id }
-                        onNotificationDismiss(notification.id)
-                    }
+        if (notifications.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No notifications yet",
+                    color = Color.Gray,
+                    fontSize = 14.sp
                 )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(
+                    items = notifications,
+                    key = { it.notification.id }
+                ) { uiItem ->
+                    
+                    // Mark as read immediately when rendered on screen if unread
+                    LaunchedEffect(uiItem.notification.id, uiItem.notification.isRead) {
+                        if (!uiItem.notification.isRead) {
+                            notificationViewModel.markAsRead(uiItem.notification.id)
+                        }
+                    }
+                    
+                    NotificationCard(
+                        uiItem = uiItem,
+                        onDismiss = {
+                            notificationViewModel.dismissNotification(uiItem.notification.id)
+                        }
+                    )
+                }
             }
         }
     }
@@ -90,13 +88,18 @@ fun NotificationScreen(
 
 @Composable
 fun NotificationCard(
-    notification: Notification,
+    uiItem: NotificationUiItem,
     onDismiss: () -> Unit = {}
 ) {
+    val notification = uiItem.notification
+    val isUnread = !notification.isRead
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isUnread) Color(0xFFF0F8FF) else Color.White
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -162,23 +165,23 @@ fun NotificationCard(
                     verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = "${notification.appName} • ${notification.timeAgo}",
+                        text = "${notification.appName} • ${uiItem.timeAgo}",
                         fontSize = 12.sp,
                         color = Color.Gray,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
-                    if (notification.type != NotificationType.INCIDENT) {
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Dismiss",
-                                tint = Color.Gray,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Dismiss",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
                 
@@ -187,8 +190,10 @@ fun NotificationCard(
                 Text(
                     text = notification.title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    fontWeight = if (isUnread) FontWeight.ExtraBold else FontWeight.Bold,
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -203,14 +208,3 @@ fun NotificationCard(
         }
     }
 }
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
-@Composable
-fun NotificationScreenPreview() {
-    PreviewNavScaffold { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            NotificationScreen()
-        }
-    }
-}
-

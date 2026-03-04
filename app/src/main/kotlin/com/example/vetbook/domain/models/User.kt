@@ -10,5 +10,6 @@ data class User(
     val phoneNumber: String = "",
     val points: Int,
     val profileImageUrl: String? = null,
-    val profileImage: Int? = null
+    val profileImage: Int? = null,
+    val isAdmin: Boolean = false
 )

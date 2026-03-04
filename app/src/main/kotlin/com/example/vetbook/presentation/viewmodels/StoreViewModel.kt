@@ -101,6 +101,7 @@ class StoreViewModel @Inject constructor(
                                     id = p.id,
                                     name = p.name,
                                     price = p.price.toString(),
+                                    stock = p.stock,
                                     imageUrl = p.imageUrl,
                                     description = p.description
                                 )

@@ -64,14 +64,18 @@ fun ServiceCard(
                     text = category.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color.Black
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = category.shortDescription,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
-                    color = Color.Black
+                    color = Color.Gray,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }

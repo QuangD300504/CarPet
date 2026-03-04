@@ -36,10 +36,11 @@ fun ServiceCategoryCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(category.iconRes),
+            androidx.compose.material3.Icon(
+                imageVector = com.example.vetbook.presentation.utils.getCategoryIcon(category.id),
                 contentDescription = null,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(48.dp),
+                tint = com.example.vetbook.presentation.theme.Brand
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {

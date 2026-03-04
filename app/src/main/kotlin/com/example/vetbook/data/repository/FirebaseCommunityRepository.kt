@@ -31,4 +31,7 @@ class FirebaseCommunityRepository(
         remoteDataSource.observeEvents().map { dtos ->
             dtos.map { it.toDomain() }
         }
+
+    override suspend fun toggleLike(postId: String, isCurrentlyLiked: Boolean): Result<Unit> =
+        remoteDataSource.toggleLike(postId, isCurrentlyLiked)
 }

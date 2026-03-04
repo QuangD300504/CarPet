@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavBackStackEntry
@@ -50,10 +52,14 @@ import com.example.vetbook.presentation.screens.profile.*
 import com.example.vetbook.presentation.screens.store.*
 import com.example.vetbook.presentation.screens.vetcare.*
 import com.example.vetbook.presentation.screens.accommodation.AccommodationScreen
+import com.example.vetbook.presentation.screens.accommodation.AccommodationDetailScreen
+import com.example.vetbook.data.datasource.AccommodationDataSource
 import com.example.vetbook.utils.compressImageForAvatar
 import com.example.vetbook.presentation.viewmodels.HomeViewModel
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 import com.example.vetbook.presentation.viewmodels.ServiceDetailViewModel
+import com.example.vetbook.presentation.viewmodels.SharedNotificationViewModel
+import androidx.compose.runtime.LaunchedEffect
 
 // ==================== ANIMATION CONFIGURATION ====================
 
@@ -260,17 +266,27 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val bottomNavController = rememberNavController()
     val homeViewModel: HomeViewModel = hiltViewModel()
     val profileViewModel: ProfileViewModel = hiltViewModel()
+    val sharedNotifViewModel: SharedNotificationViewModel = hiltViewModel()
     val categories by homeViewModel.categories.collectAsState()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val homeUiState by homeViewModel.uiState.collectAsState()
     val profileUiState by profileViewModel.uiState.collectAsState()
     val profileImageUrl = profileUiState.user?.profileImageUrl
+    val homeSearchQuery by homeViewModel.searchQuery.collectAsState()
+    val hasUnread by sharedNotifViewModel.hasUnread.collectAsState()
+    val currentUserId = profileUiState.user?.id
+
+    LaunchedEffect(currentUserId) {
+        if (currentUserId != null) {
+            sharedNotifViewModel.startListening(currentUserId)
+        }
+    }
 
     var showStoreLocationDropdown by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             when {
@@ -289,8 +305,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         },
                         profileImageUrl = profileImageUrl,
                         searchPlaceholder = "Search for a service",
-                        searchValue = "",
-                        onSearchChange = { /* no-op for now */ }
+                        searchValue = homeSearchQuery,
+                        onSearchChange = { homeViewModel.setSearch(it) },
+                        hasUnreadNotifications = hasUnread
                     )
                 }
                 currentRoute == Routes.Pet.route -> {
@@ -330,7 +347,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         showSearchBar = true,
                         searchPlaceholder = "Search for your items",
                         onSearchChange = { /* handled inside screen state for now */ },
-                        searchValue = ""
+                        searchValue = "",
+                        hasUnreadNotifications = hasUnread
                     )
                 }
                 currentRoute == Routes.Notifications.route -> {
@@ -365,34 +383,18 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 }
                 currentRoute == Routes.Cart.route -> {
                     SimpleTopBar(
-                        title = "Cart",
+                        title       = "My Cart",
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
                 currentRoute == Routes.Payment.route -> {
                     SimpleTopBar(
-                        title = "Payment",
+                        title       = "Checkout",
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
-                currentRoute == Routes.Veterinarians.route -> {
-                    SimpleTopBar(
-                        title = "Veterinary Care",
-                        onBackClick = { bottomNavController.popBackStack() }
-                    )
-                }
-                currentRoute?.startsWith("doctor_profile/") == true -> {
-                    SimpleTopBar(
-                        title = "Doctor Profile",
-                        onBackClick = { bottomNavController.popBackStack() }
-                    )
-                }
-                currentRoute?.startsWith("book_appointment/") == true -> {
-                    SimpleTopBar(
-                        title = "Book Appointment",
-                        onBackClick = { bottomNavController.popBackStack() }
-                    )
-                }
+                // Note: Veterinarians, doctor_profile, book_appointment handle
+                // their own headers internally (Type B / Type C pattern)
                 else -> { }
             }
         },
@@ -721,7 +723,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                             bottomNavController.navigate(Routes.Language.route)
                         },
                         onContactUsClick = {
-                            // Handle contact us
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:support@carpetapp.com")
+                                putExtra(Intent.EXTRA_SUBJECT, "CarPet Support")
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Contact Us"))
                         },
                         onPrivacyPolicyClick = {
                             bottomNavController.navigate(Routes.PrivacyPolicy.route)
@@ -741,9 +747,27 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 AccommodationScreen(
                     onBackClick = { bottomNavController.popBackStack() },
                     onAccommodationClick = { accommodationId ->
-                        // TODO: Navigate to accommodation detail screen
+                        bottomNavController.navigate(Routes.AccommodationDetail.createRoute(accommodationId))
                     }
                 )
+            }
+
+            composable(
+                route = Routes.AccommodationDetail.route,
+                arguments = listOf(androidx.navigation.navArgument("accommodationId") { type = androidx.navigation.NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) { backStackEntry ->
+                val accommodationId = backStackEntry.arguments?.getString("accommodationId") ?: ""
+                val accommodation = AccommodationDataSource.getAccommodations().find { it.id == accommodationId }
+                if (accommodation != null) {
+                    AccommodationDetailScreen(
+                        accommodation = accommodation,
+                        onBackClick = { bottomNavController.popBackStack() }
+                    )
+                }
             }
 
             composable(
@@ -784,6 +808,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 popExitTransition = { getPopExitTransition() }
             ) {
                 VeterinariansScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
                     onVetClick = { doctorId ->
                         bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
                     }

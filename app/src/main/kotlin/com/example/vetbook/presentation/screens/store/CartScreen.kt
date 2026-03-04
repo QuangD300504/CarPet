@@ -44,6 +44,7 @@ import com.example.vetbook.presentation.models.CartItem
 import com.example.vetbook.presentation.models.OrderSummary
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.CheckoutViewModel
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun CartScreen(
@@ -99,7 +100,7 @@ private fun CartContent(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color(0xFFFFD813))
+                CircularProgressIndicator(color = Brand)
             }
         } else if (uiState.errorMessage != null) {
             Box(
@@ -210,7 +211,7 @@ private fun CartItemCard(
                     Text(
                         text = "Edit",
                         fontSize = 14.sp,
-                        color = Color(0xFFFF9800)
+                        color = Brand,
                     )
                 }
             }

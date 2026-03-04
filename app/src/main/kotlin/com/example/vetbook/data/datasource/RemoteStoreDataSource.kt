@@ -22,5 +22,11 @@ interface RemoteStoreDataSource {
     suspend fun setCartQuantity(uid: String, productId: String, quantity: Int): Result<Unit>
 
     suspend fun clearCart(uid: String): Result<Unit>
+
+    suspend fun addProduct(product: StoreProductDto): Result<String>
+
+    suspend fun updateProduct(product: StoreProductDto): Result<Unit>
+
+    suspend fun deleteProduct(productId: String): Result<Unit>
 }
 

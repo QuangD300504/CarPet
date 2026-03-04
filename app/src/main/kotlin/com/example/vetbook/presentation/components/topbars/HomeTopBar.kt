@@ -18,7 +18,8 @@ fun HomeTopBar(
     profileImageUrl: String? = null,
     searchPlaceholder: String = "Search for a service",
     searchValue: String = "",
-    onSearchChange: (String) -> Unit = {}
+    onSearchChange: (String) -> Unit = {},
+    hasUnreadNotifications: Boolean = false
 ) {
     StoreHeader(
         currentLocation = currentLocation,
@@ -31,6 +32,7 @@ fun HomeTopBar(
         searchPlaceholder = searchPlaceholder,
         onSearchChange = onSearchChange,
         searchValue = searchValue,
+        hasUnreadNotifications = hasUnreadNotifications,
         modifier = modifier
     )
 }

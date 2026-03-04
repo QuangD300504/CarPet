@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.vetbook.domain.models.Banner
 import com.example.vetbook.domain.models.ServiceCategory
 import com.example.vetbook.presentation.components.CaringBanner
 import com.example.vetbook.presentation.components.RecommendedServices
@@ -30,10 +31,12 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val banners by viewModel.banners.collectAsState()
 
     HomeContent(
         uiState = uiState,
         categories = categories,
+        banners = banners,
         onCategoryClick = onCategoryClick,
         onSeeAllClick = onSeeAllClick
     )
@@ -43,6 +46,7 @@ fun HomeScreen(
 fun HomeContent(
     uiState: HomeUiState,
     categories: List<ServiceCategory>,
+    banners: List<Banner> = emptyList(),
     onCategoryClick: (ServiceCategory) -> Unit,
     modifier: Modifier = Modifier,
     onSeeAllClick: () -> Unit = {}
@@ -52,11 +56,9 @@ fun HomeContent(
         contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
     ) {
         item { CaringBanner() }
-        
-        item { 
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        
+
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+
         item {
             ServiceCategoriesSection(
                 categories = categories,
@@ -64,7 +66,7 @@ fun HomeContent(
                 onViewAllClick = onSeeAllClick
             )
         }
-        
+
         item {
             RecommendedServices(
                 categories = categories,
@@ -72,13 +74,12 @@ fun HomeContent(
                 onSeeAllClick = onSeeAllClick
             )
         }
-        
+
         item {
-            SponsoredSection()
+            SponsoredSection(banners = banners)
         }
-        
+
         item {
-            // Footer
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -124,6 +125,7 @@ fun HomeScreenPreview() {
         HomeContent(
             uiState = HomeUiState(),
             categories = previewHomeCategories(),
+            banners = emptyList(),
             onCategoryClick = {},
             onSeeAllClick = {},
             modifier = Modifier.padding(padding)

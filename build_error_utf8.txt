@@ -1,0 +1,10 @@
+﻿
+./gradlew : e: file:///D:/Android/
+   Specified: (e: file:///D:/A..  
+e: file:///D:/Android/Project/app/
+e: file:///D:/Android/Project/app/
+e: file:///D:/Android/Project/app/
+e: file:///D:/Android/Project/app/
+e: file:///D:/Android/Project/app/
+
+

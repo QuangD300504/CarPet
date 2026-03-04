@@ -96,6 +96,15 @@ class BookingRepositoryImpl @Inject constructor(
         return BookingRepository.CreateAppointmentResult(appointmentId = appointmentRef.id, lockId = lockId)
     }
 
+    override suspend fun cancelAppointment(appointmentId: String, lockId: String) {
+        val lockRef = firestore.collection("doctorSlotLocks").document(lockId)
+        val appointmentRef = firestore.collection("appointments").document(appointmentId)
+        firestore.runTransaction { tx ->
+            tx.delete(lockRef)
+            tx.delete(appointmentRef)
+        }.await()
+    }
+
     override suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink {
         val token = auth.currentUser?.getIdToken(false)?.await()?.token ?: error("Missing ID token")
         val resp = paymentWorkerApi.createPaymentLink(
@@ -116,15 +125,32 @@ class BookingRepositoryImpl @Inject constructor(
     override fun getUserAppointments(userId: String): Flow<List<Appointment>> = callbackFlow {
         val subscription = firestore.collection("appointments")
             .whereEqualTo("userId", userId)
-            .orderBy("appointmentAt", Query.Direction.ASCENDING)
+            // NOTE: Removed orderBy("appointmentAt") — that requires a composite index.
+            // Sorting is done in-memory below instead.
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {
-                    val appointments = snapshot.toObjects(AppointmentDto::class.java).map { it.toDomain() }
+                    val appointments = snapshot.toObjects(AppointmentDto::class.java)
+                        .map { it.toDomain() }
+                        .sortedBy { it.appointmentAt } // sort in-memory
                     trySend(appointments)
+                }
+            }
+        awaitClose { subscription.remove() }
+    }
+
+    override fun getAllAppointments(): Flow<List<Appointment>> = callbackFlow {
+        val subscription = firestore.collection("appointments")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) { close(error); return@addSnapshotListener }
+                if (snapshot != null) {
+                    val all = snapshot.toObjects(AppointmentDto::class.java)
+                        .map { it.toDomain() }
+                        .sortedByDescending { it.appointmentAt } // sort in-memory
+                    trySend(all)
                 }
             }
         awaitClose { subscription.remove() }

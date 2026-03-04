@@ -35,6 +35,7 @@ class FirebaseStoreDataSource(
                             imageUrl = doc.getString("imageUrl"),
                             description = doc.getString("description"),
                             category = doc.getString("category"),
+                            stock = (doc.getLong("stock") ?: 0L).toInt(),
                             createdAt = doc.getLong("createdAt"),
                             updatedAt = doc.getLong("updatedAt")
                         )
@@ -66,6 +67,7 @@ class FirebaseStoreDataSource(
                             imageUrl = doc.getString("imageUrl"),
                             description = doc.getString("description"),
                             category = doc.getString("category"),
+                            stock = (doc.getLong("stock") ?: 0L).toInt(),
                             createdAt = doc.getLong("createdAt"),
                             updatedAt = doc.getLong("updatedAt")
                         )
@@ -146,6 +148,54 @@ class FirebaseStoreDataSource(
             docs.documents.forEach { batch.delete(it.reference) }
             batch.commit().await()
 
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun addProduct(product: StoreProductDto): Result<String> {
+        return try {
+            val docRef = firestore.collection(PRODUCTS_COLLECTION).document()
+            val productMap = hashMapOf(
+                "name" to product.name,
+                "price" to product.price,
+                "imageUrl" to product.imageUrl,
+                "description" to product.description,
+                "category" to product.category,
+                "stock" to product.stock,
+                "createdAt" to System.currentTimeMillis(),
+                "updatedAt" to System.currentTimeMillis()
+            )
+            docRef.set(productMap).await()
+            Result.success(docRef.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateProduct(product: StoreProductDto): Result<Unit> {
+        return try {
+            val docRef = firestore.collection(PRODUCTS_COLLECTION).document(product.id)
+            val productMap = hashMapOf(
+                "name" to product.name,
+                "price" to product.price,
+                "imageUrl" to product.imageUrl,
+                "description" to product.description,
+                "category" to product.category,
+                "stock" to product.stock,
+                "updatedAt" to System.currentTimeMillis()
+            )
+            docRef.update(productMap as Map<String, Any>).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteProduct(productId: String): Result<Unit> {
+        return try {
+            firestore.collection(PRODUCTS_COLLECTION).document(productId).delete().await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

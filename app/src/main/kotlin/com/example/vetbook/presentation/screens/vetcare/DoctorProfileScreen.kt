@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.R
 import com.example.vetbook.domain.models.Veterinarian
+import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
 
 @Composable
@@ -39,13 +42,14 @@ fun DoctorProfileScreen(
 
     if (doctor != null) {
         DoctorProfileContent(
-            doctor = doctor,
-            onBookClick = onBookClick
+            doctor       = doctor,
+            onBackClick  = onBackClick,
+            onBookClick  = onBookClick
         )
     } else {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(color = Color(0xFFFFEB3B))
+                CircularProgressIndicator(color = Brand)
             } else {
                 Text(text = "Doctor not found")
             }
@@ -56,6 +60,7 @@ fun DoctorProfileScreen(
 @Composable
 private fun DoctorProfileContent(
     doctor: Veterinarian,
+    onBackClick: () -> Unit = {},
     onBookClick: () -> Unit
 ) {
     Column(
@@ -68,18 +73,35 @@ private fun DoctorProfileContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Doctor image at top
+            // Doctor hero image with floating back button overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
             ) {
                 Image(
-                    painter = painterResource(R.drawable.pawns), // Placeholder
+                    painter            = painterResource(R.drawable.pawns),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    modifier           = Modifier.fillMaxSize(),
+                    contentScale       = ContentScale.Crop
                 )
+                // Floating back button — Type C HeroHeader
+                Box(
+                    modifier = Modifier
+                        .statusBarsPadding()
+                        .padding(start = 16.dp, top = 12.dp)
+                        .size(40.dp)
+                        .background(Color.White.copy(alpha = 0.85f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    IconButton(onClick = onBackClick, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint               = Brand
+                        )
+                    }
+                }
             }
             
             Column(modifier = Modifier.padding(16.dp)) {
@@ -89,18 +111,22 @@ private fun DoctorProfileContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = doctor.name,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            color = Color.Black,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = doctor.specialty,
                             fontSize = 16.sp,
-                            color = Color.Gray
+                            color = Color.Gray,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
                     
@@ -166,22 +192,19 @@ private fun DoctorProfileContent(
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 
-                // Book Appointment button
                 Button(
-                    onClick = onBookClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFEB3B) // Yellow
+                    onClick  = onBookClick,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors   = ButtonDefaults.buttonColors(
+                        containerColor = Brand,
+                        contentColor   = MaterialTheme.colorScheme.onPrimary
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
-                        text = "Book Appointment",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        text       = "Book Appointment",
+                        style      = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
                 
@@ -207,10 +230,10 @@ fun StatCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = icon,
+                imageVector        = icon,
                 contentDescription = null,
-                tint = Color(0xFFFF9800),
-                modifier = Modifier.size(24.dp)
+                tint               = Brand,
+                modifier           = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.vetbook.R
 import com.example.vetbook.presentation.models.Product
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun ProductCard(
@@ -74,7 +75,9 @@ fun ProductCard(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black,
-                modifier = Modifier.padding(horizontal = if (showFavorite) 12.dp else 8.dp)
+                modifier = Modifier.padding(horizontal = if (showFavorite) 12.dp else 8.dp),
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             
             Spacer(modifier = Modifier.height(8.dp))
@@ -106,7 +109,7 @@ fun ProductCard(
                         modifier = Modifier
                             .size(28.dp)
                             .background(
-                                Color(0xFFFFD813), // Yellow from StoreScreen
+                                Brand, // Brand gold circle
                                 CircleShape
                             )
                             .padding(6.dp)

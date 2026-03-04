@@ -238,6 +238,19 @@ class FirebaseCommunityDataSource(
             Result.failure(e)
         }
     }
+
+    override suspend fun toggleLike(postId: String, isCurrentlyLiked: Boolean): Result<Unit> {
+        return try {
+            val delta = if (isCurrentlyLiked) -1L else 1L
+            firestore.collection(POSTS_COLLECTION)
+                .document(postId)
+                .update("likesCount", com.google.firebase.firestore.FieldValue.increment(delta))
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 
 // Extension functions for converting DTOs to Firestore maps

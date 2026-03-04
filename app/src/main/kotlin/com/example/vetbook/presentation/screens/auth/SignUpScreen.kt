@@ -35,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.components.EmailVerificationContent
 import com.example.vetbook.presentation.models.SignUpUiState
+import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.theme.VetBookTheme
 import com.example.vetbook.presentation.viewmodels.SignUpViewModel
 import kotlinx.coroutines.delay
@@ -62,7 +63,7 @@ fun SignUpScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = if (currentStep == SignUpStep.Introduction) Color.White else Color(0xFFFFD700)
+        color = Color.White
     ) {
         Crossfade(targetState = currentStep, label = "signUpFlow") { step ->
             when (step) {
@@ -221,8 +222,8 @@ fun SignUpDetailsContent(
         Button(
             onClick = onNext,
             enabled = !isLoading,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B)),
             shape = RoundedCornerShape(12.dp)
         ) {
             if (isLoading) {
@@ -238,7 +239,7 @@ fun SignUpDetailsContent(
             Text(text = "Already a member? ", color = Color.Black.copy(alpha = 0.7f))
             Text(
                 text = "Log In",
-                color = Color(0xFFEF4444),
+                color = Brand,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable { onLoginClick() }
             )
@@ -380,7 +381,7 @@ fun IntroductionContent(onFinished: () -> Unit) {
             horizontalArrangement = Arrangement.Center
         ) {
             repeat(pages.size) { iteration ->
-                val color = if (pagerState.currentPage == iteration) Color(0xFFFFD700) else Color(0xFFFFD700).copy(alpha = 0.3f)
+                val color = if (pagerState.currentPage == iteration) Brand else Brand.copy(alpha = 0.3f)
                 Box(
                     modifier = Modifier
                         .padding(4.dp)
@@ -397,7 +398,7 @@ fun IntroductionContent(onFinished: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                colors = ButtonDefaults.buttonColors(containerColor = Brand),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Bắt đầu ngay", color = Color.Black, fontWeight = FontWeight.Bold)

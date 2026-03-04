@@ -66,6 +66,12 @@ object DataSourceModule {
     fun provideRemoteStoreDataSource(
         firestore: FirebaseFirestore
     ): RemoteStoreDataSource = FirebaseStoreDataSource(firestore)
+
+    @Provides
+    @Singleton
+    fun provideNotificationDataSource(
+        firestore: FirebaseFirestore
+    ): com.example.vetbook.data.datasource.NotificationDataSource = com.example.vetbook.data.datasource.firebase.FirebaseNotificationDataSource(firestore)
 }
 
 

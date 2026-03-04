@@ -32,5 +32,32 @@ class FirebaseStoreRepository(
     override suspend fun clearCart(uid: String): Result<Unit> {
         return remoteStoreDataSource.clearCart(uid)
     }
+
+    override suspend fun addProduct(product: StoreProduct): Result<String> {
+        return remoteStoreDataSource.addProduct(product.toDto())
+    }
+
+    override suspend fun updateProduct(product: StoreProduct): Result<Unit> {
+        return remoteStoreDataSource.updateProduct(product.toDto())
+    }
+
+    override suspend fun deleteProduct(productId: String): Result<Unit> {
+        return remoteStoreDataSource.deleteProduct(productId)
+    }
+}
+
+// Extension to map Domain to DTO safely
+private fun StoreProduct.toDto(): com.example.vetbook.data.models.StoreProductDto {
+    return com.example.vetbook.data.models.StoreProductDto(
+        id = id,
+        name = name,
+        price = price,
+        imageUrl = imageUrl,
+        description = description,
+        category = category,
+        stock = stock,
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
 }
 

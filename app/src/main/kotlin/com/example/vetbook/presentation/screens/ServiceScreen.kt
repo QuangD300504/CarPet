@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.ServiceCategory
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.Brand
 
 @Composable
 fun ServiceScreen(
@@ -84,24 +86,11 @@ fun CategoryGridCard(
                     .background(Color.White, RoundedCornerShape(15.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                val tintedCategoryIds = remember {
-                    setOf(
-                        "cat_vet",
-                        "cat_spa",
-                        "cat_training",
-                        "cat_funeral"
-                    )
-                }
-
-                Image(
-                    painter = painterResource(category.iconRes),
+                Icon(
+                    imageVector = com.example.vetbook.presentation.utils.getCategoryIcon(category.id),
                     contentDescription = category.title,
-                    modifier = Modifier.size(35.dp),
-                    colorFilter = if (category.id in tintedCategoryIds) {
-                        ColorFilter.tint(Color(0xFFFFD813))
-                    } else {
-                        null
-                    }
+                    modifier = Modifier.size(32.dp),
+                    tint = Brand
                 )
             }
             Text(

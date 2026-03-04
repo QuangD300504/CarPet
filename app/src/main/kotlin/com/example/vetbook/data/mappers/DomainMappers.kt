@@ -15,7 +15,8 @@ fun UserProfileDto.toDomain(
         email = email,
         points = points,
         profileImageUrl = profileImageUrl,
-        profileImage = profileImage
+        profileImage = profileImage,
+        isAdmin = isAdmin
     )
 
 // endregion
@@ -30,6 +31,7 @@ fun StoreProductDto.toDomain(): StoreProduct =
         imageUrl = imageUrl,
         description = description,
         category = category,
+        stock = stock,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

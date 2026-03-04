@@ -53,7 +53,9 @@ fun MenuItemComponent(
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             color = Color.Black,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
             
         // Trailing content (or default arrow)
