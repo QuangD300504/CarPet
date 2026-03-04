@@ -25,18 +25,4 @@ class MainViewModel @Inject constructor(
         return authRepository.isUserLoggedIn()
     }
 
-    fun determineStartDestination(onResult: (String) -> Unit) {
-        if (!authRepository.isUserLoggedIn()) {
-            onResult("login")
-            return
-        }
-        viewModelScope.launch {
-            val user = userRepository.getCurrentUser()
-            if (user?.isAdmin == true) {
-                onResult("admin_main")
-            } else {
-                onResult("main")
-            }
-        }
-    }
 }

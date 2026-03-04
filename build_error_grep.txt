@@ -1,6 +1,0 @@
-﻿
-./gradlew : e: file:///D:/Android/
-   Specified: (e: file:///D:/A..  
-FAILURE: Build failed with an 
-
-

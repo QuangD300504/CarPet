@@ -143,18 +143,42 @@ fastlane/test_output
 google-services.json
 /tools/firestore-seed/serviceAccountKey.json
 
-# ===================================
-# Node.js (ADD THIS SECTION)
-# ===================================
+# Node.js
 node_modules/
+**/node_modules/
+package-lock.json
+yarn.lock
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-yarn.lock
 .pnpm-debug.log*
+
+# Web Build Artifacts
+dist/
+admin-web/dist/
+admin-web/.vite/
+.eslintcache
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+
+# AI and Editor helper folders
+.agent/
+.claude/
+.codebuddy/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.vscode/
+.windsurf/
+
+# Web App build/dependencies
+admin-web/node_modules/

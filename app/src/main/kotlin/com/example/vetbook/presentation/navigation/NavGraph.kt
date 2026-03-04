@@ -24,10 +24,14 @@ fun VetBookNavGraph() {
         composable(Routes.Splash.route) {
             SplashScreen(
                 onAnimationFinished = {
-                    mainViewModel.determineStartDestination { destination ->
-                        rootNavController.navigate(destination) {
-                            popUpTo(Routes.Splash.route) { inclusive = true }
-                        }
+                    val destination = if (mainViewModel.isUserLoggedIn()) {
+                        Routes.ContinueLogin.route
+                    } else {
+                        Routes.Login.route
+                    }
+
+                    rootNavController.navigate(destination) {
+                        popUpTo(Routes.Splash.route) { inclusive = true }
                     }
                 }
             )
@@ -36,10 +40,8 @@ fun VetBookNavGraph() {
         composable(Routes.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
-                    mainViewModel.determineStartDestination { destination ->
-                        rootNavController.navigate(destination) {
-                            popUpTo(Routes.Login.route) { inclusive = true }
-                        }
+                    rootNavController.navigate("main") {
+                        popUpTo(Routes.Login.route) { inclusive = true }
                     }
                 },
                 onSignUpClick = {
@@ -74,18 +76,6 @@ fun VetBookNavGraph() {
 
         composable("main") {
             MainScreen(
-                onLogout = {
-                    mainViewModel.signOut {
-                        rootNavController.navigate(Routes.Login.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                }
-            )
-        }
-
-        composable("admin_main") {
-            com.example.vetbook.presentation.screens.AdminMainScreen(
                 onLogout = {
                     mainViewModel.signOut {
                         rootNavController.navigate(Routes.Login.route) {

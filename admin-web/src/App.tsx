@@ -1,0 +1,85 @@
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { ProtectedLayout } from './components/Layout/ProtectedLayout';
+import { AuthProvider } from './contexts/AuthContext';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+
+import StoreAdminLayout from './pages/store/StoreAdminLayout';
+import ProductsList from './pages/store/ProductsList';
+import ProductForm from './pages/store/ProductForm';
+import CategoriesList from './pages/store/CategoriesList';
+import CategoryForm from './pages/store/CategoryForm';
+import OrdersList from './pages/store/OrdersList';
+
+import VetAdminLayout from './pages/vet/VetAdminLayout';
+import VetsList from './pages/vet/VetsList';
+import VetForm from './pages/vet/VetForm';
+import AppointmentsList from './pages/vet/AppointmentsList';
+
+import SettingsLayout from './pages/settings/SettingsLayout';
+import SponsorsList from './pages/settings/SponsorsList';
+import SponsorForm from './pages/settings/SponsorForm';
+import ServicesList from './pages/settings/ServicesList';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <ProtectedLayout />,
+    children: [
+      {
+        path: '/',
+        element: <Dashboard />
+      },
+      {
+        path: 'store',
+        element: <StoreAdminLayout />,
+        children: [
+            { index: true, element: <Navigate to="products" replace /> },
+            { path: 'products', element: <ProductsList /> },
+            { path: 'products/new', element: <ProductForm /> },
+            { path: 'products/edit/:id', element: <ProductForm /> },
+            { path: 'categories', element: <CategoriesList /> },
+            { path: 'categories/new', element: <CategoryForm /> },
+            { path: 'categories/edit/:id', element: <CategoryForm /> },
+            { path: 'orders', element: <OrdersList /> }
+        ]
+      },
+      {
+        path: 'vets',
+        element: <VetAdminLayout />,
+        children: [
+            { index: true, element: <Navigate to="list" replace /> },
+            { path: 'list', element: <VetsList /> },
+            { path: 'new', element: <VetForm /> },
+            { path: 'edit/:id', element: <VetForm /> },
+            { path: 'appointments', element: <AppointmentsList /> }
+        ]
+      },
+      {
+        path: 'settings',
+        element: <SettingsLayout />,
+        children: [
+            { index: true, element: <Navigate to="sponsors" replace /> },
+            { path: 'sponsors', element: <SponsorsList /> },
+            { path: 'sponsors/new', element: <SponsorForm /> },
+            { path: 'sponsors/edit/:id', element: <SponsorForm /> },
+            { path: 'services', element: <ServicesList /> }
+        ]
+      }
+    ]
+  },
+  {
+    path: '/login',
+    element: <Login />
+  }
+]);
+
+function App() {
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
+}
+
+export default App;
