@@ -9,5 +9,7 @@ data class Veterinarian(
     val reviewsCount: Int = 0,
     val initials: String,
     val bio: String = "",
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val clinicId: String = ""
 )
+

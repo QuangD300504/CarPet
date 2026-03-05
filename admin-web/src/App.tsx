@@ -15,6 +15,8 @@ import VetAdminLayout from './pages/vet/VetAdminLayout';
 import VetsList from './pages/vet/VetsList';
 import VetForm from './pages/vet/VetForm';
 import AppointmentsList from './pages/vet/AppointmentsList';
+import ClinicsList from './pages/vet/ClinicsList';
+import ClinicForm from './pages/vet/ClinicForm';
 
 import SettingsLayout from './pages/settings/SettingsLayout';
 import SponsorsList from './pages/settings/SponsorsList';
@@ -52,7 +54,10 @@ const router = createBrowserRouter([
             { path: 'list', element: <VetsList /> },
             { path: 'new', element: <VetForm /> },
             { path: 'edit/:id', element: <VetForm /> },
-            { path: 'appointments', element: <AppointmentsList /> }
+            { path: 'appointments', element: <AppointmentsList /> },
+            { path: 'clinics', element: <ClinicsList /> },
+            { path: 'clinics/new', element: <ClinicForm /> },
+            { path: 'clinics/edit/:id', element: <ClinicForm /> }
         ]
       },
       {

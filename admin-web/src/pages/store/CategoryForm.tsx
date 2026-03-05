@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../firebase/config';
+import { db } from '../../firebase/config';
+import { uploadToCloudinary } from '../../utils/cloudinary';
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from 'lucide-react';
 import type { Category } from './CategoriesList';
 
@@ -59,9 +59,7 @@ export default function CategoryForm() {
             let photoUrl = category.imageUrl;
 
             if (imageFile) {
-                const fileRef = ref(storage, `categories/${Date.now()}_${imageFile.name}`);
-                await uploadBytes(fileRef, imageFile);
-                photoUrl = await getDownloadURL(fileRef);
+                photoUrl = await uploadToCloudinary(imageFile);
             }
 
             const now = Date.now();

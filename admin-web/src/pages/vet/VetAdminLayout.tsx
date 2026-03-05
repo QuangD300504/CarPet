@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Activity, Stethoscope } from 'lucide-react';
+import { Activity, Stethoscope, Building2 } from 'lucide-react';
 
 export default function VetAdminLayout() {
     const location = useLocation();
@@ -7,6 +7,7 @@ export default function VetAdminLayout() {
     const tabs = [
         { path: '/vets/list', label: 'Veterinarians', icon: Stethoscope },
         { path: '/vets/appointments', label: 'Appointments', icon: Activity },
+        { path: '/vets/clinics', label: 'Clinics', icon: Building2 },
     ];
 
     return (

@@ -26,6 +26,7 @@ export interface Vet {
 
 export default function VetsList() {
     const [vets, setVets] = useState<Vet[]>([]);
+    const [clinicsMap, setClinicsMap] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
     const { 
         currentPage, 
@@ -36,23 +37,33 @@ export default function VetsList() {
         itemsPerPage 
     } = usePagination(vets, 8);
 
-    const fetchVets = async () => {
+    const fetchData = async () => {
         try {
-            const querySnapshot = await getDocs(collection(db, 'veterinarians'));
+            const [vetsSnap, clinicsSnap] = await Promise.all([
+                getDocs(collection(db, 'veterinarians')),
+                getDocs(collection(db, 'clinics'))
+            ]);
+
+            const cmap: Record<string, string> = {};
+            clinicsSnap.forEach(doc => {
+                cmap[doc.id] = doc.data().name;
+            });
+            setClinicsMap(cmap);
+
             const data: Vet[] = [];
-            querySnapshot.forEach((doc) => {
+            vetsSnap.forEach((doc) => {
                 data.push({ id: doc.id, ...doc.data() } as Vet);
             });
             setVets(data);
-            setLoading(false);
         } catch (error) {
-            console.error("Error fetching vets: ", error);
+            console.error("Error fetching data: ", error);
+        } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchVets();
+        fetchData();
     }, []);
 
     const handleDelete = async (id: string) => {
@@ -124,7 +135,7 @@ export default function VetsList() {
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="text-sm text-slate-600 font-medium">
-                                        {vet.clinicId || 'No clinic'}
+                                        {vet.clinicId && clinicsMap[vet.clinicId] ? clinicsMap[vet.clinicId] : (vet.clinicId || 'No clinic')}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">

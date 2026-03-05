@@ -23,6 +23,9 @@ import {
     Cell
 } from 'recharts';
 
+const formatVND = (n: number) =>
+    n.toLocaleString('vi-VN') + ' ₫';
+
 interface StatCardProps {
     title: string;
     value: string | number;
@@ -177,7 +180,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard 
                     title="Gross Revenue" 
-                    value={`$${stats.totalRevenue.toLocaleString()}`} 
+                    value={formatVND(stats.totalRevenue)} 
                     subValue="Total transaction volume"
                     icon={TrendingUp} 
                     color="bg-blue-600"

@@ -107,7 +107,7 @@ export default function OrdersList() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 font-medium text-slate-900">
-                                        ${order.totalAmount?.toFixed(2) || '0.00'}
+                                        {(order.totalAmount || 0).toLocaleString('vi-VN')} ₫
                                     </td>
                                     <td className="px-6 py-4">
                                         <select 

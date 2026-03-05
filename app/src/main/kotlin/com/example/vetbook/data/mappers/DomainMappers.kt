@@ -121,7 +121,8 @@ fun VeterinarianDto.toDomain(): Veterinarian =
         reviewsCount = reviewsCount,
         initials = initials,
         bio = bio,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        clinicId = clinicId ?: ""
     )
 
 // endregion

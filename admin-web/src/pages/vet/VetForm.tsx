@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { doc, getDoc, addDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../firebase/config';
-import { ArrowLeft, Save, Loader2, Image as ImageIcon } from 'lucide-react';
+import { doc, getDoc, addDoc, updateDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import { uploadToCloudinary } from '../../utils/cloudinary';
+import { ArrowLeft, Save, Loader2, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import type { Vet } from './VetsList';
+import type { Clinic } from './ClinicsList';
 
 export default function VetForm() {
     const { id } = useParams<{ id: string }>();
@@ -33,25 +34,23 @@ export default function VetForm() {
     const [specialties, setSpecialties] = useState<string[]>([]);
     const [isNewSpecialty, setIsNewSpecialty] = useState(false);
     const [newSpecialtyName, setNewSpecialtyName] = useState('');
-    const [clinics, setClinics] = useState<string[]>([]);
-    const [isNewClinic, setIsNewClinic] = useState(false);
-    const [newClinicName, setNewClinicName] = useState('');
+    const [clinics, setClinics] = useState<Clinic[]>([]);
 
     useEffect(() => {
         const fetchMetaData = async () => {
             try {
-                const querySnapshot = await getDocs(collection(db, 'veterinarians'));
+                const [vetSnap, clinicSnap] = await Promise.all([
+                    getDocs(collection(db, 'veterinarians')),
+                    getDocs(query(collection(db, 'clinics'), orderBy('name')))
+                ]);
                 const existingSpecialties = new Set<string>();
-                const existingClinics = new Set<string>();
-                querySnapshot.forEach((doc: any) => {
-                    const data = doc.data();
-                    if (data.specialty) existingSpecialties.add(data.specialty);
-                    if (data.clinicRef) existingClinics.add(data.clinicRef);
+                vetSnap.forEach((doc: any) => {
+                    if (doc.data().specialty) existingSpecialties.add(doc.data().specialty);
                 });
                 setSpecialties(Array.from(existingSpecialties).sort());
-                setClinics(Array.from(existingClinics).sort());
+                setClinics(clinicSnap.docs.map(d => ({ id: d.id, ...d.data() } as Clinic)));
             } catch (error) {
-                console.error("Error fetching metadata:", error);
+                console.error('Error fetching metadata:', error);
             }
         };
 
@@ -89,13 +88,10 @@ export default function VetForm() {
             let photoUrl = vet.imageUrl;
 
             if (imageFile) {
-                const fileRef = ref(storage, `veterinarians/${Date.now()}_${imageFile.name}`);
-                await uploadBytes(fileRef, imageFile);
-                photoUrl = await getDownloadURL(fileRef);
+                photoUrl = await uploadToCloudinary(imageFile);
             }
 
             const finalSpecialty = isNewSpecialty ? newSpecialtyName : vet.specialty;
-            const finalClinic = isNewClinic ? newClinicName : vet.clinicId;
             
             // Generate initials if not provided
             const initials = vet.initials || (vet.name ? vet.name.split(' ').map(n => n[0]).join('').toUpperCase() : '');
@@ -104,7 +100,7 @@ export default function VetForm() {
             const vetData = {
                 ...vet,
                 specialty: finalSpecialty,
-                clinicId: finalClinic,
+                clinicId: vet.clinicId || '',
                 initials: initials,
                 imageUrl: photoUrl || '',
                 updatedAt: now,
@@ -271,45 +267,30 @@ export default function VetForm() {
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700">Clinic Reference/ID</label>
-                            {!isNewClinic ? (
+                            <div className="flex items-center justify-between">
+                                <label className="block text-sm font-medium text-slate-700">Clinic</label>
+                                <a
+                                    href="/vets/clinics"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1"
+                                >
+                                    Manage Clinics <ExternalLink className="h-3 w-3" />
+                                </a>
+                            </div>
+                            {clinics.length === 0 ? (
+                                <p className="text-sm text-slate-400 italic">No clinics found. <a href="/vets/clinics/new" className="text-blue-500 hover:underline">Add one first.</a></p>
+                            ) : (
                                 <select
                                     value={vet.clinicId}
-                                    onChange={e => {
-                                        if (e.target.value === 'NEW') {
-                                            setIsNewClinic(true);
-                                        } else {
-                                            setVet({...vet, clinicId: e.target.value});
-                                        }
-                                    }}
+                                    onChange={e => setVet({ ...vet, clinicId: e.target.value })}
                                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white text-slate-900"
                                 >
-                                    <option value="">Select a clinic</option>
-                                    {clinics.map(clinic => (
-                                        <option key={clinic} value={clinic}>{clinic}</option>
+                                    <option value="">— No clinic assigned —</option>
+                                    {clinics.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
                                     ))}
-                                    <option value="NEW" className="font-bold text-blue-600">+ Other (Add New...)</option>
                                 </select>
-                            ) : (
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            autoFocus
-                                            value={newClinicName}
-                                            onChange={e => setNewClinicName(e.target.value)}
-                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                            placeholder="Enter clinic reference..."
-                                        />
-                                        <button 
-                                            type="button"
-                                            onClick={() => setIsNewClinic(false)}
-                                            className="px-3 text-slate-400 hover:text-slate-600"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
                             )}
                         </div>
 
