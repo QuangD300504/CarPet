@@ -21,6 +21,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 fun EditProfileScreen(
@@ -42,6 +46,7 @@ fun EditProfileScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileContent(
     fullNameInitial: String,
@@ -65,82 +70,87 @@ fun EditProfileContent(
     var showCountryDropdown by remember { mutableStateOf(false) }
     var showGenderDropdown by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Chỉnh sửa hồ sơ",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White
+                )
+            )
+        },
+        containerColor = Color(0xFFF8FAFC)
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Edit profile",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             ProfileTextField(
-                label = "Full name",
+                label = "Họ và tên",
                 value = fullName,
-                onValueChange = { fullName = it }
+                onValueChange = { fullName = it },
+                icon = Icons.Default.Person
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             ProfileTextField(
-                label = "Nick name",
+                label = "Biệt danh",
                 value = nickName,
-                onValueChange = { nickName = it }
+                onValueChange = { nickName = it },
+                icon = Icons.Default.AlternateEmail
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             ProfileTextField(
                 label = "Email",
                 value = email,
-                onValueChange = { email = it }
+                onValueChange = { email = it },
+                icon = Icons.Default.Email
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             ProfileTextField(
-                label = "Phone Number",
+                label = "Số điện thoại",
                 value = phoneNumber,
-                onValueChange = { phoneNumber = it }
+                onValueChange = { phoneNumber = it },
+                icon = Icons.Default.Phone
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             ProfileDropdownField(
-                label = "Country",
+                label = "Quốc gia",
                 value = country,
-                onClick = { showCountryDropdown = true }
+                onClick = { showCountryDropdown = true },
+                icon = Icons.Default.Public
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             ProfileDropdownField(
-                label = "Gender",
+                label = "Giới tính",
                 value = gender,
-                onClick = { showGenderDropdown = true }
+                onClick = { showGenderDropdown = true },
+                icon = Icons.Default.Wc
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             ProfileTextField(
-                label = "Address",
+                label = "Địa chỉ",
                 value = address,
-                onValueChange = { address = it }
+                onValueChange = { address = it },
+                icon = Icons.Default.LocationOn
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = onSubmitClick,
@@ -148,13 +158,14 @@ fun EditProfileContent(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2196F3)
+                    containerColor = HealthPrimary
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text = "SUBMIT",
-                    fontSize = 18.sp,
+                    text = "XÁC NHẬN",
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
@@ -167,25 +178,32 @@ fun EditProfileContent(
 fun ProfileTextField(
     label: String,
     value: String,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    icon: ImageVector
 ) {
     Column {
         Text(
             text = label,
             fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             color = Color.Black,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
+            leadingIcon = {
+                Icon(imageVector = icon, contentDescription = null, tint = HealthPrimary, modifier = Modifier.size(20.dp))
+            },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = HealthPrimary,
+                unfocusedBorderColor = Color(0xFFE2E8F0),
+                cursorColor = HealthPrimary
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         )
     }
 }
@@ -194,15 +212,16 @@ fun ProfileTextField(
 fun ProfileDropdownField(
     label: String,
     value: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    icon: ImageVector
 ) {
     Column {
         Text(
             text = label,
             fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             color = Color.Black,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
         OutlinedTextField(
             value = value,
@@ -211,17 +230,23 @@ fun ProfileDropdownField(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onClick() },
+            leadingIcon = {
+                Icon(imageVector = icon, contentDescription = null, tint = HealthPrimary, modifier = Modifier.size(20.dp))
+            },
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown"
+                    contentDescription = "Dropdown",
+                    tint = HealthPrimary
                 )
             },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = HealthPrimary,
+                unfocusedBorderColor = Color(0xFFE2E8F0)
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         )
     }
 }

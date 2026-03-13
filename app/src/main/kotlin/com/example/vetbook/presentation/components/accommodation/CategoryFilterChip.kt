@@ -15,9 +15,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.vetbook.presentation.components.ServiceCard
 import com.example.vetbook.presentation.models.AccommodationCategory
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.Background
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryFilterChip(
     category: AccommodationCategory,
@@ -32,39 +38,42 @@ fun CategoryFilterChip(
         AccommodationCategory.HOTEL -> Icons.Default.Bed
     }
     
+    // Vietnamese display names
+    val vnDisplayName = when(category) {
+        AccommodationCategory.HOMESTAY -> "Homestay"
+        AccommodationCategory.APART -> "Căn hộ"
+        AccommodationCategory.COFFEE -> "Cà phê"
+        AccommodationCategory.HOTEL -> "Khách sạn"
+    }
+    
     FilterChip(
         selected = isSelected,
         onClick = onClick,
         label = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = category.displayName,
+                    contentDescription = vnDisplayName,
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = category.displayName,
-                    fontSize = 14.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    text = vnDisplayName,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
                 )
             }
         },
         colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = Brand,
-            selectedLabelColor     = MaterialTheme.colorScheme.onPrimary,
-            containerColor         = MaterialTheme.colorScheme.surfaceVariant,
-            labelColor             = MaterialTheme.colorScheme.onSurface
+            selectedContainerColor = HealthPrimary,
+            selectedLabelColor     = Color.White,
+            containerColor         = HealthSurface,
+            labelColor             = TextSecondary
         ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled             = true,
-            selected            = isSelected,
-            borderColor         = if (isSelected) Brand else androidx.compose.ui.graphics.Color.Transparent,
-            selectedBorderColor = Brand
-        ),
-        modifier = modifier
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.height(40.dp)
     )
 }
 

@@ -32,6 +32,8 @@ interface AuthRepository {
     fun getCurrentUser(): FirebaseUser?
     
     fun isUserLoggedIn(): Boolean
+    
+    fun getCurrentUserId(): String?
 
     /**
      * Observes the authentication state changes.

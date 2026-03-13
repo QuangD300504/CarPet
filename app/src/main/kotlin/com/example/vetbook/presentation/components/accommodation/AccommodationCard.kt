@@ -17,7 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.models.Accommodation
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
 
 @Composable
 fun AccommodationCard(
@@ -27,144 +30,134 @@ fun AccommodationCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, HealthSurface)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(20.dp)
         ) {
             // Location and Popular badge row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Location
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .background(HealthSurface, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
-                        contentDescription = "Location",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
+                        contentDescription = "Vị trí",
+                        tint = HealthPrimary,
+                        modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = accommodation.district,
-                        fontSize = 12.sp,
-                        color = Color.Gray
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HealthPrimary
                     )
                 }
                 
                 // Popular badge
                 if (accommodation.isPopular) {
                     Surface(
-                        color = Color(0xFF4CAF50),
-                        shape = RoundedCornerShape(12.dp)
+                        color = Color(0xFFFF7043).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "Popular",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            text = "Phổ biến",
+                            color = Color(0xFFFF7043),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Name
             Text(
                 text = accommodation.name,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextPrimary
             )
             
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             
             // Description
             Text(
                 text = accommodation.description,
-                fontSize = 14.sp,
-                color = Color.Gray,
-                lineHeight = 20.sp
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                lineHeight = 20.sp,
+                maxLines = 2
             )
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            // Rating and Location
+            // Rating and Price row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val ratingInt = remember(accommodation.rating) { accommodation.rating.toInt() }
-                    repeat(5) { index ->
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = if (index < ratingInt) Brand else Color.Gray.copy(alpha = 0.3f),
-                            modifier = Modifier.size(16.dp)
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val ratingInt = remember(accommodation.rating) { accommodation.rating.toInt() }
+                        repeat(5) { index ->
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = if (index < ratingInt) Color(0xFFFFB300) else Color.LightGray.copy(alpha = 0.5f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "${accommodation.rating}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = TextPrimary
                         )
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${accommodation.rating}",
-                        fontSize = 14.sp,
+                        text = "${accommodation.reviewCount} đánh giá",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    val priceText = remember(accommodation.price) {
+                        com.example.vetbook.utils.CurrencyFormatter.format(accommodation.price)
+                    }
+                    Text(
+                        text = priceText,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = HealthPrimary
+                    )
+                    Text(
+                        text = if (accommodation.priceUnit.contains("night", true)) "/ đêm" else "/ ${accommodation.priceUnit}",
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = " (${accommodation.reviewCount} reviews)",
-                        fontSize = 12.sp,
-                        color = Color.Gray
+                        color = TextSecondary
                     )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Country/Location and Price
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = "Country",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Vietnam",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-                
-                val priceText = remember(accommodation.price, accommodation.priceUnit) {
-                    "${accommodation.price.toInt()} ${accommodation.priceUnit}"
-                }
-                Text(
-                    text = priceText,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
             }
         }
     }

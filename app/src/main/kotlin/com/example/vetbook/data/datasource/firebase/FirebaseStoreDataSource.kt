@@ -28,17 +28,7 @@ class FirebaseStoreDataSource(
                 }
                 val items = snapshot?.documents.orEmpty().mapNotNull { doc ->
                     try {
-                        StoreProductDto(
-                            id = doc.id,
-                            name = doc.getString("name") ?: "",
-                            price = doc.getDouble("price") ?: 0.0,
-                            imageUrl = doc.getString("imageUrl"),
-                            description = doc.getString("description"),
-                            category = doc.getString("category"),
-                            stock = (doc.getLong("stock") ?: 0L).toInt(),
-                            createdAt = doc.getLong("createdAt"),
-                            updatedAt = doc.getLong("updatedAt")
-                        )
+                        doc.toStoreProductDto()
                     } catch (_: Exception) {
                         null
                     }
@@ -60,17 +50,7 @@ class FirebaseStoreDataSource(
                 }
                 val items = snapshot?.documents.orEmpty().mapNotNull { doc ->
                     try {
-                        StoreProductDto(
-                            id = doc.id,
-                            name = doc.getString("name") ?: "",
-                            price = doc.getDouble("price") ?: 0.0,
-                            imageUrl = doc.getString("imageUrl"),
-                            description = doc.getString("description"),
-                            category = doc.getString("category"),
-                            stock = (doc.getLong("stock") ?: 0L).toInt(),
-                            createdAt = doc.getLong("createdAt"),
-                            updatedAt = doc.getLong("updatedAt")
-                        )
+                        doc.toStoreProductDto()
                     } catch (_: Exception) {
                         null
                     }
@@ -200,6 +180,20 @@ class FirebaseStoreDataSource(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toStoreProductDto(): StoreProductDto {
+        return StoreProductDto(
+            id = id,
+            name = getString("name") ?: "",
+            price = getDouble("price") ?: 0.0,
+            imageUrl = getString("imageUrl"),
+            description = getString("description"),
+            category = getString("category"),
+            stock = (getLong("stock") ?: 0L).toInt(),
+            createdAt = getLong("createdAt"),
+            updatedAt = getLong("updatedAt")
+        )
     }
 }
 

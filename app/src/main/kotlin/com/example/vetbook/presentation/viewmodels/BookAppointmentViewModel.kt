@@ -2,7 +2,11 @@ package com.example.vetbook.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.vetbook.data.datasource.RemotePetDataSource
+import com.example.vetbook.data.mappers.toDomain
+import com.example.vetbook.domain.repository.AuthRepository
 import com.example.vetbook.domain.repository.BookingRepository
+import kotlinx.coroutines.flow.update
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +17,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class BookAppointmentViewModel @Inject constructor(
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val petDataSource: RemotePetDataSource,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     sealed class UiState {
@@ -23,11 +29,70 @@ class BookAppointmentViewModel @Inject constructor(
         data class PaymentReady(val appointmentId: String, val lockId: String, val checkoutUrl: String) : UiState()
     }
 
-    private var pendingAppointmentId: String? = null
-    private var pendingLockId: String? = null
+    var pendingAppointmentId: String? = null
+        private set
+    var pendingLockId: String? = null
+        private set
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    private val _pets = MutableStateFlow<List<com.example.vetbook.domain.models.Pet>>(emptyList())
+    val pets = _pets.asStateFlow()
+
+    private val _selectedPetIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedPetIds = _selectedPetIds.asStateFlow()
+
+    val timeSlots = listOf("09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30")
+
+    private val _bookedSlots = MutableStateFlow<Set<String>>(emptySet())
+    val bookedSlots = _bookedSlots.asStateFlow()
+
+    init {
+        loadUserPets()
+    }
+
+    private fun loadUserPets() {
+        val uid = authRepository.getCurrentUserId() ?: return
+        viewModelScope.launch {
+            try {
+                val userPets = petDataSource.getUserPets(uid).map { it.toDomain() }
+                _pets.value = userPets
+                if (userPets.isNotEmpty() && _selectedPetIds.value.isEmpty()) {
+                    _selectedPetIds.value = setOf(userPets.first().id)
+                }
+            } catch (e: Exception) {
+                // Silently handle
+            }
+        }
+    }
+
+    fun togglePetSelection(petId: String) {
+        _selectedPetIds.update { current ->
+            if (current.contains(petId)) {
+                if (current.size > 1) current - petId else current
+            } else {
+                current + petId
+            }
+        }
+    }
+
+    /** Load which slots are already locked for [veterinarianId] on the given date. */
+    fun loadBookedSlots(veterinarianId: String, year: Int, month: Int, day: Int) {
+        viewModelScope.launch {
+            try {
+                val locked = bookingRepository.getLockedSlots(
+                    veterinarianId = veterinarianId,
+                    year  = year,
+                    month = month,
+                    day   = day
+                )
+                _bookedSlots.value = locked
+            } catch (e: Exception) {
+                _bookedSlots.value = emptySet()
+            }
+        }
+    }
 
     fun confirmAndPay(
         veterinarianId: String,
@@ -44,7 +109,8 @@ class BookAppointmentViewModel @Inject constructor(
                     appointmentAt = appointmentAt,
                     totalPrice = totalPrice,
                     durationMinutes = durationMinutes,
-                    notes = notes
+                    notes = notes,
+                    petIds = _selectedPetIds.value.toList()
                 )
                 pendingAppointmentId = created.appointmentId
                 pendingLockId = created.lockId
@@ -61,13 +127,22 @@ class BookAppointmentViewModel @Inject constructor(
         }
     }
 
-    fun clearPendingUnlock() {
-        pendingAppointmentId = null
-        pendingLockId = null
+
+    fun onPaymentSuccess(appointmentId: String) {
+        viewModelScope.launch {
+            try {
+                bookingRepository.markAppointmentAsPaid(appointmentId)
+            } catch (e: Exception) {
+                // Ignore failure
+            }
+            pendingAppointmentId = null
+            pendingLockId = null
+        }
     }
 
     fun cancelAppointment(appointmentId: String, lockId: String) {
-        clearPendingUnlock()
+        pendingAppointmentId = null
+        pendingLockId = null
         @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
         kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {

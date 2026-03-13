@@ -21,7 +21,10 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.vetbook.R
 import com.example.vetbook.presentation.models.Product
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.HealthMuted
+import com.example.vetbook.presentation.theme.TextPrimary
 
 @Composable
 fun ProductCard(
@@ -33,8 +36,10 @@ fun ProductCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(4.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -42,8 +47,9 @@ fun ProductCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (showFavorite) 150.dp else 120.dp),
-                contentAlignment = if (showFavorite) Alignment.TopEnd else Alignment.Center
+                    .height(140.dp)
+                    .background(HealthSurface.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.TopEnd
             ) {
                 AsyncImage(
                     model = product.imageUrl,
@@ -56,64 +62,73 @@ fun ProductCard(
                 if (showFavorite) {
                     IconButton(
                         onClick = { },
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(32.dp)
+                            .background(Color.White.copy(alpha = 0.8f), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(20.dp)
+                            contentDescription = "Yêu thích",
+                            tint = HealthPrimary,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = product.name,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Black,
-                modifier = Modifier.padding(horizontal = if (showFavorite) 12.dp else 8.dp),
-                maxLines = 2,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (showFavorite) 12.dp else 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(12.dp)
             ) {
-                val priceText = remember(product.price) {
-                    "$${product.price}"
-                }
                 Text(
-                    text = priceText,
-                    fontSize = 16.sp,
+                    text = product.name,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-                IconButton(
-                    onClick = onAddToCart,
-                    modifier = Modifier.size(36.dp)
+
+                Text(
+                    text = product.shopName,
+                    fontSize = 11.sp,
+                    color = HealthMuted,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add to cart",
-                        tint = Color.White,
-                        modifier = Modifier
-                            .size(28.dp)
-                            .background(
-                                Brand, // Brand gold circle
-                                CircleShape
+                    Column {
+                        Text(
+                            text = com.example.vetbook.utils.CurrencyFormatter.format(product.price),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = HealthPrimary
+                        )
+                    }
+                    
+                    Surface(
+                        onClick = onAddToCart,
+                        shape = RoundedCornerShape(10.dp),
+                        color = HealthPrimary,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Thêm vào giỏ",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
-                            .padding(6.dp)
-                    )
+                        }
+                    }
                 }
             }
         }

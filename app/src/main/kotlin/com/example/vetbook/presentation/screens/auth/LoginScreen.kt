@@ -1,5 +1,6 @@
 package com.example.vetbook.presentation.screens.auth
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +13,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,13 +41,17 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.models.LoginUiState
-import com.example.vetbook.presentation.theme.Brand
-import com.example.vetbook.presentation.theme.BrandSurface
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.HealthMuted
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
+import com.example.vetbook.presentation.theme.Link
 import com.example.vetbook.presentation.theme.VetBookTheme
 import com.example.vetbook.presentation.viewmodels.LoginViewModel
 
-private val DarkCardColor = Color(0xFF1E293B)
-private val AuthBackground = Color(0xFFF7F8FA)
+
+private val DarkCardColor = Color(0xFF0F172A)
 
 @Composable
 fun LoginScreen(
@@ -86,112 +96,121 @@ fun LoginContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AuthBackground)
+            .background(HealthSurface)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // ── Hero header with Brand gradient ──────────────────────────
+        // ── Hero header with Healthcare gradient ─────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(260.dp)
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(Brand, Brand.copy(alpha = 0.75f))
+                        colors = listOf(HealthPrimary, HealthPrimary.copy(alpha = 0.8f))
                     )
                 ),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // App logo placeholder — white circle with paw
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
+                // App logo container — Professional white circle with Pet Icon
+                Surface(
+                    modifier = Modifier.size(80.dp),
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 8.dp
                 ) {
-                    Text("🐾", fontSize = 36.sp)
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Pets,
+                            contentDescription = null,
+                            tint = HealthPrimary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "CarPet",
-                    fontSize = 28.sp,
+                    text = "VetBook",
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
+                    color = Color.White,
+                    letterSpacing = 1.sp
                 )
                 Text(
-                    text = "Your pet's best companion",
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.85f)
+                    text = "Professional Pet Care Solutions",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
 
-        // ── White card for form ───────────────────────────────────────
+        // Form Section (Card) — Standardized offset and rounded corners
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-20).dp),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                .fillMaxSize()
+                .offset(y = (-30.dp)),
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
             color = Color.White,
             shadowElevation = 0.dp
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 28.dp),
+                    .fillMaxSize()
+                    .padding(horizontal = 28.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Welcome back",
-                    fontSize = 22.sp,
+                    text = "Chào mừng trở lại",
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B)
+                    color = TextPrimary
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Vui lòng đăng nhập thông tin để tiếp tục",
-                    fontSize = 13.sp,
-                    color = Color.Gray,
+                    text = "Vui lòng nhập thông tin để tiếp tục",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 // Email field
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Email",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1E293B)
+                        text = "Địa chỉ Email",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     CustomTextField(
                         value = uiState.username,
                         onValueChange = onUsernameChange,
-                        placeholder = "example@email.com",
+                        placeholder = "VD: alex@petcare.com",
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next,
                         onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // Password field
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Password",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1E293B)
+                        text = "Mật khẩu",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     CustomTextField(
                         value = uiState.password,
                         onValueChange = onPasswordChange,
-                        placeholder = "At least 8 characters",
+                        placeholder = "Ít nhất 8 ký tự",
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
@@ -200,9 +219,14 @@ fun LoginContent(
                             onLoginClick()
                         },
                         trailingIcon = {
-                            val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            val image =
+                                if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
+                                Icon(
+                                    imageVector = image,
+                                    contentDescription = null,
+                                    tint = HealthPrimary.copy(alpha = 0.6f)
+                                )
                             }
                         }
                     )
@@ -213,28 +237,25 @@ fun LoginContent(
                     horizontalArrangement = Arrangement.End
                 ) {
                     Text(
-                        text = "Forgot Password?",
-                        color = Brand,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
+                        text = "Quên mật khẩu?",
+                        color = Link,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 12.dp)
                             .clickable { onForgotPasswordClick() }
                     )
                 }
 
-                uiState.error?.let { error ->
-                    Spacer(modifier = Modifier.height(4.dp))
+                if (uiState.error != null) {
                     Text(
-                        text = error,
+                        text = uiState.error!!,
                         color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // Login button
                 Button(
@@ -242,115 +263,164 @@ fun LoginContent(
                     enabled = !uiState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DarkCardColor)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary)
                 ) {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
                     } else {
-                        Text(text = "Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(
+                            text = "Đăng nhập",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = HealthMuted)
                     Text(
-                        text = "Or sign in with",
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        text = " Hoặc ",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = TextSecondary,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = HealthMuted)
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SocialLoginButton(
-                    text = "Continue with Google",
-                    iconRes = null,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onGoogleLoginClick
-                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Google Login Button
+                OutlinedButton(
+                    onClick = onGoogleLoginClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, HealthMuted)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Google "G" placeholder since drawable is missing
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color(0xFF4285F4), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "G",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Tiếp tục với Google",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // SignUp link
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "Don't have an account? ",
-                        color = Color.Gray,
-                        fontSize = 14.sp
+                        text = "Chưa có tài khoản? ",
+                        fontSize = 14.sp,
+                        color = TextSecondary
                     )
                     Text(
-                        text = "Sign up",
-                        color = Brand,
-                        fontWeight = FontWeight.Bold,
+                        text = "Đăng ký ngay",
                         fontSize = 14.sp,
+                        color = HealthPrimary,
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable { onSignUpClick() }
                     )
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
-}
 
-@Composable
-fun SocialLoginButton(
-    text: String,
-    iconRes: Int?,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier.height(48.dp),
-        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
+    @Composable
+    fun SocialLoginButton(
+        text: String,
+        iconRes: Int?,
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (iconRes != null) {
-                Image(
-                    painter = painterResource(id = iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            } else {
-                // Google "G" placeholder
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .background(Color(0xFF4285F4), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("G", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        OutlinedButton(
+            onClick = onClick,
+            modifier = modifier.height(52.dp),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFE2E8F0))
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (iconRes != null) {
+                    Image(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    // Google "G" placeholder
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(Color(0xFF4285F4), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "G",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = text,
+                    color = Color(0xFF1E293B),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = text, color = Color(0xFF1E293B), fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun LoginPreview() {
-    VetBookTheme {
-        LoginContent(
-            uiState = LoginUiState(),
-            onUsernameChange = {},
-            onPasswordChange = {},
-            onLoginClick = {},
-            onGoogleLoginClick = {},
-            onSignUpClick = {},
-            onForgotPasswordClick = {}
-        )
+    @Preview(showBackground = true)
+    @Composable
+    fun LoginPreview() {
+        VetBookTheme {
+            LoginContent(
+                uiState = LoginUiState(),
+                onUsernameChange = {},
+                onPasswordChange = {},
+                onLoginClick = {},
+                onGoogleLoginClick = {},
+                onSignUpClick = {},
+                onForgotPasswordClick = {}
+            )
+        }
     }
 }

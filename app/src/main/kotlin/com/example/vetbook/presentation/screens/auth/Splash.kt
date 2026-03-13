@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
 import kotlinx.coroutines.delay
 
 @Composable
@@ -50,7 +51,7 @@ fun SplashScreen(onAnimationFinished: () -> Unit) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Box(modifier = Modifier.fillMaxSize().background(HealthSurface)) {
         if (offsetAnim < 1f) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Top-Left Half - Slides Left
@@ -88,7 +89,7 @@ fun DiagonalHalfPanel(
             override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
                 val path = Path().apply {
                     if (isTopLeftHalf) {
-                        moveTo(0f, 0f)
+                        moveTo(0f,0f)
                         lineTo(size.width, 0f)
                         lineTo(0f, size.height)
                         close()
@@ -114,7 +115,7 @@ fun DiagonalHalfPanel(
                 }
             }
             .clip(diagonalShape)
-            .background(Brand)
+            .background(HealthPrimary)
             .border(1.dp, Color.Black.copy(alpha = 0.1f), diagonalShape)
     )
 }

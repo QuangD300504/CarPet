@@ -1,12 +1,9 @@
 package com.example.vetbook.presentation.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -14,15 +11,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.domain.models.ServiceCategory
-import com.example.vetbook.presentation.theme.Brand
-import com.example.vetbook.presentation.theme.Link
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
+import com.example.vetbook.presentation.theme.HealthMuted
 
 @Composable
 fun ServiceCategoriesSection(
@@ -34,7 +33,7 @@ fun ServiceCategoriesSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = 24.dp)
     ) {
         Row(
             modifier = Modifier
@@ -44,43 +43,32 @@ fun ServiceCategoriesSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Service Categories",
+                text = "Danh mục dịch vụ",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+                fontWeight = FontWeight.ExtraBold,
+                color = TextPrimary
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Text(
+                text = "Xem tất cả",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = HealthPrimary,
                 modifier = Modifier.clickable { onViewAllClick() }
-            ) {
-                Text(
-                    text = "View all",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Link
-                )
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(19.dp),
-                    tint = Link
-                )
-            }
+            )
         }
         
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         
-        // 2x2 Grid layout instead of horizontal scroll
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val displayCategories = categories.take(4)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(20.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 displayCategories.take(2).forEach { category ->
                     CategoryCard(
@@ -89,17 +77,25 @@ fun ServiceCategoriesSection(
                         modifier = Modifier.weight(1f)
                     )
                 }
+                if (displayCategories.take(2).size < 2) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                displayCategories.drop(2).take(2).forEach { category ->
-                    CategoryCard(
-                        category = category,
-                        onClick = { onCategoryClick(category) },
-                        modifier = Modifier.weight(1f)
-                    )
+            if (displayCategories.size > 2) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    displayCategories.drop(2).take(2).forEach { category ->
+                        CategoryCard(
+                            category = category,
+                            onClick = { onCategoryClick(category) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (displayCategories.drop(2).take(2).size < 2) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -114,43 +110,53 @@ fun CategoryCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier
-            .height(76.dp),
-        shape = RoundedCornerShape(15.dp),
+        modifier = modifier.height(84.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF2F2F2) // Light grey background from Figma
+            containerColor = Color.White
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 10.dp, vertical = 11.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(54.dp)
-                    .background(Color.White, RoundedCornerShape(15.dp)),
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(HealthSurface),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = com.example.vetbook.presentation.utils.getCategoryIcon(category.id),
                     contentDescription = category.title,
-                    modifier = Modifier.size(32.dp),
-                    tint = Brand // Brand gold icon
+                    modifier = Modifier.size(28.dp),
+                    tint = HealthPrimary
                 )
             }
-            Text(
-                text = category.title,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Black,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column {
+                Text(
+                    text = category.title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Khám phá",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = HealthMuted
+                )
+            }
         }
     }
 }
-

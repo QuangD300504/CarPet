@@ -27,4 +27,5 @@ object FirebaseModule {
         firestore.firestoreSettings = settings
         return firestore
     }
+
 }

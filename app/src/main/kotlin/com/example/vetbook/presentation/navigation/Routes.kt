@@ -25,11 +25,20 @@ sealed class Routes(val route: String) {
         fun createRoute(doctorId: String) = "book_appointment/$doctorId"
     }
     object Store : Routes("store")
-    object Products : Routes("products")
+    object Products : Routes("products?category={category}") {
+        fun createRoute(category: String? = null) = if (category != null) "products?category=$category" else "products"
+    }
     object Cart : Routes("cart")
     object Payment : Routes("payment")
-    object PaymentResult : Routes("payment_result/{isSuccess}") {
-        fun createRoute(isSuccess: Boolean) = "payment_result/$isSuccess"
+    object PaymentResult : Routes("payment_result/{isSuccess}?source={source}") {
+        fun createRoute(isSuccess: Boolean, source: String = "store") =
+            "payment_result/$isSuccess?source=$source"
+    }
+    object InAppPayment : Routes("in_app_payment?url={url}") {
+        fun createRoute(url: String) = "in_app_payment?url=${java.net.URLEncoder.encode(url, "UTF-8")}"
+    }
+    object ProductDetail : Routes("product_detail/{productId}") {
+        fun createRoute(productId: String) = "product_detail/$productId"
     }
     object Notifications : Routes("notifications")
     object EditProfile : Routes("edit_profile")
@@ -40,7 +49,9 @@ sealed class Routes(val route: String) {
         fun createRoute(accommodationId: String) = "accommodation_detail/$accommodationId"
     }
     object Pet : Routes("pet")
-    object AddPet : Routes("add_pet")
+    object AddPet : Routes("add_pet?petId={petId}") {
+        fun createRoute(petId: String? = null) = if (petId != null) "add_pet?petId=$petId" else "add_pet"
+    }
 
     object ContinueLogin : Routes("continue_login")
     object ContinueLoginStart : Routes("continue_login_start")

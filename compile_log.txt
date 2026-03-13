@@ -1,0 +1,113 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+
+> Task :app:compileDebugKotlin FAILED
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/data/datasource/firebase/FirebasePetDataSource.kt:12:1 Class 'FirebasePetDataSource' is not abstract and does not implement abstract member 'getUserPets'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/MainScreen.kt:671:61 Unresolved reference 'ProductDetail'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/MainScreen.kt:708:37 Unresolved reference 'compressImageForAvatar'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/MainScreen.kt:710:59 Argument type mismatch: actual type is 'kotlin.Any', but 'kotlin.ByteArray' was expected.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:40:26 Property delegate must have a 'getValue(Nothing?, KProperty0<*>)' method. None of the following functions is applicable:
+fun FloatState.getValue(thisObj: Any?, property: KProperty<*>): Float
+fun DoubleState.getValue(thisObj: Any?, property: KProperty<*>): Double
+fun IntState.getValue(thisObj: Any?, property: KProperty<*>): Int
+fun LongState.getValue(thisObj: Any?, property: KProperty<*>): Long
+fun <T> State<T>.getValue(thisObj: Any?, property: KProperty<*>): T
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:40:50 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:40:50 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+fun <T> StateFlow<T>.collectAsState(context: CoroutineContext = ...): State<T>
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:49:13 Argument type mismatch: actual type is 'kotlin.Unit', but 'K' was expected.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:51:13 Argument type mismatch: actual type is 'R?', but 'K?' was expected.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:51:13 Argument type mismatch: actual type is 'K#2 (type parameter of fun <K> ELVIS_CALL(x: K?, y: K): K)', but 'K#1 (type parameter of fun <K> WHEN_CALL(vararg branches: K): K)' was expected.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:51:28 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:51:28 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+fun <T, R> T.let(block: (T) -> R): R
+    [R|Contract description]
+     <
+        CallsInPlace(block, EXACTLY_ONCE)
+    >
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:51:34 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:52:17 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/accommodation/AccommodationDetailScreen.kt:53:18 Argument type mismatch: actual type is 'kotlin.Unit', but 'K' was expected.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/pets/PetScreen.kt:107:42 None of the following candidates is applicable:
+fun PaddingValues(all: Dp): PaddingValues
+fun PaddingValues(horizontal: Dp = ..., vertical: Dp = ...): PaddingValues
+fun PaddingValues(start: Dp = ..., top: Dp = ..., end: Dp = ..., bottom: Dp = ...): PaddingValues
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/services/ServiceScreen.kt:79:29 Unresolved reference 'clickable'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:39:52 Conflicting import: imported name 'BookAppointmentViewModel' is ambiguous.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:40:52 Conflicting import: imported name 'VeterinariansViewModel' is ambiguous.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:42:52 Conflicting import: imported name 'BookAppointmentViewModel' is ambiguous.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:43:52 Conflicting import: imported name 'VeterinariansViewModel' is ambiguous.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:138:58 Unresolved reference 'HealthSurface'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:140:51 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:186:26 Unresolved reference 'HealthSurface'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:228:32 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:257:25 Unresolved reference 'HealthSurface'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:266:84 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:304:85 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:344:88 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:375:91 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:392:52 Unresolved reference 'outlinedTextFieldColors'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:393:50 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:406:46 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:446:33 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:452:35 Argument type mismatch: actual type is 'androidx.compose.ui.Alignment', but 'androidx.compose.foundation.layout.Arrangement.Vertical' was expected.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:454:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:456:39 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:459:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:460:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:462:39 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:483:33 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:527:33 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:533:35 Argument type mismatch: actual type is 'androidx.compose.ui.Alignment', but 'androidx.compose.foundation.layout.Arrangement.Vertical' was expected.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:536:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:539:77 Unresolved reference 'HealthSurface'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:546:65 Unresolved reference 'HealthPrimary'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:550:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:551:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:553:39 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:558:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:560:39 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/screens/vetcare/BookAppointmentScreen.kt:596:9 No value passed for parameter 'timeSlots'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/viewmodels/AccommodationDetailViewModel.kt:5:42 Unresolved reference 'Accommodation'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/viewmodels/AccommodationDetailViewModel.kt:19:51 Unresolved reference 'Accommodation'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/viewmodels/AccommodationDetailViewModel.kt:19:67 Null cannot be a value of a non-null type 'T'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/viewmodels/AccommodationDetailViewModel.kt:20:34 Unresolved reference 'Accommodation'.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/viewmodels/AccommodationDetailViewModel.kt:20:67 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///D:/Android/Project/app/src/main/kotlin/com/example/vetbook/presentation/viewmodels/PetProfileViewModel.kt:49:55 Argument type mismatch: actual type is 'kotlin.collections.List<com.example.vetbook.data.models.VaccinationRecordDto>', but 'kotlin.collections.List<com.example.vetbook.domain.models.Vaccination>' was expected.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 15s
+19 actionable tasks: 1 executed, 18 up-to-date

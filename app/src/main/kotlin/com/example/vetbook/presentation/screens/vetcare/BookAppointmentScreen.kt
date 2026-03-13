@@ -1,5 +1,7 @@
 package com.example.vetbook.presentation.screens.vetcare
 
+import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,48 +12,83 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.filled.ArrowDropDown
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.vetbook.R
 import com.example.vetbook.domain.models.Veterinarian
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthMuted
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.utils.PayosLauncher
+import com.example.vetbook.utils.DeepLinkHandler
 import com.example.vetbook.presentation.viewmodels.BookAppointmentViewModel
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
-import java.util.Calendar
-import java.util.Date
+import com.example.vetbook.R
+import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import java.time.LocalDateTime
 
-private const val MVP_FIXED_PRICE_VND = 100000.0
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookAppointmentScreen(
     doctorId: String,
     vetsViewModel: VeterinariansViewModel = hiltViewModel(),
     bookingViewModel: BookAppointmentViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
-    onPaymentReady: (checkoutUrl: String) -> Unit = {}
+    onShowPayment: (checkoutUrl: String) -> Unit = {},
+    onPaymentFinished: (isSuccess: Boolean) -> Unit = {}
 ) {
     val uiState by vetsViewModel.uiState.collectAsState()
     val doctor = uiState.veterinarians.find { it.id == doctorId }
     val bookingState by bookingViewModel.uiState.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val pets by bookingViewModel.pets.collectAsState()
+    val selectedPetIds by bookingViewModel.selectedPetIds.collectAsState()
+    val bookedSlots by bookingViewModel.bookedSlots.collectAsState()
 
-    var selectedDate by remember { mutableStateOf(2) }
-    var selectedTime by remember { mutableStateOf(0) }
+    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
+    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
+    var noteText by remember { mutableStateOf("") }
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // Reload locked slots whenever the doctor or selected date changes
+    LaunchedEffect(doctorId, selectedDateMillis) {
+        selectedDateMillis?.let { millis ->
+            val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+            bookingViewModel.loadBookedSlots(doctorId, date.year, date.monthValue, date.dayOfMonth)
+        }
+    }
+
+    var isResultHandled by remember { mutableStateOf(false) }
 
     LaunchedEffect(bookingState) {
         when (val state = bookingState) {
@@ -60,344 +97,426 @@ fun BookAppointmentScreen(
                 bookingViewModel.reset()
             }
             is BookAppointmentViewModel.UiState.PaymentReady -> {
-                try {
-                    val intent = android.content.Intent(context, com.vnpay.authentication.VNP_AuthenticationActivity::class.java)
-                    intent.putExtra("url", state.checkoutUrl)
-                    intent.putExtra("tmn_code", "W8JDF86Z")
-                    intent.putExtra("scheme", "vetbook-vnpay")
-                    intent.putExtra("is_sandbox", true)
-
-                    com.vnpay.authentication.VNP_AuthenticationActivity.setSdkCompletedCallback(object : com.vnpay.authentication.VNP_SdkCompletedCallback {
-                        override fun sdkAction(action: String) {
-                            android.util.Log.d("VNPAY", "Action: $action")
-                            val isSuccess = action == "SuccessBackAction"
-                            if (!isSuccess) {
-                                bookingViewModel.cancelAppointment(state.appointmentId, state.lockId)
-                            } else {
-                                bookingViewModel.clearPendingUnlock()
-                            }
-                            onPaymentReady(isSuccess.toString()) // Passing "true" or "false" string to handle generic result
-                        }
-                    })
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    android.util.Log.e("VNPAY", "Launch failed: ${e.message}")
-                    bookingViewModel.cancelAppointment(state.appointmentId, state.lockId)
-                }
+                isResultHandled = false
+                onShowPayment(state.checkoutUrl)
                 bookingViewModel.reset()
             }
             else -> Unit
         }
     }
 
+    LaunchedEffect(Unit) {
+        DeepLinkHandler.paymentResult.collect { isSuccess ->
+            if (isResultHandled) return@collect
+            
+            val apptId = bookingViewModel.pendingAppointmentId
+            val lockId = bookingViewModel.pendingLockId
+            if (apptId != null && lockId != null) {
+                isResultHandled = true
+                if (isSuccess) {
+                    bookingViewModel.onPaymentSuccess(apptId)
+                } else {
+                    bookingViewModel.cancelAppointment(apptId, lockId)
+                }
+                DeepLinkHandler.clear()
+                onPaymentFinished(isSuccess)
+                
+                selectedDateMillis?.let { millis ->
+                    val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    bookingViewModel.loadBookedSlots(doctorId, date.year, date.monthValue, date.dayOfMonth)
+                }
+            }
+        }
+    }
+
     if (doctor != null) {
         BookAppointmentContent(
             doctor            = doctor,
-            selectedDate      = selectedDate,
+            pets              = pets,
+            selectedPetIds    = selectedPetIds,
+            selectedDateMillis = selectedDateMillis,
             selectedTime      = selectedTime,
+            noteText          = noteText,
             bookingState      = bookingState,
             snackbarHostState = snackbarHostState,
+            bookedSlots       = bookedSlots,
             onBackClick       = onBackClick,
-            onDateSelect      = { selectedDate = it },
+            onPetToggle       = { bookingViewModel.togglePetSelection(it) },
+            onDateSelect      = { selectedDateMillis = it },
             onTimeSelect      = { selectedTime = it },
+            onNoteChange      = { noteText = it },
             onConfirmClick    = {
-                val appointmentAt = buildAppointmentDate(selectedDate, selectedTime)
-                bookingViewModel.confirmAndPay(
-                    veterinarianId  = doctorId,
-                    appointmentAt   = appointmentAt,
-                    totalPrice      = MVP_FIXED_PRICE_VND,
-                    durationMinutes = 30,
-                    notes           = null
-                )
+                val date = selectedDateMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() }
+                val time = selectedTime
+                if (date != null && time != null) {
+                    val appointmentAt = Date.from(date.atTime(time).atZone(ZoneId.systemDefault()).toInstant())
+                    bookingViewModel.confirmAndPay(
+                        veterinarianId  = doctorId,
+                        appointmentAt   = appointmentAt,
+                        totalPrice      = doctor.servicePrice * selectedPetIds.size,
+                        durationMinutes = 30,
+                        notes           = if (noteText.isBlank()) null else noteText
+                    )
+                }
             }
         )
     } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(HealthSurface), contentAlignment = Alignment.Center) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(color = Brand)
+                CircularProgressIndicator(color = HealthPrimary)
             } else {
-                Text(text = "Doctor not found")
+                Text(text = "Không tìm thấy bác sĩ", color = HealthMuted)
             }
         }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookAppointmentContent(
     doctor: Veterinarian,
-    selectedDate: Int,
-    selectedTime: Int,
+    pets: List<com.example.vetbook.domain.models.Pet>,
+    selectedPetIds: Set<String>,
+    selectedDateMillis: Long?,
+    selectedTime: LocalTime?,
+    noteText: String,
     bookingState: BookAppointmentViewModel.UiState,
     snackbarHostState: SnackbarHostState,
+    bookedSlots: Set<String> = emptySet(),
     onBackClick: () -> Unit = {},
-    onDateSelect: (Int) -> Unit,
-    onTimeSelect: (Int) -> Unit,
+    onPetToggle: (String) -> Unit,
+    onDateSelect: (Long?) -> Unit,
+    onTimeSelect: (LocalTime?) -> Unit,
+    onNoteChange: (String) -> Unit,
     onConfirmClick: () -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val today = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                return utcTimeMillis >= today
+            }
+        }
+    )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDateSelect(datePickerState.selectedDateMillis)
+                    showDatePicker = false
+                }) {
+                    Text("Chọn")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Hủy")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = selectedTime?.hour ?: 9,
+            initialMinute = selectedTime?.minute ?: 0
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val pickedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                    val now = LocalDateTime.now()
+                    val pickedDateTime = selectedDateMillis?.let {
+                        Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atTime(pickedTime)
+                    }
+                    
+                    if (pickedDateTime != null && pickedDateTime.isBefore(now.plusMinutes(2))) {
+                        // In reality, we'd show a snackbar or error here.
+                    } else {
+                        onTimeSelect(pickedTime)
+                    }
+                    showTimePicker = false
+                }) {
+                    Text("Chọn")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text("Hủy")
+                }
+            },
+            text = {
+                Box(modifier = Modifier.padding(top = 16.dp)) {
+                    TimePicker(state = timePickerState)
+                }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.White
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+        containerColor = HealthSurface,
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 16.dp,
+                color = Color.White
             ) {
-                // Doctor hero image with floating back button overlay
-                Box(
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp)
+                        .padding(20.dp)
+                        .navigationBarsPadding(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Image(
-                        painter            = painterResource(R.drawable.pawns),
-                        contentDescription = null,
-                        modifier           = Modifier.fillMaxSize(),
-                        contentScale       = ContentScale.Crop
-                    )
-                    // Floating back button — Type C HeroHeader
-                    Box(
-                        modifier = Modifier
-                            .statusBarsPadding()
-                            .padding(start = 16.dp, top = 12.dp)
-                            .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.85f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        IconButton(onClick = onBackClick, modifier = Modifier.fillMaxSize()) {
-                            Icon(
-                                imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint               = Brand
-                            )
-                        }
+                    Column {
+                        Text(
+                            text = "Tổng thanh toán",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = HealthMuted
+                        )
+                        val total = doctor.servicePrice * selectedPetIds.size
+                        Text(
+                            text = String.format("%,.0f đ", total),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = HealthPrimary
+                        )
                     }
-                    // Info card overlay
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                            .padding(16.dp),
-                        shape  = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Brand)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text      = doctor.name,
-                                style     = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text  = doctor.specialty,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Appointment",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    val calendar = Calendar.getInstance()
-                    val daysList = mutableListOf<String>()
-                    val datesList = mutableListOf<Int>()
-                    
-                    for (i in 0 until 14) {
-                        val dayFormat = java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault())
-                        daysList.add(dayFormat.format(calendar.time))
-                        datesList.add(calendar.get(Calendar.DAY_OF_MONTH))
-                        calendar.add(Calendar.DAY_OF_YEAR, 1)
-                    }
-
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
-                    ) {
-                        items(daysList.size) { index ->
-                            CalendarDayItem(
-                                day = daysList[index],
-                                date = datesList[index],
-                                isSelected = selectedDate == index,
-                                onClick = { onDateSelect(index) }
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Text(
-                        text = "Available Time",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    val timeSlots = listOf("9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM")
-
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
-                    ) {
-                        items(timeSlots.size) { index ->
-                            TimeSlotItem(
-                                time = timeSlots[index],
-                                isSelected = selectedTime == index,
-                                onClick = { onTimeSelect(index) }
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
                     Button(
-                        onClick  = onConfirmClick,
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        colors   = ButtonDefaults.buttonColors(
-                            containerColor = Brand,
-                            contentColor   = MaterialTheme.colorScheme.onPrimary
+                        onClick = onConfirmClick,
+                        enabled = selectedDateMillis != null && selectedTime != null && selectedPetIds.isNotEmpty() && bookingState !is BookAppointmentViewModel.UiState.Loading,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = HealthPrimary,
+                            disabledContainerColor = HealthPrimary.copy(alpha = 0.5f)
                         ),
-                        shape   = RoundedCornerShape(14.dp),
-                        enabled = bookingState !is BookAppointmentViewModel.UiState.Loading
+                        modifier = Modifier.width(180.dp)
                     ) {
                         if (bookingState is BookAppointmentViewModel.UiState.Loading) {
-                            CircularProgressIndicator(
-                                modifier    = Modifier.size(24.dp),
-                                color       = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                         } else {
-                            Text(
-                                text       = "Confirm Appointment",
-                                style      = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                            Text("Đặt Lịch & Thanh Toán")
+                        }
+                    }
+                }
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Header Image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.pawns),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))))
+                )
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.statusBarsPadding().padding(16.dp).background(Color.White.copy(0.9f), CircleShape)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = HealthPrimary)
+                }
+                Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
+                    Text(doctor.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(doctor.specialty, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(0.9f))
+                }
+            }
+
+            Column(modifier = Modifier.padding(20.dp)) {
+                // Section: Pets
+                SectionTitle(title = "Chọn Thú Cưng", icon = Icons.Default.Pets)
+                Spacer(modifier = Modifier.height(16.dp))
+                if (pets.isEmpty()) {
+                    Text("Vui lòng thêm thú cưng trong hồ sơ của bạn để đặt lịch khám", color = HealthMuted, style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(pets) { pet ->
+                            PetSelectionItem(
+                                pet = pet,
+                                isSelected = selectedPetIds.contains(pet.id),
+                                onClick = { onPetToggle(pet.id) }
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Section: Date
+                SectionTitle(title = "Chọn Ngày Khám", icon = Icons.Default.Event)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary)
+                ) {
+                    Icon(Icons.Default.Event, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val dateText = selectedDateMillis?.let {
+                        Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ofPattern("dd MMMM, yyyy", Locale("vi")))
+                    } ?: "Chọn ngày dự kiến"
+                    Text(dateText, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Section: Time
+                SectionTitle(title = "Chọn Giờ Khám", icon = Icons.Default.Schedule)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { showTimePicker = true },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary)
+                ) {
+                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val timeText = selectedTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Chọn khung giờ"
+                    Text(timeText, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Section: Notes
+                SectionTitle(title = "Lưu Ý Cho Bác Sĩ", icon = Icons.Default.Description)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = noteText,
+                    onValueChange = onNoteChange,
+                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                    placeholder = { Text("Mô tả sơ qua tình trạng thú cưng của bạn...", color = HealthMuted, fontSize = 14.sp) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = HealthPrimary,
+                        unfocusedBorderColor = HealthMuted.copy(alpha = 0.2f),
+                        cursorColor = HealthPrimary
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
 }
 
 @Composable
-fun CalendarDayItem(
-    day: String,
-    date: Int,
+private fun SectionTitle(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = HealthPrimary, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun PetSelectionItem(
+    pet: com.example.vetbook.domain.models.Pet,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
+    Surface(
+        modifier = Modifier
+            .width(110.dp)
+            .height(120.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) HealthPrimary else Color.White,
+        border = if (!isSelected) BorderStroke(1.dp, HealthMuted.copy(alpha = 0.2f)) else null,
+        shadowElevation = if (isSelected) 6.dp else 0.dp
     ) {
-        Text(
-            text = day,
-            fontSize = 12.sp,
-            color = if (isSelected) Color.Black else Color.Gray
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(
-                    color = if (isSelected) Brand else Color.Transparent,
-                    shape = RoundedCornerShape(8.dp)
-                ),
-            contentAlignment = Alignment.Center
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(8.dp)
         ) {
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = CircleShape,
+                color = if (isSelected) Color.White.copy(alpha = 0.2f) else HealthSurface
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Pets,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = if (isSelected) Color.White else HealthPrimary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text       = date.toString(),
-                style      = MaterialTheme.typography.titleMedium,
+                text = pet.name,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color      = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                color = if (isSelected) Color.White else Color.Black,
+                maxLines = 1
+            )
+            Text(
+                text = pet.type,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isSelected) Color.White.copy(alpha = 0.8f) else HealthMuted,
+                maxLines = 1
             )
         }
     }
 }
 
-@Composable
-fun TimeSlotItem(
-    time: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick  = onClick,
-        modifier = modifier.height(48.dp),
-        colors   = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Brand else MaterialTheme.colorScheme.surfaceVariant,
-            contentColor   = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Text(
-            text       = time,
-            style      = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-/** Build a Date from selected day-of-week index (0=Sun) and time slot index. */
-private fun buildAppointmentDate(daysFromToday: Int, timeIndex: Int): java.util.Date {
-    val calendar = Calendar.getInstance()
-    calendar.add(Calendar.DAY_OF_YEAR, daysFromToday)
-    val hourMinute = listOf(
-        9 to 0, 9 to 30, 10 to 0, 10 to 30, 11 to 0,
-        14 to 0, 14 to 30, 15 to 0, 15 to 30
-    )
-    val (hour, minute) = hourMinute.getOrElse(timeIndex) { 9 to 0 }
-    calendar.set(Calendar.HOUR_OF_DAY, hour)
-    calendar.set(Calendar.MINUTE, minute)
-    calendar.set(Calendar.SECOND, 0)
-    calendar.set(Calendar.MILLISECOND, 0)
-    return calendar.time
-}
-
 @Preview(showBackground = true)
 @Composable
 fun BookAppointmentScreenPreview() {
-    val snackbarHostState = remember { SnackbarHostState() }
     BookAppointmentContent(
         doctor = Veterinarian(
             id = "1",
-            name = "Dr. Ali Uzair",
-            specialty = "Senior Cardiologist and Surgeon",
-            experience = "3+ years",
+            name = "BS. Nguyễn Văn A",
+            specialty = "Chuyên gia tim mạch",
+            experience = "5 năm",
             rating = "4.9",
             reviewsCount = 95,
-            initials = "DAU",
-            bio = ""
+            initials = "NA",
+            bio = "",
+            servicePrice = 100000.0
         ),
-        selectedDate = 2,
-        selectedTime = 0,
+        pets = listOf(
+            com.example.vetbook.domain.models.Pet(id = "1", name = "Lu Lu", type = "Chó", breed = "Poodle")
+        ),
+        selectedPetIds = setOf("1"),
+        selectedDateMillis = null,
+        selectedTime = null,
+        noteText = "",
         bookingState = BookAppointmentViewModel.UiState.Idle,
-        snackbarHostState = snackbarHostState,
+        snackbarHostState = remember { SnackbarHostState() },
+        onPetToggle = {},
         onDateSelect = {},
         onTimeSelect = {},
+        onNoteChange = {},
         onConfirmClick = {}
     )
 }

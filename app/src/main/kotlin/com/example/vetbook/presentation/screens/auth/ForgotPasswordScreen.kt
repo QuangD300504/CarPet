@@ -3,7 +3,10 @@ package com.example.vetbook.presentation.screens.auth
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.*
@@ -23,6 +26,16 @@ import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.components.EmailVerificationContent
 import com.example.vetbook.presentation.viewmodels.SignUpViewModel
 import kotlinx.coroutines.delay
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.ui.text.style.TextAlign
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
+
+// AuthBackground removed in favor of HealthSurface
 
 enum class ForgotPasswordStep {
     EnterEmail, Verify, Success
@@ -39,7 +52,7 @@ fun ForgotPasswordScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFFFD700)
+        color = HealthSurface
     ) {
         Crossfade(targetState = currentStep, label = "forgotPasswordFlow") { step ->
             when (step) {
@@ -87,71 +100,157 @@ fun EnterEmailContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        IconButton(
-            onClick = onBack,
+        // ── Hero header with Healthcare gradient ─────────────────────
+        Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color.White)
+                .fillMaxWidth()
+                .height(260.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(HealthPrimary, HealthPrimary.copy(alpha = 0.8f))
+                    )
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Back", tint = Color.Black)
+            // Absolute positioned back button
+            Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .align(Alignment.TopStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(
+                    modifier = Modifier.size(80.dp),
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Pets,
+                            contentDescription = null,
+                            tint = HealthPrimary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "VetBook",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = "Professional Pet Care Solutions",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
-
-        Text(
-            text = "Quên mật khẩu",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-        
-        Text(
-            text = "Vui lòng nhập email của bạn để nhận liên kết đặt lại mật khẩu",
-            fontSize = 14.sp,
-            color = Color.Black.copy(alpha = 0.6f),
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Email của bạn",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        CustomTextField(
-            value = email,
-            onValueChange = onEmailChange,
-            placeholder = "Nhập email",
-            keyboardType = KeyboardType.Email,
-            imeAction = ImeAction.Done,
-            onImeAction = {
-                focusManager.clearFocus()
-                if (isEmailValid) onResetClick()
-            }
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = onResetClick,
-            enabled = isEmailValid,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFEF4444),
-                disabledContainerColor = Color(0xFFEF4444).copy(alpha = 0.5f)
-            ),
-            shape = RoundedCornerShape(12.dp)
+        // ── Forgot Password Form Card ────────────────────────────────
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = (-30.dp)),
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            color = Color.White,
+            shadowElevation = 0.dp
         ) {
-            Text(text = "Đặt lại mật khẩu", color = Color.White, fontWeight = FontWeight.Bold)
+            Column(
+                modifier = Modifier
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Khôi phục tài khoản",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Đừng lo lắng! Nhập email của bạn để chúng mình gửi liên kết đặt lại mật khẩu nhé.",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+                )
+
+                // Email Field with Label
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Địa chỉ Email",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    CustomTextField(
+                        value = email,
+                        onValueChange = onEmailChange,
+                        placeholder = "VD: alex@petcare.com",
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Done,
+                        onImeAction = {
+                            focusManager.clearFocus()
+                            if (isEmailValid) onResetClick()
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                Button(
+                    onClick = onResetClick,
+                    enabled = isEmailValid,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HealthPrimary,
+                        disabledContainerColor = HealthPrimary.copy(alpha = 0.4f)
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Text(text = "Gửi liên kết", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                TextButton(onClick = onBack) {
+                    Text(
+                        text = "Quay lại đăng nhập",
+                        color = HealthPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(80.dp))
+            }
         }
     }
 }
@@ -161,37 +260,112 @@ fun SuccessContent(onBackToLogin: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(HealthSurface)
     ) {
-        Spacer(modifier = Modifier.weight(0.3f))
-        
-        Text(
-            text = "Yêu cầu đã được gửi",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black,
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        Text(
-            text = "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu. Vui lòng đăng nhập lại sau khi đã thay đổi mật khẩu!",
-            fontSize = 16.sp,
-            color = Color.Black.copy(alpha = 0.7f),
-            modifier = Modifier.padding(top = 16.dp).fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Button(
-            onClick = onBackToLogin,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-            shape = RoundedCornerShape(12.dp)
+        // Hero Header
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(260.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(HealthPrimary, HealthPrimary.copy(alpha = 0.8f))
+                    )
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            Text(text = "Trở về đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(
+                    modifier = Modifier.size(80.dp),
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Pets,
+                            contentDescription = null,
+                            tint = HealthPrimary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "VetBook",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    letterSpacing = 1.sp
+                )
+            }
         }
-        
-        Spacer(modifier = Modifier.weight(0.7f))
+
+        // Success Card
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .offset(y = (-30.dp)),
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            color = Color.White
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 28.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Yêu cầu đã được gửi!",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(HealthPrimary.copy(alpha = 0.05f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Pets,
+                        contentDescription = null,
+                        tint = HealthPrimary.copy(alpha = 0.3f),
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn nhé!",
+                    fontSize = 15.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 24.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Button(
+                    onClick = onBackToLogin,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                ) {
+                    Text(text = "Trở về đăng nhập", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+                
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+        }
     }
 }

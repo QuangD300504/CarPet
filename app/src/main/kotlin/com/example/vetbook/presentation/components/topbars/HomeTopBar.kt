@@ -10,13 +10,13 @@ import com.example.vetbook.presentation.components.store.StoreHeader
 @Composable
 fun HomeTopBar(
     modifier: Modifier = Modifier,
-    currentLocation: String = "Ho Chi Minh City",
+    currentLocation: String = "Hồ Chí Minh",
     onLocationClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     profileImageUrl: String? = null,
-    searchPlaceholder: String = "Search for a service",
+    searchPlaceholder: String = "Tìm kiếm dịch vụ...",
     searchValue: String = "",
     onSearchChange: (String) -> Unit = {},
     hasUnreadNotifications: Boolean = false

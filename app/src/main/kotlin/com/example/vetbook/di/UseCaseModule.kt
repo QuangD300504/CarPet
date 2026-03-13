@@ -84,4 +84,18 @@ object UseCaseModule {
     ): ClearCartUseCase {
         return ClearCartUseCase(repository)
     }
+
+    @Provides
+    fun provideGetAccommodationsUseCase(
+        repository: AccommodationRepository
+    ): GetAccommodationsUseCase {
+        return GetAccommodationsUseCase(repository)
+    }
+
+    @Provides
+    fun provideGetAccommodationByIdUseCase(
+        repository: AccommodationRepository
+    ): GetAccommodationByIdUseCase {
+        return GetAccommodationByIdUseCase(repository)
+    }
 }

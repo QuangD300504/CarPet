@@ -8,7 +8,9 @@ data class ServiceCategory(
     val id: String,
     val title: String,
     val shortDescription: String,
-    val iconRes: Int
+    val iconRes: Int,
+    val iconUrl: String? = null,
+    val imageUrl: String? = null
 )
 data class ServicePackage(
     val id: String,

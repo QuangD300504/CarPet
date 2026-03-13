@@ -6,7 +6,8 @@ import com.example.vetbook.data.datasource.RemoteServiceDataSource
 import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
-import com.example.vetbook.data.network.PaymentWorkerApi
+import com.example.vetbook.data.network.CloudinaryService
+import com.example.vetbook.data.network.PayosApiService
 import com.example.vetbook.data.repository.*
 import com.example.vetbook.domain.repository.*
 import com.google.firebase.auth.FirebaseAuth
@@ -20,6 +21,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+
+    @Provides
+    @Singleton
+    fun provideImageRepository(
+        cloudinaryService: CloudinaryService
+    ): ImageRepository {
+        return CloudinaryImageRepository(cloudinaryService)
+    }
 
     @Provides
     @Singleton
@@ -68,7 +77,7 @@ object RepositoryModule {
         auth: FirebaseAuth,
         remoteUserDataSource: RemoteUserDataSource,
         remotePetDataSource: RemotePetDataSource,
-        cloudinaryService: com.example.vetbook.data.network.CloudinaryService
+        cloudinaryService: CloudinaryService
     ): UserRepository {
         return FirebaseAuthUserRepository(
             auth = auth,
@@ -83,12 +92,12 @@ object RepositoryModule {
     fun provideBookingRepository(
         firestore: FirebaseFirestore,
         auth: FirebaseAuth,
-        paymentWorkerApi: PaymentWorkerApi
+        payosApi: PayosApiService
     ): BookingRepository {
         return BookingRepositoryImpl(
             firestore = firestore,
             auth = auth,
-            paymentWorkerApi = paymentWorkerApi
+            payosApi = payosApi
         )
     }
 
@@ -106,6 +115,14 @@ object RepositoryModule {
         firestore: FirebaseFirestore
     ): BannerRepository {
         return FirebaseBannerRepository(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAccommodationRepository(
+        remoteDataSource: com.example.vetbook.data.datasource.RemoteAccommodationDataSource
+    ): AccommodationRepository {
+        return AccommodationRepositoryImpl(remoteDataSource)
     }
 
 }

@@ -8,11 +8,16 @@ fun AppointmentDto.toDomain(): Appointment {
         id = id,
         userId = userId,
         veterinarianId = veterinarianId,
+        veterinarianName = veterinarianName,
+        clinicName = clinicName,
+        clinicAddress = clinicAddress,
         status = status,
         paymentStatus = paymentStatus,
         appointmentAt = appointmentAt.toDate().toInstant(),
         durationMinutes = durationMinutes,
         notes = notes,
+        petIds = petIds,
+        petNames = petNames,
         totalPrice = totalPrice
     )
 }

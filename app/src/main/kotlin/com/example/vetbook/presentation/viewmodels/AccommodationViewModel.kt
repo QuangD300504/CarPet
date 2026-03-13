@@ -2,7 +2,7 @@ package com.example.vetbook.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.vetbook.data.datasource.AccommodationDataSource
+import com.example.vetbook.domain.usecases.GetAccommodationsUseCase
 import com.example.vetbook.presentation.models.Accommodation
 import com.example.vetbook.presentation.models.AccommodationCategory
 import com.example.vetbook.presentation.models.AccommodationUiState
@@ -16,7 +16,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AccommodationViewModel @Inject constructor() : ViewModel() {
+class AccommodationViewModel @Inject constructor(
+    private val getAccommodationsUseCase: GetAccommodationsUseCase
+) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AccommodationUiState())
     val uiState: StateFlow<AccommodationUiState> = _uiState.asStateFlow()
@@ -30,7 +32,7 @@ class AccommodationViewModel @Inject constructor() : ViewModel() {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
             try {
-                val accommodations = AccommodationDataSource.getAccommodations()
+                val accommodations = getAccommodationsUseCase()
                 _uiState.update { 
                     it.copy(
                         accommodations = accommodations,
@@ -114,4 +116,3 @@ class AccommodationViewModel @Inject constructor() : ViewModel() {
         return filtered
     }
 }
-

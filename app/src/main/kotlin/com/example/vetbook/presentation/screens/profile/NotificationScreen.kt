@@ -23,7 +23,11 @@ import com.example.vetbook.domain.models.NotificationType
 import com.example.vetbook.presentation.viewmodels.NotificationUiItem
 import com.example.vetbook.presentation.viewmodels.NotificationViewModel
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationScreen(
     onBackClick: () -> Unit = {},
@@ -40,51 +44,76 @@ fun NotificationScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        if (notifications.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No notifications yet",
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(
-                    items = notifications,
-                    key = { it.notification.id }
-                ) { uiItem ->
-                    
-                    // Mark as read immediately when rendered on screen if unread
-                    LaunchedEffect(uiItem.notification.id, uiItem.notification.isRead) {
-                        if (!uiItem.notification.isRead) {
-                            notificationViewModel.markAsRead(uiItem.notification.id)
-                        }
-                    }
-                    
-                    NotificationCard(
-                        uiItem = uiItem,
-                        onDismiss = {
-                            notificationViewModel.dismissNotification(uiItem.notification.id)
-                        }
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Thông báo",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White
+                )
+            )
+        },
+        containerColor = Color(0xFFF8FAFC)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            if (notifications.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Chưa có thông báo nào",
+                        color = Color.Gray,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(
+                        items = notifications,
+                        key = { it.notification.id }
+                    ) { uiItem ->
+
+                        // Mark as read immediately when rendered on screen if unread
+                        LaunchedEffect(uiItem.notification.id, uiItem.notification.isRead) {
+                            if (!uiItem.notification.isRead) {
+                                notificationViewModel.markAsRead(uiItem.notification.id)
+                            }
+                        }
+
+                        NotificationCard(
+                            uiItem = uiItem,
+                            onDismiss = {
+                                notificationViewModel.dismissNotification(uiItem.notification.id)
+                            }
+                        )
+                    }
                 }
             }
         }
-    }
-}
+                }
+            }
+
 
 @Composable
 fun NotificationCard(
@@ -94,13 +123,11 @@ fun NotificationCard(
     val notification = uiItem.notification
     val isUnread = !notification.isRead
 
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isUnread) Color(0xFFF0F8FF) else Color.White
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = if (isUnread) 4.dp else 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -111,50 +138,37 @@ fun NotificationCard(
             // Left indicator/icon
             when (notification.type) {
                 NotificationType.INCIDENT -> {
-                    // Red bar and icon
-                    Column(
-                        modifier = Modifier.width(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .background(Color(0xFFE53935))
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .background(Color(0xFFE53935), CircleShape),
+                            .size(48.dp)
+                            .background(Color(0xFFFFF1F2), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = "Incident",
-                            tint = Color.White,
+                            tint = Color(0xFFE11D48),
                             modifier = Modifier.size(24.dp)
                         )
                     }
                 }
+
                 else -> {
-                    // Blue icon
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .background(Color(0xFF2196F3).copy(alpha = 0.2f), CircleShape),
+                            .size(48.dp)
+                            .background(HealthPrimary.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = "Info",
-                            tint = Color(0xFF2196F3),
+                            tint = HealthPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                 }
             }
-            
             // Content
             Column(
                 modifier = Modifier.weight(1f)
@@ -184,20 +198,20 @@ fun NotificationCard(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = notification.title,
                     fontSize = 16.sp,
-                    fontWeight = if (isUnread) FontWeight.ExtraBold else FontWeight.Bold,
-                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isUnread) HealthPrimary else Color.Black,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = notification.description,
                     fontSize = 14.sp,

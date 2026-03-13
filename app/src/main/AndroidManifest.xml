@@ -29,13 +29,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="vetbook-vnpay" />
+                <data android:scheme="vetbook-payos" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name="com.vnpay.authentication.VNP_AuthenticationActivity"
-            android:exported="false" />
 
     </application>
 

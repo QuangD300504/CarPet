@@ -15,6 +15,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
 
 /**
  * Reusable TextField component that fixes:
@@ -65,10 +68,10 @@ fun CustomTextField(
             Text(
                 text = placeholder, 
                 fontSize = 14.sp,
-                color = Color(0xFF9CA3AF) // Gray placeholder
+                color = TextSecondary.copy(alpha = 0.7f)
             ) 
         },
-        label = label?.let { { Text(text = it, color = Color.Black) } },
+        label = label?.let { { Text(text = it, color = TextPrimary) } },
         singleLine = singleLine,
         enabled = enabled,
         readOnly = readOnly,
@@ -90,21 +93,25 @@ fun CustomTextField(
         ),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            // Light background
-            focusedContainerColor = Color(0xFFF1F5F9),
-            unfocusedContainerColor = Color(0xFFF1F5F9),
-            disabledContainerColor = Color(0xFFF1F5F9),
+            // Tinted light background
+            focusedContainerColor = HealthPrimary.copy(alpha = 0.05f),
+            unfocusedContainerColor = HealthPrimary.copy(alpha = 0.03f),
+            disabledContainerColor = HealthPrimary.copy(alpha = 0.02f),
             
-            // CRITICAL FIX: Force dark text color regardless of system theme
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black,
-            disabledTextColor = Color.Black.copy(alpha = 0.6f),
+            // Health theme text colors
+            focusedTextColor = TextPrimary,
+            unfocusedTextColor = TextPrimary,
+            disabledTextColor = TextPrimary.copy(alpha = 0.6f),
             
-            // Cursor color
-            cursorColor = Color.Black,
+            // Cursor and selection
+            cursorColor = HealthPrimary,
+            selectionColors = androidx.compose.foundation.text.selection.TextSelectionColors(
+                handleColor = HealthPrimary,
+                backgroundColor = HealthPrimary.copy(alpha = 0.2f)
+            ),
             
             // Border colors
-            focusedBorderColor = Color.Transparent,
+            focusedBorderColor = HealthPrimary.copy(alpha = 0.3f),
             unfocusedBorderColor = Color.Transparent,
             disabledBorderColor = Color.Transparent,
             errorBorderColor = Color(0xFFEF4444)

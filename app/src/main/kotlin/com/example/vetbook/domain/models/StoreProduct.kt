@@ -8,6 +8,7 @@ data class StoreProduct(
     val description: String? = null,
     val category: String? = null,
     val stock: Int = 0,
+    val shopName: String = "VetBook Shop",
     val createdAt: Long? = null,
     val updatedAt: Long? = null
 )

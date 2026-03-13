@@ -22,10 +22,15 @@ import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.StoreViewModel
 import com.example.vetbook.presentation.viewmodels.StoreUiState
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.HealthMuted
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.Background
 
 @Composable
 fun ProductsScreen(
+    category: String? = null,
     viewModel: StoreViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
@@ -36,6 +41,10 @@ fun ProductsScreen(
     var searchQuery by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(category) {
+        viewModel.setCategory(category)
+    }
+
     LaunchedEffect(uiState.message) {
         uiState.message?.let {
             snackbarHostState.showSnackbar(it)
@@ -45,22 +54,12 @@ fun ProductsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.White
+        containerColor = Background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
         ) {
-            com.example.vetbook.presentation.components.store.StoreHeader(
-                currentLocation = "Ho Chi Minh City",
-                onLocationClick = { },
-                onCartClick = onCartClick,
-                onNotificationClick = onNotificationClick,
-                onProfileClick = onProfileClick,
-                profileImageUrl = null,
-                showSearchBar = false
-            )
 
             ProductsContent(
                 uiState = uiState,
@@ -75,6 +74,7 @@ fun ProductsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProductsContent(
     uiState: StoreUiState,
@@ -83,87 +83,96 @@ private fun ProductsContent(
     onAddToCart: (String) -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
     ) {
-        Column(
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        TextField(
+            value = searchQuery,
+            onValueChange = onSearchChange,
+            placeholder = { 
+                Text(
+                    text = "Tìm kiếm sản phẩm...",
+                    color = HealthMuted,
+                    fontSize = 14.sp
+                ) 
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Tìm kiếm",
+                    tint = HealthMuted,
+                    modifier = Modifier.size(22.dp)
+                )
+            },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                placeholder = { Text("Search products...") },
-                leadingIcon = {
+                .fillMaxWidth()
+                .height(52.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = HealthSurface.copy(alpha = 0.5f),
+                unfocusedContainerColor = HealthSurface.copy(alpha = 0.5f),
+                disabledContainerColor = HealthSurface.copy(alpha = 0.5f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = HealthPrimary
+            ),
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp) 
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "Sản Phẩm",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = HealthPrimary)
+            }
+        } else if (uiState.errorMessage != null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = uiState.errorMessage ?: "Lỗi tải sản phẩm", color = Color.Red)
+            }
+        } else if (uiState.products.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
+                        Icons.Default.Inventory,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = HealthMuted.copy(alpha = 0.5f)
                     )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFFF5F5F5),
-                    unfocusedContainerColor = Color(0xFFF5F5F5),
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent
-                ),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Products",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Brand)
-                }
-            } else if (uiState.errorMessage != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = uiState.errorMessage ?: "Error loading products", color = Color.Red)
-                }
-            } else if (uiState.products.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "No products found", color = Color.Gray)
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(
-                        items = uiState.products,
-                        key = { it.id }
-                    ) { product ->
-                        ProductCard(
-                            product = product,
-                            showFavorite = true,
-                            onAddToCart = { onAddToCart(product.id) }
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = "Không tìm thấy sản phẩm", color = HealthMuted)
                 }
             }
-        }
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
-@Composable
-fun ProductsScreenPreview() {
-    PreviewNavScaffold { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            ProductsScreen()
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 20.dp)
+            ) {
+                items(
+                    items = uiState.products,
+                    key = { it.id }
+                ) { product ->
+                    ProductCard(
+                        product = product,
+                        showFavorite = true,
+                        onAddToCart = { onAddToCart(product.id) }
+                    )
+                }
+            }
         }
     }
 }

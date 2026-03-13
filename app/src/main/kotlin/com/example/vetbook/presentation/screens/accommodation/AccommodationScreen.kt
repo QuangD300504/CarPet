@@ -29,6 +29,14 @@ import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.theme.Error
 import com.example.vetbook.presentation.viewmodels.AccommodationViewModel
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
+import com.example.vetbook.presentation.theme.Background
+
 @Composable
 fun AccommodationScreen(
     viewModel: AccommodationViewModel = hiltViewModel(),
@@ -42,20 +50,23 @@ fun AccommodationScreen(
             .fillMaxSize()
             .background(Background)
     ) {
-        // Type-B header with search bar slot and trailing list/map toggle
+        // Premium Top Bar
         SimpleTopBar(
-            title       = uiState.selectedCategory?.displayName ?: "Accommodation",
+            title       = "Lưu trú",
             onBackClick = onBackClick,
             trailingContent = {
-                IconButton(onClick = { viewModel.toggleViewMode() }) {
+                IconButton(
+                    onClick = { viewModel.toggleViewMode() },
+                    modifier = Modifier.background(HealthSurface, RoundedCornerShape(12.dp))
+                ) {
                     Icon(
                         imageVector = if (uiState.viewMode == ViewMode.LIST) {
                             Icons.Default.Map
                         } else {
                             Icons.AutoMirrored.Filled.List
                         },
-                        contentDescription = if (uiState.viewMode == ViewMode.LIST) "Map View" else "List View",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        contentDescription = if (uiState.viewMode == ViewMode.LIST) "Bản đồ" else "Danh sách",
+                        tint = HealthPrimary
                     )
                 }
             },
@@ -63,51 +74,45 @@ fun AccommodationScreen(
                 OutlinedTextField(
                     value         = uiState.searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
-                    placeholder   = { Text("Hospital, Coffee shop…") },
-                    leadingIcon   = {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    placeholder   = { 
+                        Text(
+                            "Bệnh viện, Quán cà phê...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        ) 
                     },
-                    modifier      = Modifier.fillMaxWidth(),
+                    leadingIcon   = {
+                        Icon(Icons.Default.Search, contentDescription = "Tìm kiếm", tint = HealthPrimary)
+                    },
+                    modifier      = Modifier.fillMaxWidth().padding(top = 8.dp),
                     colors        = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor   = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor      = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor    = Color.Transparent
+                        focusedContainerColor   = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor      = HealthPrimary,
+                        unfocusedBorderColor    = HealthSurface,
+                        cursorColor = HealthPrimary
                     ),
-                    shape         = RoundedCornerShape(12.dp),
+                    shape         = RoundedCornerShape(16.dp),
                     singleLine    = true
                 )
             }
         )
 
-        // Category filter chips
+        // Category filter chips - Scrollable
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CategoryFilterChip(
-                category   = AccommodationCategory.HOMESTAY,
-                isSelected = uiState.selectedCategory == AccommodationCategory.HOMESTAY,
-                onClick    = { viewModel.filterByCategory(AccommodationCategory.HOMESTAY) }
-            )
-            CategoryFilterChip(
-                category   = AccommodationCategory.APART,
-                isSelected = uiState.selectedCategory == AccommodationCategory.APART,
-                onClick    = { viewModel.filterByCategory(AccommodationCategory.APART) }
-            )
-            CategoryFilterChip(
-                category   = AccommodationCategory.COFFEE,
-                isSelected = uiState.selectedCategory == AccommodationCategory.COFFEE,
-                onClick    = { viewModel.filterByCategory(AccommodationCategory.COFFEE) }
-            )
-            CategoryFilterChip(
-                category   = AccommodationCategory.HOTEL,
-                isSelected = uiState.selectedCategory == AccommodationCategory.HOTEL,
-                onClick    = { viewModel.filterByCategory(AccommodationCategory.HOTEL) }
-            )
+            AccommodationCategory.values().forEach { category ->
+                CategoryFilterChip(
+                    category   = category,
+                    isSelected = uiState.selectedCategory == category,
+                    onClick    = { viewModel.filterByCategory(category) }
+                )
+            }
         }
 
         // Content area
@@ -118,7 +123,7 @@ fun AccommodationScreen(
                         modifier         = Modifier.fillMaxSize().weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Brand)
+                        CircularProgressIndicator(color = HealthPrimary)
                     }
                 } else {
                     val error = uiState.error
@@ -127,13 +132,24 @@ fun AccommodationScreen(
                             modifier         = Modifier.fillMaxSize().weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = error, color = Error)
+                            Text(text = "Đã xảy ra lỗi: $error", color = Color.Red)
+                        }
+                    } else if (uiState.filteredAccommodations.isEmpty()) {
+                        Box(
+                            modifier         = Modifier.fillMaxSize().weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Không tìm thấy kết quả phù hợp",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = TextSecondary
+                            )
                         }
                     } else {
                         LazyColumn(
                             modifier        = Modifier.fillMaxSize().weight(1f),
-                            contentPadding  = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            contentPadding  = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(
                                 items = uiState.filteredAccommodations,
@@ -153,26 +169,28 @@ fun AccommodationScreen(
                     modifier         = Modifier
                         .fillMaxSize()
                         .weight(1f)
-                        .background(Color(0xFFE0E0E0)),
+                        .background(HealthSurface),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector        = Icons.Default.Map,
-                            contentDescription = "Map",
-                            modifier           = Modifier.size(64.dp),
-                            tint               = MaterialTheme.colorScheme.onSurfaceVariant
+                            contentDescription = "Bản đồ",
+                            modifier           = Modifier.size(80.dp),
+                            tint               = HealthPrimary.copy(alpha = 0.3f)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
-                            text       = "Map View",
-                            fontWeight = FontWeight.Medium,
-                            color      = MaterialTheme.colorScheme.onSurfaceVariant
+                            text       = "Chế độ Bản đồ",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color      = TextPrimary
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text  = "Google Maps integration coming soon",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text  = "Tính năng Bản đồ đang được phát triển",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
                         )
                     }
                 }

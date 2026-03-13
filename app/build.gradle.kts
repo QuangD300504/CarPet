@@ -47,11 +47,7 @@ android {
     }
 }
 
-// Exclude legacy Android Support Library pulled in by the local VNPAY SDK .aar,
-// which conflicts with the project's AndroidX dependencies.
-configurations.all {
-    exclude(group = "com.android.support")
-}
+// Core & Activity
 
 dependencies {
     // Import the BOM
@@ -83,6 +79,11 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.foundation.layout)
+    implementation(libs.androidx.benchmark.traceprocessor)
+    implementation(libs.androidx.foundation)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -97,14 +98,16 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
+    implementation("androidx.browser:browser:1.8.0")
 
     // Networking (Cloudinary)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // VNPay SDK
-    implementation(files("libs/merchant-1.0.25.aar"))
+    // Testing & Tooling
 
     // Testing & Tooling
     testImplementation(libs.junit)

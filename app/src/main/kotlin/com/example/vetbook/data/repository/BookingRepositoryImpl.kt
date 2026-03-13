@@ -2,7 +2,9 @@ package com.example.vetbook.data.repository
 
 import com.example.vetbook.data.mappers.toDomain
 import com.example.vetbook.data.models.AppointmentDto
-import com.example.vetbook.data.network.PaymentWorkerApi
+import com.example.vetbook.data.network.PayosApiService
+import com.example.vetbook.data.network.PayosPaymentRequest
+import com.example.vetbook.data.util.PayosHelper
 import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.domain.models.PaymentLink
 import com.example.vetbook.domain.repository.BookingRepository
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -26,7 +29,7 @@ import javax.inject.Singleton
 class BookingRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth,
-    private val paymentWorkerApi: PaymentWorkerApi
+    private val payosApi: PayosApiService
 ) : BookingRepository {
 
     private fun makeLockId(veterinarianId: String, appointmentAt: Date): String {
@@ -44,19 +47,40 @@ class BookingRepositoryImpl @Inject constructor(
         appointmentAt: Date,
         totalPrice: Double,
         durationMinutes: Int,
-        notes: String?
+        notes: String?,
+        petIds: List<String>
     ): BookingRepository.CreateAppointmentResult {
         val uid = auth.currentUser?.uid ?: error("Not logged in")
+
+        // Fetch descriptive names before transaction for cleaner code
+        val vetDoc = firestore.collection("veterinarians").document(veterinarianId).get().await()
+        val vetName = vetDoc.getString("name") ?: "Unknown Doctor"
+        val clinicId = vetDoc.getString("clinicId") ?: ""
+        
+        var clinicName = ""
+        var clinicAddress = ""
+        if (clinicId.isNotEmpty()) {
+            val clinicDoc = firestore.collection("clinics").document(clinicId).get().await()
+            clinicName = clinicDoc.getString("name") ?: ""
+            clinicAddress = clinicDoc.getString("address") ?: ""
+        }
+
+        val petNames = petIds.map { pid ->
+            val petDoc = firestore.collection("pets").document(pid).get().await()
+            petDoc.getString("name") ?: "Unknown Pet"
+        }
 
         val lockId = makeLockId(veterinarianId, appointmentAt)
         val lockRef = firestore.collection("doctorSlotLocks").document(lockId)
         val appointmentRef = firestore.collection("appointments").document()
 
-        firestore.runTransaction { tx ->
+        return firestore.runTransaction { tx ->
             val lockSnap = tx.get(lockRef)
             if (lockSnap.exists()) {
+                android.util.Log.w("BookingRepo", "Lock already exists for $lockId")
                 throw IllegalStateException("Time slot already booked")
             }
+            android.util.Log.d("BookingRepo", "Creating lock and appointment: $lockId")
 
             tx.set(
                 lockRef,
@@ -73,11 +97,16 @@ class BookingRepositoryImpl @Inject constructor(
                 id = appointmentRef.id,
                 userId = uid,
                 veterinarianId = veterinarianId,
+                veterinarianName = vetName,
+                clinicName = clinicName,
+                clinicAddress = clinicAddress,
                 status = "PENDING_PAYMENT",
                 paymentStatus = "UNPAID",
                 appointmentAt = Timestamp(appointmentAt),
                 durationMinutes = durationMinutes,
                 notes = notes,
+                petIds = petIds,
+                petNames = petNames,
                 totalPrice = totalPrice,
                 createdAt = now,
                 updatedAt = now,
@@ -93,10 +122,10 @@ class BookingRepositoryImpl @Inject constructor(
             )
         }.await()
 
-        return BookingRepository.CreateAppointmentResult(appointmentId = appointmentRef.id, lockId = lockId)
     }
 
     override suspend fun cancelAppointment(appointmentId: String, lockId: String) {
+        android.util.Log.i("BookingRepo", "Cancelling appointment $appointmentId and removing lock $lockId")
         val lockRef = firestore.collection("doctorSlotLocks").document(lockId)
         val appointmentRef = firestore.collection("appointments").document(appointmentId)
         firestore.runTransaction { tx ->
@@ -106,19 +135,51 @@ class BookingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink {
-        val token = auth.currentUser?.getIdToken(false)?.await()?.token ?: error("Missing ID token")
-        val resp = paymentWorkerApi.createPaymentLink(
-            authorization = "Bearer $token",
-            body = PaymentWorkerApi.CreatePaymentLinkRequest(
-                kind = "APPOINTMENT",
-                referenceId = appointmentId,
-                appointmentId = appointmentId // Support both names for compatibility
-            )
+        val appointmentDoc = firestore.collection("appointments").document(appointmentId).get().await()
+        if (!appointmentDoc.exists()) throw IllegalStateException("Appointment not found")
+        
+        val totalPrice = appointmentDoc.getDouble("totalPrice") ?: 0.0
+        val orderCode = System.currentTimeMillis()
+        val amount = totalPrice.toInt()
+        val description = "VetBook appt ${appointmentId.take(5)}"
+        val cancelUrl = "vetbook-payos://payment-result"
+        val returnUrl = "vetbook-payos://payment-result"
+
+        val params = mapOf(
+            "amount" to amount,
+            "cancelUrl" to cancelUrl,
+            "description" to description,
+            "orderCode" to orderCode,
+            "returnUrl" to returnUrl
         )
+        
+        val signature = PayosHelper.calculateSignature(params)
+        
+        val request = PayosPaymentRequest(
+            orderCode = orderCode,
+            amount = amount,
+            description = description,
+            cancelUrl = cancelUrl,
+            returnUrl = returnUrl,
+            signature = signature
+        )
+
+        val response = payosApi.createPaymentLink(PayosHelper.CLIENT_ID, PayosHelper.API_KEY, request)
+        
+        if (response.code != "00") {
+            throw IllegalStateException("PayOS error: ${response.desc}")
+        }
+
+        val checkoutUrl = response.data?.checkoutUrl ?: throw IllegalStateException("No checkout URL")
+
+        // Save orderCode to appointment so we can keep track
+        firestore.collection("appointments").document(appointmentId)
+            .update("payos.orderCode", orderCode).await()
+
         return PaymentLink(
-            checkoutUrl = resp.checkoutUrl,
-            orderCode = resp.orderCode,
-            paymentLinkId = resp.paymentLinkId
+            checkoutUrl = checkoutUrl,
+            orderCode = orderCode,
+            paymentLinkId = appointmentId
         )
     }
 
@@ -135,11 +196,52 @@ class BookingRepositoryImpl @Inject constructor(
                 if (snapshot != null) {
                     val appointments = snapshot.toObjects(AppointmentDto::class.java)
                         .map { it.toDomain() }
+                        .filter { it.status != "CANCELLED" } // hide cancelled from calendar
                         .sortedBy { it.appointmentAt } // sort in-memory
                     trySend(appointments)
                 }
             }
         awaitClose { subscription.remove() }
+    }
+
+    override suspend fun getLockedSlots(
+        veterinarianId: String,
+        year: Int,
+        month: Int,
+        day: Int
+    ): Set<String> {
+        // Build UTC start/end of the given local calendar day
+        val dayStart = Calendar.getInstance().apply {
+            set(year, month - 1, day, 0, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.time
+        val dayEnd = Calendar.getInstance().apply {
+            set(year, month - 1, day, 23, 59, 59)
+            set(Calendar.MILLISECOND, 999)
+        }.time
+
+        val snapshot = firestore.collection("doctorSlotLocks")
+            .whereEqualTo("veterinarianId", veterinarianId)
+            .whereGreaterThanOrEqualTo("appointmentAt", com.google.firebase.Timestamp(dayStart))
+            .whereLessThanOrEqualTo("appointmentAt", com.google.firebase.Timestamp(dayEnd))
+            .get()
+            .await()
+
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.US)
+        return snapshot.documents.mapNotNull { doc ->
+            val ts = doc.getTimestamp("appointmentAt") ?: return@mapNotNull null
+            timeFormat.format(ts.toDate())
+        }.toSet()
+    }
+
+    override suspend fun markAppointmentAsPaid(appointmentId: String) {
+        val appointmentRef = firestore.collection("appointments").document(appointmentId)
+        appointmentRef.update(
+            "status", "UPCOMING",
+            "paymentStatus", "PAID",
+            "updatedAt", Timestamp.now(),
+            "paidAt", Timestamp.now()
+        ).await()
     }
 
     override fun getAllAppointments(): Flow<List<Appointment>> = callbackFlow {

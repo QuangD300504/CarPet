@@ -22,12 +22,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.example.vetbook.R
 import com.example.vetbook.domain.models.Veterinarian
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
@@ -35,6 +40,8 @@ import com.example.vetbook.presentation.models.VeterinariansUiState
 import com.example.vetbook.presentation.theme.Background
 import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.theme.Error
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
 
 @Composable
@@ -72,28 +79,33 @@ fun VeterinariansContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(HealthSurface)
     ) {
         // Type-B header with inline search bar slot
         SimpleTopBar(
-            title       = "Veterinary Care",
+            title       = "Chăm Sóc Thú Y",
             onBackClick = onBackClick,
             searchBar   = {
                 OutlinedTextField(
                     value         = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder   = { Text("Search doctor, specialty…") },
+                    placeholder   = { Text("Tìm bác sĩ, chuyên khoa...", color = Color.Gray.copy(alpha = 0.6f)) },
                     leadingIcon   = {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        Icon(
+                            imageVector = Icons.Default.Search, 
+                            contentDescription = "Search",
+                            tint = HealthPrimary
+                        )
                     },
-                    modifier   = Modifier.fillMaxWidth(),
+                    modifier   = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     colors     = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor   = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor      = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor    = Color.Transparent
+                        focusedContainerColor   = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor      = HealthPrimary,
+                        unfocusedBorderColor    = Color.LightGray.copy(alpha = 0.3f),
+                        cursorColor = HealthPrimary
                     ),
-                    shape      = RoundedCornerShape(12.dp),
+                    shape      = RoundedCornerShape(16.dp),
                     singleLine = true
                 )
             }
@@ -102,7 +114,7 @@ fun VeterinariansContent(
         // Content
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Brand)
+                CircularProgressIndicator(color = HealthPrimary)
             }
         } else if (uiState.error != null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -112,18 +124,26 @@ fun VeterinariansContent(
             LazyColumn(
                 modifier            = Modifier.fillMaxSize(),
                 contentPadding      = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
                     Text(
-                        text      = "Top Rated Doctors",
-                        style     = MaterialTheme.typography.titleLarge,
-                        modifier  = Modifier.padding(vertical = 8.dp)
+                        text      = "Bác Sĩ Hàng Đầu",
+                        style     = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ),
+                        color = Color(0xFF2D3142),
+                        modifier  = Modifier.padding(bottom = 4.dp)
                     )
                 }
 
                 items(items = filteredVets, key = { it.id }) { vet ->
                     TopRateDoctorCard(vet, onClick = { onVetClick(vet.id) })
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -164,75 +184,107 @@ fun NavigationIcon(
 
 @Composable
 fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
-    Card(
+    Surface(
         modifier  = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape     = RoundedCornerShape(20.dp),
+        color     = Color.White,
+        shadowElevation = 2.dp
     ) {
         Row(
             modifier          = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter            = painterResource(R.drawable.pawns),
-                contentDescription = null,
-                modifier           = Modifier.size(64.dp).clip(CircleShape)
-            )
+            Surface(
+                modifier = Modifier.size(72.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = HealthPrimary.copy(alpha = 0.1f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (!vet.imageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(vet.imageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = vet.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter            = painterResource(R.drawable.pawns),
+                            contentDescription = null,
+                            modifier           = Modifier.size(48.dp),
+                            alpha = 0.6f
+                        )
+                        if (vet.initials.isNotEmpty()) {
+                            Text(
+                                text = vet.initials,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = HealthPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text  = vet.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2D3142)
+                    ),
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text  = vet.specialty,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text  = "10:30 AM – 3:30 PM",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text      = "Fee: \$25.00",
-                    style     = MaterialTheme.typography.bodyLarge,
+                    color = Color.Gray,
                     fontWeight = FontWeight.Medium
                 )
-            }
-
-            Column(
-                horizontalAlignment  = Alignment.End,
-                verticalArrangement  = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
-                        imageVector        = Icons.Default.Star,
+                        imageVector = Icons.Default.Star,
                         contentDescription = null,
-                        tint               = Brand,
-                        modifier           = Modifier.size(18.dp)
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text      = vet.rating,
-                        style     = MaterialTheme.typography.titleMedium
+                        text = vet.rating,
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF2D3142)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Phí: ${String.format("%,.0f", vet.servicePrice)}đ",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = HealthPrimary
+                        )
                     )
                 }
+            }
+
+            IconButton(onClick = onClick) {
                 Icon(
                     imageVector        = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "View",
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier           = Modifier.size(20.dp)
+                    contentDescription = "Xem chi tiết",
+                    tint               = HealthPrimary,
+                    modifier           = Modifier.size(24.dp)
                 )
             }
         }

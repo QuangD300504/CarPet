@@ -18,7 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.previews.PreviewNavScaffold
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageScreen(
     onBackClick: () -> Unit = {},
@@ -32,33 +36,42 @@ fun LanguageScreen(
         "Arabic", "Russian", "Indonesia", "Vietnamese"
     )
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Ngôn ngữ",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White
+                )
+            )
+        },
+        containerColor = Color(0xFFF8FAFC)
+    ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 Text(
-                    text = "Language",
-                    fontSize = 24.sp,
+                    text = "Gợi ý",
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-            
-            item {
-                Text(
-                    text = "Suggested",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                 )
             }
             
@@ -82,11 +95,11 @@ fun LanguageScreen(
             
             item {
                 Text(
-                    text = "Others",
-                    fontSize = 18.sp,
+                    text = "Khác",
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp)
                 )
             }
             
@@ -113,12 +126,12 @@ fun LanguageItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Card(
+    Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -129,7 +142,7 @@ fun LanguageItem(
         ) {
             Text(
                 text = language,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black
             )
@@ -138,7 +151,7 @@ fun LanguageItem(
                 selected = isSelected,
                 onClick = onClick,
                 colors = RadioButtonDefaults.colors(
-                    selectedColor = Color(0xFF2196F3)
+                    selectedColor = HealthPrimary
                 )
             )
         }

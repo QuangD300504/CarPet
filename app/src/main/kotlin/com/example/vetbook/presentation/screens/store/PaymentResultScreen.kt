@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -17,20 +18,54 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.HealthMuted
+import com.example.vetbook.presentation.theme.TextPrimary
 import com.example.vetbook.presentation.theme.Success
 import com.example.vetbook.presentation.theme.Error as ErrorColor
 
+/**
+ * @param isSuccess         Whether the payment/booking succeeded.
+ * @param onContinueShoppingClick  Primary action for the store flow.
+ * @param onHomeClick       Back / home navigation.
+ * @param onViewCalendarClick  If non-null, a "View Calendar" button is shown on success
+ *                          (used by the vet-booking flow).
+ * @param onTryAgainClick   If non-null, a "Try Again" button is shown on failure
+ *                          (used by the vet-booking flow).
+ */
 @Composable
 fun PaymentResultScreen(
     isSuccess: Boolean,
     onContinueShoppingClick: () -> Unit,
-    onHomeClick: () -> Unit
+    onHomeClick: () -> Unit,
+    onViewCalendarClick: (() -> Unit)? = null,
+    onTryAgainClick: (() -> Unit)? = null
 ) {
+    // Vet-booking mode: we have a calendar action (success) or try-again action (failure)
+    val isVetBookingFlow = onViewCalendarClick != null || onTryAgainClick != null
+
+    val titleText = when {
+        isSuccess && isVetBookingFlow  -> "Đặt lịch thành công!"
+        isSuccess                       -> "Thanh toán thành công!"
+        !isSuccess && isVetBookingFlow  -> "Đặt lịch chưa hoàn tất"
+        else                            -> "Thanh toán thất bại"
+    }
+    val subtitleText = when {
+        isSuccess && isVetBookingFlow  ->
+            "Lịch hẹn của bạn đã được xác nhận.\nBạn có thể xem trong lịch của mình."
+        isSuccess                       ->
+            "Giao dịch của bạn đã được hoàn tất thành công.\nCảm ơn bạn đã tin dùng!"
+        !isSuccess && isVetBookingFlow  ->
+            "Thanh toán bị hủy hoặc không thành công.\nLịch hẹn chưa được giữ cho bạn."
+        else                            ->
+            "Giao dịch đã bị hủy hoặc bị từ chối.\nVui lòng thử lại sau."
+    }
+
     Scaffold(
         topBar = {
             SimpleTopBar(
-                title = "Payment Status",
+                title = if (isVetBookingFlow) "Xác nhận đặt lịch" else "Trạng thái thanh toán",
                 onBackClick = onHomeClick
             )
         },
@@ -55,7 +90,7 @@ fun PaymentResultScreen(
             ) {
                 Icon(
                     imageVector = if (isSuccess) Icons.Default.Check else Icons.Default.Close,
-                    contentDescription = if (isSuccess) "Success" else "Failed",
+                    contentDescription = if (isSuccess) "Thành công" else "Thất bại",
                     tint = if (isSuccess) Success else ErrorColor,
                     modifier = Modifier.size(64.dp)
                 )
@@ -64,62 +99,96 @@ fun PaymentResultScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = if (isSuccess) "Payment Successful!" else "Payment Failed",
-                fontSize = 28.sp,
+                text = titleText,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.Black,
+                color = TextPrimary,
                 textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = if (isSuccess) 
-                    "Your transaction has been completed successfully.\nThank you!"
-                else 
-                    "The transaction was cancelled or declined.\nPlease try again.",
+                text = subtitleText,
                 fontSize = 16.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.Center
+                color = HealthMuted,
+                textAlign = TextAlign.Center,
+                lineHeight = 22.sp
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            Button(
-                onClick = onContinueShoppingClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Brand,
-                    contentColor   = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = "Continue Shopping",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
+            // Primary action
+            if (isSuccess && onViewCalendarClick != null) {
+                // Vet booking success → "View Calendar"
+                Button(
+                    onClick = onViewCalendarClick,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Xem lịch hẹn",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            } else if (!isSuccess && onTryAgainClick != null) {
+                // Vet booking failure → "Try Again"
+                Button(
+                    onClick = onTryAgainClick,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "Thử lại",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            } else {
+                // Store payment flow — keep original button
+                Button(
+                    onClick = onContinueShoppingClick,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "Tiếp tục mua sắm",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
                 onClick = onHomeClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
             ) {
                 Text(
-                    text = "Back to Home",
-                    fontSize = 18.sp,
+                    text = "Quay về Trang chủ",
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = TextPrimary
                 )
             }
         }
     }
 }
+

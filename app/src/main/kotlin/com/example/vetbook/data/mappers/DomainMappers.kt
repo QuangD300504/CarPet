@@ -47,7 +47,7 @@ fun CartLineDto.toDomain(): CartLine =
 
 // region Pets
 
-fun PetDto.toDomain(): Pet =
+fun PetDto.toDomain(vaccinations: List<Vaccination> = emptyList()): Pet =
     Pet(
         id = id,
         ownerId = ownerId,
@@ -61,7 +61,7 @@ fun PetDto.toDomain(): Pet =
         parasiticStatus = parasiticStatus,
         note = note,
         realImgUrl = imageUrl,
-        vaccinations = emptyList()
+        vaccinations = vaccinations
     )
 
 // endregion
@@ -122,7 +122,8 @@ fun VeterinarianDto.toDomain(): Veterinarian =
         initials = initials,
         bio = bio,
         imageUrl = imageUrl,
-        clinicId = clinicId ?: ""
+        clinicId = clinicId ?: "",
+        servicePrice = servicePrice
     )
 
 // endregion
@@ -134,7 +135,9 @@ fun ServiceCategoryDto.toDomain(iconRes: Int): ServiceCategory =
         id = id,
         title = title,
         shortDescription = shortDescription,
-        iconRes = iconRes
+        iconRes = iconRes,
+        iconUrl = iconUrl,
+        imageUrl = iconUrl
     )
 
 fun ServicePackageDto.toDomain(): ServicePackage =

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.vetbook.domain.models.Banner
+import com.example.vetbook.presentation.theme.TextPrimary
 
 @Composable
 fun SponsoredSection(
@@ -25,30 +26,26 @@ fun SponsoredSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(vertical = 24.dp)
     ) {
         Text(
-            text = "Sponsored",
+            text = "Featured Offers",
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
+            fontWeight = FontWeight.ExtraBold,
+            color = TextPrimary,
+            modifier = Modifier.padding(horizontal = 20.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        if (banners.isEmpty()) {
-            // Fallback: show placeholder cards (same look as before)
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(15.dp)
-            ) {
-                items(6) { SponsoredCard() }
-            }
-        } else {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(15.dp)
-            ) {
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            if (banners.isEmpty()) {
+                items(3) { SponsoredCard() }
+            } else {
                 items(banners) { banner ->
                     BannerCard(banner = banner)
                 }
@@ -60,14 +57,14 @@ fun SponsoredSection(
 @Composable
 fun BannerCard(banner: Banner, modifier: Modifier = Modifier) {
     AsyncImage(
-        model = banner.imageUrl.ifBlank { null },
+        model = banner.imageUrl.ifBlank { "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=1964&auto=format&fit=crop" },
         contentDescription = banner.title,
         contentScale = ContentScale.Crop,
         modifier = modifier
-            .width(148.dp)
-            .height(242.dp)
-            .clip(RoundedCornerShape(15.dp))
-            .background(Color(0xFFD9D9D9))
+            .width(160.dp)
+            .height(240.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFFF2F2F2))
     )
 }
 
@@ -75,11 +72,9 @@ fun BannerCard(banner: Banner, modifier: Modifier = Modifier) {
 fun SponsoredCard(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .width(148.dp)
-            .height(242.dp)
-            .background(
-                color = Color(0xFFD9D9D9),
-                shape = RoundedCornerShape(15.dp)
-            )
+            .width(160.dp)
+            .height(240.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFFF2F2F2))
     )
 }

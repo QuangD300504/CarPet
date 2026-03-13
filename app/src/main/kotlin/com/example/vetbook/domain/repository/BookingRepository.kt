@@ -16,7 +16,8 @@ interface BookingRepository {
         appointmentAt: Date,
         totalPrice: Double,
         durationMinutes: Int = 30,
-        notes: String? = null
+        notes: String? = null,
+        petIds: List<String> = emptyList()
     ): CreateAppointmentResult
 
     suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink
@@ -27,4 +28,11 @@ interface BookingRepository {
 
     /** Admin only — observe every appointment across all users */
     fun getAllAppointments(): Flow<List<Appointment>>
+
+    /**
+     * Returns the set of time strings (e.g. "09:00") that are already locked
+     * for the given veterinarian on the given date (local date components).
+     */
+    suspend fun getLockedSlots(veterinarianId: String, year: Int, month: Int, day: Int): Set<String>
+    suspend fun markAppointmentAsPaid(appointmentId: String)
 }

@@ -9,11 +9,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.TextPrimary
 
 @Composable
 fun CaringBanner(
@@ -23,60 +30,79 @@ fun CaringBanner(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
+            .height(180.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        HealthSurface,
+                        Color(0xFFE0F2F1) // Slightly darker mint
+                    )
+                )
+            )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier
+                    .weight(1.2f)
+                    .padding(start = 24.dp, top = 20.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "CARING\nMADE SIMPLE!",
-                    fontSize = 32.sp,
+                    text = "DỊCH VỤ THÚ CƯNG",
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    lineHeight = 48.sp
+                    color = HealthPrimary,
+                    letterSpacing = 1.2.sp
                 )
+                
+                Spacer(modifier = Modifier.height(6.dp))
+                
                 Text(
-                    text = "Everything your pet needs,\nin one place",
-                    fontSize = 16.sp,
-                    color = Color.Black,
-                    lineHeight = 24.sp
+                    text = "Chuyên nghiệp &\nTận tâm nhất",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = TextPrimary,
+                    lineHeight = 28.sp
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                
+                Spacer(modifier = Modifier.height(18.dp))
+                
                 Button(
                     onClick = { },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
+                        containerColor = HealthPrimary
                     ),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier
-                        .height(32.dp)
-                        .defaultMinSize(minWidth = 92.dp)
+                    shape = RoundedCornerShape(14.dp),
+                    contentPadding = PaddingValues(horizontal = 18.dp),
+                    modifier = Modifier.height(38.dp)
                 ) {
                     Text(
-                        text = "Explore",
-                        color = Color.Black,
+                        text = "Khám phá ngay",
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        maxLines = 1
+                        fontSize = 12.sp
                     )
                 }
             }
             
-            // Placeholder for image (158x198 from Figma)
             Box(
                 modifier = Modifier
-                    .width(158.dp)
-                    .height(198.dp)
-                    .background(
-                        color = Color(0xFFD9D9D9),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-            )
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(bottomEnd = 28.dp, topEnd = 28.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?q=80&w=2071&auto=format&fit=crop",
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
     }
 }
@@ -86,4 +112,3 @@ fun CaringBanner(
 fun CaringBannerPreview() {
     CaringBanner()
 }
-

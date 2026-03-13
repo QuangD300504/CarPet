@@ -1,47 +1,26 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.vetbook.presentation.screens.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,15 +29,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.domain.models.Appointment
+import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.viewmodels.CalendarUiState
 import com.example.vetbook.presentation.viewmodels.CalendarViewModel
-import com.example.vetbook.presentation.theme.Brand
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.TextStyle
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel()
@@ -69,130 +47,182 @@ fun CalendarScreen(
         uiState = uiState,
         onPreviousMonth = viewModel::onPreviousMonth,
         onNextMonth = viewModel::onNextMonth,
-        onSelectDay = viewModel::onDateSelected,
+        onDateSelected = viewModel::onDateSelected,
         getAppointmentsForDate = viewModel::getAppointmentsForDate
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CalendarContent(
     uiState: CalendarUiState,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    onSelectDay: (LocalDate) -> Unit,
+    onDateSelected: (LocalDate) -> Unit,
     getAppointmentsForDate: (LocalDate) -> List<Appointment>
 ) {
-    val yellow = Brand
     var showReminder by remember { mutableStateOf(false) }
+    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .background(Color(0xFFF9FAFB))
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+        // App Bar / Title
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Lịch Hẹn",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF111827)
+                )
+                Text(
+                    text = "Quản lý lịch khám thú cưng",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+            
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+                color = Brand.copy(alpha = 0.1f),
+                onClick = { showReminder = true }
             ) {
-                IconButton(onClick = onPreviousMonth) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Previous Month",
-                        tint = Color(0xFF6F6F6F),
-                        modifier = Modifier.size(18.dp)
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Reminders",
+                        tint = Brand,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
+            }
+        }
 
-                Text(
-                    text = uiState.currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) + " " + uiState.currentMonth.year,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+        // Calendar Card
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White,
+            shadowElevation = 0.5.dp,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onPreviousMonth,
+                        modifier = Modifier.clip(CircleShape).background(Color(0xFFF3F4F6))
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Prev", modifier = Modifier.size(18.dp))
+                    }
+                    
+                    Text(
+                        text = uiState.currentMonth.format(formatter),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF111827)
+                    )
+                    
+                    IconButton(
+                        onClick = onNextMonth,
+                        modifier = Modifier.clip(CircleShape).background(Color(0xFFF3F4F6))
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, "Next", modifier = Modifier.size(18.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                CalendarMonthGrid(
+                    currentMonth = uiState.currentMonth,
+                    selectedDate = uiState.selectedDate,
+                    appointments = uiState.appointments,
+                    onSelectDay = onDateSelected
                 )
+            }
+        }
 
-                IconButton(onClick = onNextMonth) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Next Month",
-                        tint = Color(0xFF6F6F6F),
-                        modifier = Modifier.size(18.dp)
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Schedule Section
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomEnd = 0.dp, bottomStart = 0.dp))
+                .background(Color.White)
+                .padding(top = 24.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = uiState.selectedDate.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF111827)
+                )
+                
+                val dailyAppointments = getAppointmentsForDate(uiState.selectedDate)
+                Surface(
+                    shape = CircleShape,
+                    color = Brand.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        text = "${dailyAppointments.size} Lịch hẹn",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Brand
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            CalendarMonthGrid(
-                currentMonth = uiState.currentMonth,
-                selectedDate = uiState.selectedDate,
-                appointments = uiState.appointments,
-                onSelectDay = onSelectDay
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                Text(
-                    text = uiState.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM dd yyyy")),
-                    fontSize = 12.sp,
-                    color = Color(0xFF6F6F6F),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                val selectedAppointments = getAppointmentsForDate(uiState.selectedDate)
-
-                if (selectedAppointments.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No appointments scheduled",
-                            color = Color.Gray,
-                            fontSize = 14.sp
+            val dailyAppointments = getAppointmentsForDate(uiState.selectedDate)
+            if (dailyAppointments.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Event,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color(0xFFE5E7EB)
                         )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(selectedAppointments) { appointment ->
-                            AppointmentItem(appointment = appointment)
-                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "Không có lịch hẹn cho ngày này",
+                            color = Color.Gray,
+                            fontSize = 15.sp
+                        )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 40.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Button(
-                        onClick = { showReminder = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = yellow),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(
-                            horizontal = 14.dp,
-                            vertical = 8.dp
-                        )
-                    ) {
-                        Text(
-                            text = "Reminder",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
-                        )
+                    items(dailyAppointments) { appointment ->
+                        ScheduleStickyNote(appointment)
                     }
                 }
             }
@@ -205,60 +235,96 @@ private fun CalendarContent(
                 sheetState = sheetState,
                 containerColor = Color.White
             ) {
-                ReminderSheetContent(
-                    onClose = { showReminder = false }
-                )
+                ReminderSheetContent(onClose = { showReminder = false })
             }
         }
     }
 }
 
 @Composable
-private fun AppointmentItem(appointment: Appointment) {
-    val yellow = Brand
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+private fun ScheduleStickyNote(appointment: Appointment) {
+    val time = appointment.appointmentAt.atZone(java.time.ZoneId.systemDefault()).toLocalTime()
+    
+    // Aesthetic colors based on service type or ID for \"notes\" feel
+    val colors = listOf(
+        Color(0xFFE0F2FE) to Color(0xFF0369A1), // Blue
+        Color(0xFFDCFCE7) to Color(0xFF15803D), // Green
+        Color(0xFFFEF9C3) to Color(0xFFA16207), // Yellow
+        Color(0xFFFEE2E2) to Color(0xFFB91C1C), // Red
+        Color(0xFFF3E8FF) to Color(0xFF7E22CE)  // Purple
+    )
+    val (bgColor, textColor) = colors[appointment.id.hashCode().coerceAtLeast(0) % colors.size]
+
+    Surface(
+        color = bgColor,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(14.dp)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = "Veterinary Care",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    text = time.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
                 )
-                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Appointment #${appointment.id.takeLast(4)}",
-                    fontSize = 12.sp,
-                    color = Color(0xFF6F6F6F)
+                    text = time.format(DateTimeFormatter.ofPattern("a")),
+                    fontSize = 10.sp,
+                    color = textColor.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
                 )
             }
 
-            Surface(
-                color = yellow,
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                val time = appointment.appointmentAt
-                    .atZone(java.time.ZoneId.systemDefault())
-                    .toLocalTime()
-                    .format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"))
-                
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = time,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    fontSize = 12.sp,
+                    text = appointment.veterinarianName.ifEmpty { "Khám định kỳ" },
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = textColor
                 )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = textColor.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Pets,
+                            contentDescription = null,
+                            modifier = Modifier.padding(4.dp).size(12.dp),
+                            tint = textColor
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Thú cưng: ${appointment.petNames.firstOrNull() ?: "Chưa rõ"}",
+                        fontSize = 13.sp,
+                        color = textColor.copy(alpha = 0.8f)
+                    )
+                }
             }
+
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = null,
+                tint = textColor.copy(alpha = 0.5f)
+            )
         }
     }
 }
@@ -270,78 +336,91 @@ private fun CalendarMonthGrid(
     appointments: List<Appointment>,
     onSelectDay: (LocalDate) -> Unit
 ) {
-    val daysOfWeek = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+    val daysOfWeek = listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")
     val firstDayOfMonth = currentMonth.atDay(1)
     val daysInMonth = currentMonth.lengthOfMonth()
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // 0 for Sunday
+    
+    // Adjusting for ISO day of week (Monday = 1)
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value - 1
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             daysOfWeek.forEach { label ->
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
-                    fontSize = 11.sp,
-                    color = Color(0xFF6F6F6F)
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray.copy(alpha = 0.4f)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        var currentDay = 1
-        for (i in 0..5) { // Max 6 weeks
-            if (currentDay > daysInMonth) break
+        var currentDayCounter = 1
+        for (i in 0..5) {
+            if (currentDayCounter > daysInMonth) break
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 for (j in 0..6) {
-                    val dayOfMonth = if (i == 0 && j < firstDayOfWeek || currentDay > daysInMonth) {
+                    val dayOfMonth = if (i == 0 && j < firstDayOfWeek || currentDayCounter > daysInMonth) {
                         null
                     } else {
-                        currentDay++
+                        currentDayCounter++
                     }
 
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(28.dp),
+                            .aspectRatio(1f),
                         contentAlignment = Alignment.Center
                     ) {
                         if (dayOfMonth != null) {
                             val date = currentMonth.atDay(dayOfMonth)
                             val isSelected = date == selectedDate
+                            val isToday = date == LocalDate.now()
                             val hasAppointments = appointments.any { appt ->
                                 appt.appointmentAt
                                     .atZone(java.time.ZoneId.systemDefault())
                                     .toLocalDate() == date
                             }
 
-                            val bg = if (isSelected) Color(0xFFB8F06A) else Color.Transparent
+                            val contentColor = when {
+                                isSelected -> Color.White
+                                isToday -> Brand
+                                else -> Color(0xFF1F2937)
+                            }
 
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .background(bg, RoundedCornerShape(12.dp))
-                                    .clickable { onSelectDay(date) },
-                                contentAlignment = Alignment.Center
+                            Surface(
+                                modifier = Modifier.size(38.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) Brand else Color.Transparent,
+                                onClick = { onSelectDay(date) }
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
                                     Text(
                                         text = dayOfMonth.toString(),
-                                        fontSize = 12.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = Color.Black
+                                        fontSize = 15.sp,
+                                        fontWeight = if (isSelected || isToday) FontWeight.ExtraBold else FontWeight.Medium,
+                                        color = contentColor
                                     )
                                     if (hasAppointments) {
                                         Box(
                                             modifier = Modifier
+                                                .padding(top = 2.dp)
                                                 .size(4.dp)
-                                                .background(Color.Red, RoundedCornerShape(2.dp))
+                                                .background(
+                                                    if (isSelected) Color.White else Brand,
+                                                    CircleShape
+                                                )
                                         )
                                     }
                                 }

@@ -9,6 +9,9 @@ import com.example.vetbook.domain.usecases.ClearCartUseCase
 import com.example.vetbook.domain.usecases.GetStoreProductsUseCase
 import com.example.vetbook.domain.usecases.ObserveCartUseCase
 import com.example.vetbook.domain.usecases.SetCartQuantityUseCase
+import com.example.vetbook.data.network.PayosApiService
+import com.example.vetbook.data.network.PayosPaymentRequest
+import com.example.vetbook.data.util.PayosHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +37,7 @@ class CheckoutViewModel @Inject constructor(
     private val clearCartUseCase: ClearCartUseCase,
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-    private val paymentWorkerApi: com.example.vetbook.data.network.PaymentWorkerApi
+    private val payosApi: PayosApiService
 ) : ViewModel() {
 
     data class UiLine(
@@ -70,28 +73,51 @@ class CheckoutViewModel @Inject constructor(
         }
     }
 
-    suspend fun fetchVnpayUrl(): String {
-        val token = auth.currentUser?.getIdToken(true)?.await()?.token
-            ?: throw IllegalStateException("Not authenticated — please log in again.")
+    suspend fun fetchPayosUrl(): String {
         val total = _uiState.value.total
-        val amount = kotlin.math.round(total).toLong()
-        if (amount <= 0L) throw IllegalArgumentException("Cart is empty.")
-        val resp = paymentWorkerApi.createVnpayLink(
-            authorization = "Bearer $token",
-            body = com.example.vetbook.data.network.PaymentWorkerApi.CreateVnpayLinkRequest(
-                amount = amount,
-                orderCode = System.currentTimeMillis(),
-                description = "VetBook store order",
-                locale = "vn"
-            )
+        val amount = kotlin.math.round(total).toInt()
+        if (amount <= 0) throw IllegalArgumentException("Cart is empty.")
+        
+        val orderCode = System.currentTimeMillis()
+        val description = "VetBook Store Order"
+        val cancelUrl = "vetbook-payos://payment-result"
+        val returnUrl = "vetbook-payos://payment-result"
+
+        val params = mapOf(
+            "amount" to amount,
+            "cancelUrl" to cancelUrl,
+            "description" to description,
+            "orderCode" to orderCode,
+            "returnUrl" to returnUrl
         )
-        return resp.url.also { url ->
-            if (url.isBlank()) throw IllegalStateException("Worker returned empty URL.")
+        
+        val signature = PayosHelper.calculateSignature(params)
+        
+        val request = PayosPaymentRequest(
+            orderCode = orderCode,
+            amount = amount,
+            description = description,
+            cancelUrl = cancelUrl,
+            returnUrl = returnUrl,
+            signature = signature
+        )
+        
+        val response = payosApi.createPaymentLink(PayosHelper.CLIENT_ID, PayosHelper.API_KEY, request)
+        
+        if (response.code != "00") {
+            throw IllegalStateException("PayOS error: ${response.desc}")
         }
+        
+        val checkoutUrl = response.data?.checkoutUrl ?: throw IllegalStateException("Failed to get checkout URL")
+        
+        // Save orderCode to a local property or Firestore if needed for IPN
+        // For now, it's enough to just return the URL
+        
+        return checkoutUrl
     }
 
     /**
-     * Called when VNPAY reports SuccessBackAction.
+     * Called when PayOS reports success.
      * Writes a store order document to Firestore, then clears the cart.
      */
     fun onCheckoutSuccess() {
@@ -103,7 +129,7 @@ class CheckoutViewModel @Inject constructor(
             val orderCode = System.currentTimeMillis()
             val orderData = hashMapOf(
                 "uid" to uid,
-                "orderCode" to orderCode.toString(), // matches vnp_TxnRef for IPN lookup
+                "orderCode" to orderCode.toString(), // matches PayOS orderCode
                 "items" to state.lines.map { line ->
                     mapOf(
                         "productId" to line.product.id,
@@ -176,8 +202,19 @@ class CheckoutViewModel @Inject constructor(
 
         val itemCount = lines.sumOf { it.quantity }
         val subtotal = lines.sumOf { it.lineTotal }
-        val discount = 0.0
-        val delivery = if (lines.isEmpty()) 0.0 else 20000.0
+        
+        // Dynamic logic:
+        // 1. Discount: 10% if subtotal > 500,000 VND
+        val discount = if (subtotal > 500000.0) subtotal * 0.1 else 0.0
+        
+        // 2. Delivery: Free if subtotal > 1,000,000 VND, else 20,000 VND
+        // (Only apply if cart is not empty)
+        val delivery = when {
+            lines.isEmpty() -> 0.0
+            subtotal > 1000000.0 -> 0.0
+            else -> 20000.0
+        }
+        
         val total = subtotal - discount + delivery
 
         return UiState(

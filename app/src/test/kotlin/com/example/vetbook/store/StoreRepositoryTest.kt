@@ -38,6 +38,30 @@ private class FakeRemoteStoreDataSource(
         cartCleared = true
         return Result.success(Unit)
     }
+
+    override suspend fun addProduct(product: StoreProductDto): Result<String> {
+        val current = productsFlow.value.toMutableList()
+        current.add(product)
+        productsFlow.value = current
+        return Result.success(product.id)
+    }
+
+    override suspend fun updateProduct(product: StoreProductDto): Result<Unit> {
+        val current = productsFlow.value.toMutableList()
+        val index = current.indexOfFirst { it.id == product.id }
+        if (index >= 0) {
+            current[index] = product
+            productsFlow.value = current
+        }
+        return Result.success(Unit)
+    }
+
+    override suspend fun deleteProduct(productId: String): Result<Unit> {
+        val current = productsFlow.value.toMutableList()
+        current.removeAll { it.id == productId }
+        productsFlow.value = current
+        return Result.success(Unit)
+    }
 }
 
 class StoreRepositoryTest {

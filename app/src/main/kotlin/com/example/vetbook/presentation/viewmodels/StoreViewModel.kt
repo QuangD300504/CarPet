@@ -103,11 +103,15 @@ class StoreViewModel @Inject constructor(
                                     price = p.price.toString(),
                                     stock = p.stock,
                                     imageUrl = p.imageUrl,
+                                    shopName = p.shopName,
+                                    category = p.category ?: "",
                                     description = p.description
                                 )
                             }
-                            val filtered = if (query.isBlank()) mapped else mapped.filter {
-                                it.name.contains(query, ignoreCase = true)
+                            val filtered = mapped.filter { p ->
+                                val matchesCategory = category == null || p.category.equals(category, ignoreCase = true)
+                                val matchesQuery = query.isBlank() || p.name.contains(query, ignoreCase = true)
+                                matchesCategory && matchesQuery
                             }
 
                             StoreUiState(

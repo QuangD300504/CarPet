@@ -119,6 +119,11 @@ class FirebaseVeterinarianDataSource(
             clinic = getClinic(),
             availability = getAvailability(),
             isActive = getBoolean("isActive") ?: true,
+            servicePrice = when (val p = get("servicePrice") ?: get("serviceprice")) {
+                is Number -> p.toDouble()
+                is String -> p.toDoubleOrNull() ?: 0.0
+                else -> 0.0
+            },
             createdAt = getLong("createdAt"),
             updatedAt = getLong("updatedAt")
         )
@@ -219,6 +224,7 @@ class FirebaseVeterinarianDataSource(
                 )
             },
             "isActive" to isActive,
+            "servicePrice" to servicePrice,
             "createdAt" to createdAt,
             "updatedAt" to updatedAt
         )

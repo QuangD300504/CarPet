@@ -10,6 +10,6 @@ data class Veterinarian(
     val initials: String,
     val bio: String = "",
     val imageUrl: String? = null,
-    val clinicId: String = ""
+    val clinicId: String = "",
+    val servicePrice: Double = 100000.0
 )
-

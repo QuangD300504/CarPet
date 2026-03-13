@@ -341,6 +341,7 @@ object FirestoreSeeder {
                 "imageUrl" to null, // Cloudinary integration pending
                 "email" to "sarah.johnson@vetbook.com",
                 "phone" to "+1-555-0101",
+                "servicePrice" to 150000.0,
                 "isActive" to true,
                 "createdAt" to now,
                 "updatedAt" to now
@@ -357,6 +358,7 @@ object FirestoreSeeder {
                 "imageUrl" to null,
                 "email" to "michael.chen@vetbook.com",
                 "phone" to "+1-555-0102",
+                "servicePrice" to 200000.0,
                 "isActive" to true,
                 "createdAt" to now,
                 "updatedAt" to now
@@ -373,6 +375,7 @@ object FirestoreSeeder {
                 "imageUrl" to null,
                 "email" to "tuan.tu@vetbook.com",
                 "phone" to "+84-555-0103",
+                "servicePrice" to 120000.0,
                 "isActive" to true,
                 "createdAt" to now,
                 "updatedAt" to now
@@ -389,6 +392,7 @@ object FirestoreSeeder {
                 "imageUrl" to null,
                 "email" to "david.thompson@vetbook.com",
                 "phone" to "+1-555-0104",
+                "servicePrice" to 180000.0,
                 "isActive" to true,
                 "createdAt" to now,
                 "updatedAt" to now

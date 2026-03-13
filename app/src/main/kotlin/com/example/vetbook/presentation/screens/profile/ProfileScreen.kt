@@ -33,6 +33,11 @@ import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.theme.Error
 import com.example.vetbook.presentation.theme.Link
 import com.example.vetbook.presentation.viewmodels.ProfileViewModel
+import androidx.compose.ui.graphics.Brush
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.HealthMuted
+import androidx.compose.material.icons.filled.Pets
 
 @Composable
 fun ProfileScreen(
@@ -87,13 +92,23 @@ fun ProfileScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF8FAFC))
             .verticalScroll(rememberScrollState())
     ) {
+        // ── Hero Header ─────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(HealthPrimary, HealthPrimary.copy(alpha = 0.8f))
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box {
@@ -101,138 +116,202 @@ fun ProfileScreenContent(
                         model = avatarOverride ?: uiState.user?.profileImageUrl ?: R.drawable.pawns,
                         contentDescription = "Profile",
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(100.dp)
                             .clip(CircleShape)
                             .border(
-                                width = 2.dp,
-                                color = Color(0xFFE0E0E0),
+                                width = 3.dp,
+                                color = Color.White.copy(alpha = 0.3f),
                                 shape = CircleShape
                             ),
                         contentScale = ContentScale.Crop
                     )
                     IconButton(
-                        onClick  = onAvatarClick,
+                        onClick = onAvatarClick,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .size(46.dp)
-                            .background(Brand, CircleShape)
+                            .size(36.dp)
+                            .background(Color.White, CircleShape)
+                            .padding(2.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Edit Avatar",
+                            tint = HealthPrimary,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = uiState.user?.name ?: "PHÙNG CANH MỘ",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    text = uiState.user?.name ?: "Người dùng VetBook",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
-                    text = "${uiState.user?.email ?: "mail@gmail.com"} | ${uiState.user?.phoneNumber ?: "+01 234 567 89"}",
+                    text = uiState.user?.email ?: "user@vetbook.com",
                     fontSize = 14.sp,
-                    color = Color.Black,
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.Medium
                 )
             }
+        }
 
-            Column(
+        // ── Stats Summary Row ────────────────────────────────────────
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .offset(y = (-20.dp)),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            shadowElevation = 8.dp
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = 15.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(vertical = 20.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Account settings card (Edit profile, Notifications, Language)
-                Card(
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "${uiState.pets.size}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HealthPrimary
+                    )
+                    Text(text = "Thú cưng", fontSize = 12.sp, color = Color.Gray)
+                }
+                
+                Divider(modifier = Modifier.height(30.dp).width(1.dp), color = Color(0xFFEEEEEE))
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "${uiState.user?.points ?: 0}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HealthPrimary
+                    )
+                    Text(text = "Điểm thưởng", fontSize = 12.sp, color = Color.Gray)
+                }
+                
+                Divider(modifier = Modifier.height(30.dp).width(1.dp), color = Color(0xFFEEEEEE))
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB300),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(text = "Thành viên", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Cài đặt tài khoản",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+            )
+                // Account settings card
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                    shadowElevation = 2.dp
                 ) {
                     Column(
                         modifier = Modifier.padding(vertical = 8.dp)
                     ) {
                         MenuItemComponent(
                             icon = Icons.Default.Person,
-                            label = "Edit profile information",
+                            label = "Thông tin cá nhân",
                             onClick = onEditProfileClick
                         )
 
                         MenuItemComponent(
                             icon = Icons.Default.Notifications,
-                            label = "Notifications",
+                            label = "Thông báo",
                             onClick = onNotificationClick,
                             trailingContent = {
                                 Text(
-                                    text = if (notificationsEnabled) "ON" else "OFF",
-                                    fontSize = 14.sp,
-                                    color = Link,
-                                    fontWeight = FontWeight.Normal
+                                    text = if (notificationsEnabled) "Bật" else "Tắt",
+                                    fontSize = 13.sp,
+                                    color = HealthPrimary,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         )
 
                         MenuItemComponent(
                             icon = Icons.Default.Language,
-                            label = "Language",
+                            label = "Ngôn ngữ",
                             onClick = onLanguageClick,
                             trailingContent = {
                                 Text(
                                     text = selectedLanguage,
-                                    fontSize = 14.sp,
-                                    color = Link,
-                                    fontWeight = FontWeight.Normal
+                                    fontSize = 13.sp,
+                                    color = HealthPrimary,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         )
                     }
                 }
 
-                // Security / Help & support / Contact / Privacy card
-                Card(
+                Text(
+                    text = "Hỗ trợ & Bảo mật",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                )
+
+                // Security / Support card
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                    shadowElevation = 2.dp
                 ) {
                     Column(
                         modifier = Modifier.padding(vertical = 8.dp)
                     ) {
                         MenuItemComponent(
                             icon = Icons.Default.Security,
-                            label = "Security",
+                            label = "Bảo mật tài khoản",
                             onClick = onSecurityClick
                         )
 
                         MenuItemComponent(
                             icon = Icons.AutoMirrored.Filled.Help,
-                            label = "Help & Support",
+                            label = "Trung tâm trợ giúp",
                             onClick = onHelpAndSupportClick
                         )
 
                         MenuItemComponent(
                             icon = Icons.Default.Phone,
-                            label = "Contact us",
+                            label = "Liên hệ với chúng tôi",
                             onClick = onContactUsClick
                         )
 
                         MenuItemComponent(
                             icon = Icons.Default.PrivacyTip,
-                            label = "Privacy policy",
+                            label = "Chính sách bảo mật",
                             onClick = onPrivacyPolicyClick
                         )
                     }
@@ -241,23 +320,32 @@ fun ProfileScreenContent(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick  = onLogout,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    colors   = ButtonDefaults.buttonColors(
-                        containerColor = Error,
-                        contentColor   = Color.White
+                    onClick = onLogout,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFF1F2),
+                        contentColor = Color(0xFFE11D48)
                     ),
-                    shape = RoundedCornerShape(14.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Logout,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Log out",
+                        text = "Đăng xuất",
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
-            }
         }
     }
+}
 
 
 @Preview(showBackground = true)

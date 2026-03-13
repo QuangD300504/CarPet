@@ -6,6 +6,3 @@ import javax.inject.Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class CloudinaryClient
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class PaymentWorkerClient

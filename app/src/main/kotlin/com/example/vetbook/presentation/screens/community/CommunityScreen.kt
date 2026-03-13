@@ -1,4 +1,4 @@
-package com.example.vetbook.presentation.screens
+package com.example.vetbook.presentation.screens.community
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,7 +33,11 @@ import com.example.vetbook.domain.models.PetEvent
 import com.example.vetbook.domain.models.Post
 import com.example.vetbook.presentation.models.CommunityTab
 import com.example.vetbook.presentation.viewmodels.CommunityViewModel
-import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthPrimary
+import com.example.vetbook.presentation.theme.HealthSurface
+import com.example.vetbook.presentation.theme.TextPrimary
+import com.example.vetbook.presentation.theme.TextSecondary
+import com.example.vetbook.presentation.components.topbars.SimpleTopBar
 
 @Composable
 fun CommunityScreen(
@@ -47,43 +51,44 @@ fun CommunityScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFFDFDFD))
+            .background(com.example.vetbook.presentation.theme.Background)
     ) {
-        Surface(shadowElevation = 0.dp) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            ) {
-                Spacer(modifier = Modifier.height(20.dp))
+        SimpleTopBar(
+            title = "Cộng đồng",
+            onBackClick = {} // Usually home back or system back
+        )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF5F5F5)),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    CommunityTabItem(
-                        title = "Feed",
-                        isSelected = uiState.selectedTab == CommunityTab.Feed,
-                        onClick = { viewModel.onTabSelected(CommunityTab.Feed) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    CommunityTabItem(
-                        title = "Adoption",
-                        isSelected = uiState.selectedTab == CommunityTab.Adoption,
-                        onClick = { viewModel.onTabSelected(CommunityTab.Adoption) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    CommunityTabItem(
-                        title = "Events",
-                        isSelected = uiState.selectedTab == CommunityTab.Events,
-                        onClick = { viewModel.onTabSelected(CommunityTab.Events) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.White,
+            shadowElevation = 0.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(HealthSurface),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                CommunityTabItem(
+                    title = "Bản tin",
+                    isSelected = uiState.selectedTab == CommunityTab.Feed,
+                    onClick = { viewModel.onTabSelected(CommunityTab.Feed) },
+                    modifier = Modifier.weight(1f)
+                )
+                CommunityTabItem(
+                    title = "Nhận nuôi",
+                    isSelected = uiState.selectedTab == CommunityTab.Adoption,
+                    onClick = { viewModel.onTabSelected(CommunityTab.Adoption) },
+                    modifier = Modifier.weight(1f)
+                )
+                CommunityTabItem(
+                    title = "Sự kiện",
+                    isSelected = uiState.selectedTab == CommunityTab.Events,
+                    onClick = { viewModel.onTabSelected(CommunityTab.Events) },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
 
@@ -114,17 +119,17 @@ fun CommunityTabItem(
     Box(
         modifier = modifier
             .padding(4.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .height(40.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(if (isSelected) Color.White else Color.Transparent)
-            .clickable { onClick() }
-            .padding(vertical = 8.dp),
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = title,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.Black.copy(alpha = 1f) else Color.Gray,
-            fontSize = 14.sp
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
+            color = if (isSelected) HealthPrimary else TextSecondary
         )
     }
 }
@@ -167,29 +172,39 @@ fun PostCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, HealthSurface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFFFE0B2)),
+                        .background(HealthSurface),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "👩", fontSize = 20.sp)
+                    Text(text = "👩", fontSize = 22.sp)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = post.authorName, fontWeight = FontWeight.Bold, color = Color.Black.copy(alpha = 1f))
-                    Text(text = post.timestamp, fontSize = 12.sp, color = Color.Gray)
+                    Text(
+                        text = post.authorName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = post.timestamp,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (post.imageUrl != null) {
                 AsyncImage(
@@ -197,18 +212,23 @@ fun PostCard(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
+                        .height(220.dp)
                         .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
             }
 
-            Text(text = post.content, fontSize = 14.sp, color = Color.Black.copy(alpha = 1f))
+            Text(
+                text = post.content,
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextPrimary,
+                lineHeight = 22.sp
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = Color(0xFFF0F0F0))
-            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(color = HealthSurface)
+            Spacer(modifier = Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -217,42 +237,58 @@ fun PostCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(
-                        modifier = Modifier.clickable { onLikeClick() }.padding(4.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onLikeClick() }
+                            .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Like",
+                            contentDescription = "Thích",
                             modifier = Modifier.size(20.dp),
-                            tint = if (isLiked) Brand else Color.Gray
+                            tint = if (isLiked) Color.Red else TextSecondary
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = post.likesCount.toString(), fontSize = 12.sp, color = if (isLiked) Brand else Color.Gray)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = post.likesCount.toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isLiked) Color.Red else TextSecondary
+                        )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
                     Row(
-                        modifier = Modifier.clickable { onCommentClick() }.padding(4.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onCommentClick() }
+                            .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ChatBubbleOutline,
-                            contentDescription = "Comment",
+                            contentDescription = "Bình luận",
                             modifier = Modifier.size(20.dp),
-                            tint = Color.Gray
+                            tint = TextSecondary
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = post.commentsCount.toString(), fontSize = 12.sp, color = Color.Gray)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = post.commentsCount.toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextSecondary
+                        )
                     }
                 }
                 
                 IconButton(onClick = onShareClick) {
                     Icon(
                         imageVector = Icons.Outlined.Share,
-                        contentDescription = "Share",
+                        contentDescription = "Chia sẻ",
                         modifier = Modifier.size(20.dp),
-                        tint = Color.Gray
+                        tint = TextSecondary
                     )
                 }
             }
@@ -289,9 +325,10 @@ fun AdoptionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, HealthSurface)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -299,34 +336,46 @@ fun AdoptionCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF5F5F5)),
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(HealthSurface),
                 contentAlignment = Alignment.Center
             ) {
                 val petEmoji = remember(pet.type) {
                     if (pet.type.lowercase() == "dog") "🐕" else "🐱"
                 }
-                Text(text = petEmoji, fontSize = 40.sp)
+                Text(text = petEmoji, fontSize = 44.sp)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = pet.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black.copy(alpha = 1f))
-                Text(text = pet.breed, color = Color.Gray, fontSize = 14.sp)
-                Text(text = pet.age, color = Color.Gray, fontSize = 14.sp)
+                Text(
+                    text = pet.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = TextPrimary
+                )
+                Text(
+                    text = "${pet.breed} • ${pet.age}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary
+                )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = onAdoptClick,
-                    modifier = Modifier.height(36.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Brand),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                    modifier = Modifier.height(38.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp)
                 ) {
-                    Text(text = "Adopt Now", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Nhận nuôi ngay",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
             }
         }
@@ -353,27 +402,53 @@ fun EventList(events: List<PetEvent>) {
 fun EventCard(event: PetEvent) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, HealthSurface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "🎉", fontSize = 32.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = event.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black.copy(alpha = 1f))
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(HealthSurface, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "🎉", fontSize = 28.sp)
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(
+                text = event.title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextPrimary
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Event, null, tint = HealthPrimary, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = event.date, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = event.date, color = Color.Gray, fontSize = 14.sp)
-            Text(text = event.location, color = Color.Gray, fontSize = 14.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.LocationOn, null, tint = HealthPrimary, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = event.location, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Button(
                 onClick = { },
-                modifier = Modifier.height(40.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Brand),
-                shape = RoundedCornerShape(10.dp)
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(text = "Join Event", fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Tham gia sự kiện",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold
+                )
             }
         }
     }

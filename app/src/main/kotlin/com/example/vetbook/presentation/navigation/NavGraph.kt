@@ -6,11 +6,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.vetbook.presentation.screens.MainScreen
-import com.example.vetbook.presentation.screens.auth.ForgotPasswordScreen
-import com.example.vetbook.presentation.screens.auth.LoginScreen
-import com.example.vetbook.presentation.screens.auth.SignUpScreen
-import com.example.vetbook.presentation.screens.auth.SplashScreen
 import com.example.vetbook.presentation.viewmodels.MainViewModel
+import com.example.vetbook.presentation.screens.auth.*
+import com.example.vetbook.presentation.viewmodels.LoginViewModel
+import com.example.vetbook.presentation.viewmodels.ContinueLoginViewModel
 
 @Composable
 fun VetBookNavGraph() {
@@ -82,6 +81,51 @@ fun VetBookNavGraph() {
                             popUpTo(0) { inclusive = true }
                         }
                     }
+                }
+            )
+        }
+
+        // Continue Login Flow
+        composable(Routes.ContinueLogin.route) {
+            ContinueLoginScreen(
+                onNext = {
+                    rootNavController.navigate(Routes.ContinueLoginStart.route)
+                }
+            )
+        }
+
+        composable(Routes.ContinueLoginStart.route) {
+            ContinueLoginStartScreen(
+                onNext = {
+                    rootNavController.navigate(Routes.ContinueLoginPassword.route)
+                }
+            )
+        }
+
+        composable(Routes.ContinueLoginPassword.route) {
+            val loginViewModel: LoginViewModel = hiltViewModel()
+            val continueLoginViewModel: ContinueLoginViewModel = hiltViewModel()
+            ContinueLoginPasswordScreen(
+                loginViewModel = loginViewModel,
+                continueLoginViewModel = continueLoginViewModel,
+                onForgotPasswordClick = {
+                    rootNavController.navigate(Routes.ForgotPassword.route)
+                },
+                onLoginSuccess = {
+                    rootNavController.navigate("main") {
+                        popUpTo(Routes.Splash.route) { inclusive = true }
+                    }
+                },
+                onUseAnotherAccount = {
+                    rootNavController.navigate(Routes.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onLoginClick = { password ->
+                    val email = continueLoginViewModel.uiState.value.email
+                    loginViewModel.onUsernameChange(email)
+                    loginViewModel.onPasswordChange(password)
+                    loginViewModel.onLoginClick()
                 }
             )
         }

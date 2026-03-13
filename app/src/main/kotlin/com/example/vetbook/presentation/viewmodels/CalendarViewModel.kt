@@ -19,6 +19,7 @@ import javax.inject.Inject
 data class CalendarUiState(
     val currentMonth: YearMonth = YearMonth.now(),
     val selectedDate: LocalDate = LocalDate.now(),
+    val selectedWeekStart: LocalDate = LocalDate.now().with(java.time.DayOfWeek.MONDAY),
     val appointments: List<Appointment> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
@@ -51,11 +52,25 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun onPreviousMonth() {
-        _uiState.update { it.copy(currentMonth = it.currentMonth.minusMonths(1)) }
+        _uiState.update { 
+            val newMonth = it.currentMonth.minusMonths(1)
+            it.copy(currentMonth = newMonth)
+        }
     }
 
     fun onNextMonth() {
-        _uiState.update { it.copy(currentMonth = it.currentMonth.plusMonths(1)) }
+        _uiState.update { 
+            val newMonth = it.currentMonth.plusMonths(1)
+            it.copy(currentMonth = newMonth)
+        }
+    }
+
+    fun onPreviousWeek() {
+        _uiState.update { it.copy(selectedWeekStart = it.selectedWeekStart.minusWeeks(1)) }
+    }
+
+    fun onNextWeek() {
+        _uiState.update { it.copy(selectedWeekStart = it.selectedWeekStart.plusWeeks(1)) }
     }
 
     fun onDateSelected(date: LocalDate) {

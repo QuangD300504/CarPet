@@ -19,24 +19,13 @@ class FirebaseServiceRepository(
     private val remoteServiceDataSource: RemoteServiceDataSource
 ) : ServiceRepository {
 
-    // Icon mapping from service IDs to drawable resources
-    private val iconMap = mapOf(
-        "cat_vet" to R.drawable.checkup,
-        "cat_hotel" to R.drawable.hotel,
-        "cat_ride" to R.drawable.homecare,
-        "cat_spa" to R.drawable.groom,
-        "cat_training" to R.drawable.checkup,
-        "cat_party" to R.drawable.hotel,
-        "cat_funeral" to R.drawable.groom
-    )
-
     override fun getCategories(): List<ServiceCategory> {
         return runBlocking {
             try {
                 val dtos = remoteServiceDataSource.getServiceCategories()
                 dtos.map { dto ->
-                    val iconRes = iconMap[dto.id] ?: R.drawable.checkup
-                    dto.toDomain(iconRes)
+                    // Use a generic fallback icon resource; the mapper will also provide the dynamic iconUrl.
+                    dto.toDomain(R.drawable.checkup)
                 }
             } catch (e: Exception) {
                 emptyList()

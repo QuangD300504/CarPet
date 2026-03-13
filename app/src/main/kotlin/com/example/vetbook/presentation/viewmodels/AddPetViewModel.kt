@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vetbook.data.datasource.RemotePetDataSource
 import com.example.vetbook.data.models.PetDto
+import com.example.vetbook.domain.repository.ImageRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,25 +16,30 @@ import javax.inject.Inject
 
 data class AddPetUiState(
     val isSaving: Boolean = false,
+    val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val success: Boolean = false,
 
     val name: String = "",
-    val type: String = "Dog",
+    val type: String = "Chó",
     val breed: String = "",
-    val gender: String = "Male",
-
-    // Real-life sensible defaults: keep optional fields empty unless user fills
+    val gender: String = "Đực",
     val ageYears: String = "",
     val ageMonths: String = "",
     val weightKg: String = "",
-
-    val parasiticStatus: String = "Healthy",
-    val note: String = ""
-)
+    val note: String = "",
+    
+    val petId: String? = null,
+    val selectedImageBytes: ByteArray? = null,
+    val existingImageUrl: String? = null
+) {
+    val isEditMode: Boolean get() = petId != null
+}
 
 @HiltViewModel
 class AddPetViewModel @Inject constructor(
-    private val remotePetDataSource: RemotePetDataSource,
+    private val petDataSource: RemotePetDataSource,
+    private val imageRepository: ImageRepository,
     private val auth: FirebaseAuth
 ) : ViewModel() {
 
@@ -47,103 +53,103 @@ class AddPetViewModel @Inject constructor(
     fun setAgeYears(value: String) = _uiState.update { it.copy(ageYears = value) }
     fun setAgeMonths(value: String) = _uiState.update { it.copy(ageMonths = value) }
     fun setWeightKg(value: String) = _uiState.update { it.copy(weightKg = value) }
-    fun setParasiticStatus(value: String) = _uiState.update { it.copy(parasiticStatus = value) }
     fun setNote(value: String) = _uiState.update { it.copy(note = value) }
-
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
 
-    fun save(onSuccess: () -> Unit) {
-        val uid = auth.currentUser?.uid
-        if (uid.isNullOrBlank()) {
-            _uiState.update { it.copy(errorMessage = "Not authenticated") }
-            return
-        }
+    fun onImageSelected(bytes: ByteArray) = _uiState.update { it.copy(selectedImageBytes = bytes) }
 
-        val state = _uiState.value
-
-        val name = state.name.trim()
-        if (name.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Pet name is required") }
-            return
-        }
-
-        val breed = state.breed.trim()
-        if (breed.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Breed is required") }
-            return
-        }
-
-        val years = state.ageYears.trim().toIntOrNull()
-        val months = state.ageMonths.trim().toIntOrNull()
-        if (years != null && (years < 0 || years > 40)) {
-            _uiState.update { it.copy(errorMessage = "Age (years) must be between 0 and 40") }
-            return
-        }
-        if (months != null && (months < 0 || months > 11)) {
-            _uiState.update { it.copy(errorMessage = "Age (months) must be between 0 and 11") }
-            return
-        }
-
-        val weight = state.weightKg.trim().toDoubleOrNull()
-        if (weight != null && (weight <= 0.0 || weight > 120.0)) {
-            _uiState.update { it.copy(errorMessage = "Weight (kg) must be between 0 and 120") }
-            return
-        }
-
-        val ageString = buildAgeString(years, months)
-        val weightString = weight?.let { formatWeightKg(it) } ?: ""
-
+    fun loadPet(petId: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
-
-            val petDto = PetDto(
-                id = "", // auto-id
-                ownerId = uid,
-                name = name,
-                type = state.type,
-                breed = breed,
-                imageUrl = null,
-                age = ageString,
-                gender = state.gender,
-                weight = weightString,
-                parasiticStatus = state.parasiticStatus,
-                note = state.note.trim(),
-                createdAt = null,
-                updatedAt = null,
-                isForAdoption = false,
-                adoptionDetails = null
-            )
-
-            val result = remotePetDataSource.createPet(petDto)
-            result
-                .onSuccess {
-                    _uiState.update { it.copy(isSaving = false) }
-                    onSuccess()
-                }
-                .onFailure { e ->
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val result = petDataSource.getPetById(petId)
+                if (result.isSuccess) {
+                    val dto = result.getOrThrow()
                     _uiState.update {
                         it.copy(
-                            isSaving = false,
-                            errorMessage = e.message ?: "Failed to save pet"
+                            isLoading = false,
+                            petId = dto.id,
+                            name = dto.name,
+                            type = dto.type,
+                            breed = dto.breed,
+                            gender = dto.gender,
+                            ageYears = dto.age.substringBefore(" ").filter { it.isDigit() },
+                            ageMonths = dto.age.substringAfter(" ", "").filter { it.isDigit() },
+                            weightKg = dto.weight,
+                            note = dto.note,
+                            existingImageUrl = dto.imageUrl
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.exceptionOrNull()?.message
                         )
                     }
                 }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+            }
         }
     }
 
-    private fun buildAgeString(years: Int?, months: Int?): String {
-        val y = years ?: 0
-        val m = months ?: 0
-        if (y == 0 && m == 0) return ""
+    fun save(onSuccess: () -> Unit) {
+        val state = _uiState.value
+        if (state.name.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Vui lòng nhập tên thú cưng") }
+            return
+        }
 
-        val parts = mutableListOf<String>()
-        if (y > 0) parts.add("$y year" + if (y > 1) "s" else "")
-        if (m > 0) parts.add("$m month" + if (m > 1) "s" else "")
-        return parts.joinToString(" ")
-    }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+            try {
+                val uid = auth.currentUser?.uid ?: throw IllegalStateException("Chưa đăng nhập")
 
-    private fun formatWeightKg(weightKg: Double): String {
-        val trimmed = if (weightKg % 1.0 == 0.0) weightKg.toInt().toString() else weightKg.toString()
-        return "$trimmed kg"
+                var finalImageUrl = state.existingImageUrl
+                state.selectedImageBytes?.let { bytes ->
+                    val uploadResult = imageRepository.uploadImage(bytes)
+                    if (uploadResult.isSuccess) {
+                        finalImageUrl = uploadResult.getOrNull()
+                    } else {
+                        throw uploadResult.exceptionOrNull() ?: Exception("Lỗi tải ảnh")
+                    }
+                }
+
+                val petDto = PetDto(
+                    id = state.petId ?: "",
+                    ownerId = uid,
+                    name = state.name.trim(),
+                    type = state.type,
+                    breed = state.breed.trim(),
+                    gender = state.gender,
+                    age = "${state.ageYears}y ${state.ageMonths}m",
+                    weight = state.weightKg.trim(),
+                    note = state.note.trim(),
+                    imageUrl = finalImageUrl,
+                    updatedAt = System.currentTimeMillis()
+                )
+
+                val result = if (state.petId == null) {
+                    petDataSource.createPet(petDto)
+                } else {
+                    petDataSource.updatePet(petDto)
+                }
+
+                if (result.isSuccess) {
+                    _uiState.update { it.copy(isSaving = false, success = true) }
+                    onSuccess()
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            errorMessage = result.exceptionOrNull()?.message
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
+            }
+        }
     }
 }

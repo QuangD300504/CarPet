@@ -19,6 +19,7 @@ data class VeterinarianDto(
     val clinic: Clinic? = null,
     val availability: Availability? = null,
     val isActive: Boolean = true,
+    val servicePrice: Double = 0.0,
     val createdAt: Long? = null,
     val updatedAt: Long? = null
 ) {
