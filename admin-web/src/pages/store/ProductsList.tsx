@@ -5,6 +5,8 @@ import { Plus, Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Pagination from '../../components/Common/Pagination';
 import { usePagination } from '../../hooks/usePagination';
+import { formatVND } from '../../utils/format';
+
 
 export interface Product {
     id: string;
@@ -70,7 +72,7 @@ export default function ProductsList() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-slate-800">Products Management</h1>
-                <Link to="/store/products/new" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <Link to="/store/products/new" className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
                     <Plus className="h-5 w-5" />
                     Add Product
                 </Link>
@@ -112,8 +114,8 @@ export default function ProductsList() {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <div className="font-medium text-slate-900">${product.price.toFixed(2)}</div>
-                                    {product.salePrice && <div className="text-sm text-emerald-600">Sale: ${product.salePrice.toFixed(2)}</div>}
+                                    <div className="font-medium text-slate-900">{formatVND(product.price)}</div>
+                                    {product.salePrice && <div className="text-sm text-emerald-600">Sale: {formatVND(product.salePrice)}</div>}
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -125,7 +127,7 @@ export default function ProductsList() {
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
-                                        <Link to={`/store/products/edit/${product.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <Link to={`/store/products/edit/${product.id}`} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
                                             <Edit2 className="h-5 w-5" />
                                         </Link>
                                         <button onClick={() => handleDelete(product.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">

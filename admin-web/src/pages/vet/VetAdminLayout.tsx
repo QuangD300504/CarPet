@@ -23,7 +23,7 @@ export default function VetAdminLayout() {
                                 className={`
                                     whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors
                                     ${active 
-                                        ? 'border-blue-500 text-blue-600' 
+                                        ? 'border-primary-500 text-primary-600' 
                                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}
                                 `}
                             >

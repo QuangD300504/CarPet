@@ -63,8 +63,9 @@ export default function AppointmentsList() {
         pending: 'bg-yellow-100 text-yellow-800',
         PENDING: 'bg-yellow-100 text-yellow-800',
         PENDING_PAYMENT: 'bg-amber-100 text-amber-800',
-        confirmed: 'bg-blue-100 text-blue-800',
-        CONFIRMED: 'bg-blue-100 text-blue-800',
+        confirmed: 'bg-primary-100 text-primary-800',
+        CONFIRMED: 'bg-primary-100 text-primary-800',
+        UPCOMING: 'bg-primary-50 text-primary-700 font-bold border border-primary-100',
         completed: 'bg-emerald-100 text-emerald-800',
         COMPLETED: 'bg-emerald-100 text-emerald-800',
         cancelled: 'bg-red-100 text-red-800',
@@ -132,6 +133,7 @@ export default function AppointmentsList() {
                                         >
                                             <option value="pending">Pending</option>
                                             <option value="PENDING_PAYMENT">Pending Payment</option>
+                                            <option value="UPCOMING">Upcoming (Paid)</option>
                                             <option value="confirmed">Confirmed</option>
                                             <option value="completed">Completed</option>
                                             <option value="cancelled">Cancelled</option>

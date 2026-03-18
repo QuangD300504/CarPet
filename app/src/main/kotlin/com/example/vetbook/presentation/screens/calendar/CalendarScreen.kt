@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -32,6 +34,7 @@ import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.presentation.theme.Brand
 import com.example.vetbook.presentation.viewmodels.CalendarUiState
 import com.example.vetbook.presentation.viewmodels.CalendarViewModel
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -61,6 +64,8 @@ private fun CalendarContent(
     getAppointmentsForDate: (LocalDate) -> List<Appointment>
 ) {
     var showReminder by remember { mutableStateOf(false) }
+    var showAppointmentDetail by remember { mutableStateOf(false) }
+    var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
     val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
 
     Column(
@@ -68,104 +73,109 @@ private fun CalendarContent(
             .fillMaxSize()
             .background(Color(0xFFF9FAFB))
     ) {
-        // App Bar / Title
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "Lịch Hẹn",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF111827)
-                )
-                Text(
-                    text = "Quản lý lịch khám thú cưng",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-            }
-            
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = Brand.copy(alpha = 0.1f),
-                onClick = { showReminder = true }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Reminders",
-                        tint = Brand,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-        }
-
-        // Calendar Card
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White,
-            shadowElevation = 0.5.dp,
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = onPreviousMonth,
-                        modifier = Modifier.clip(CircleShape).background(Color(0xFFF3F4F6))
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Prev", modifier = Modifier.size(18.dp))
-                    }
-                    
-                    Text(
-                        text = uiState.currentMonth.format(formatter),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF111827)
-                    )
-                    
-                    IconButton(
-                        onClick = onNextMonth,
-                        modifier = Modifier.clip(CircleShape).background(Color(0xFFF3F4F6))
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, "Next", modifier = Modifier.size(18.dp))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                CalendarMonthGrid(
-                    currentMonth = uiState.currentMonth,
-                    selectedDate = uiState.selectedDate,
-                    appointments = uiState.appointments,
-                    onSelectDay = onDateSelected
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Schedule Section
+        // App Bar / Title and Calendar should scroll together with the schedule
         Column(
             modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomEnd = 0.dp, bottomStart = 0.dp))
-                .background(Color.White)
-                .padding(top = 24.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
+            // App Bar / Title
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Lịch Hẹn",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF111827)
+                    )
+                    Text(
+                        text = "Quản lý lịch khám thú cưng",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
+                
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = CircleShape,
+                    color = Brand.copy(alpha = 0.1f),
+                    onClick = { showReminder = true }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Reminders",
+                            tint = Brand,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+
+            // Calendar Card
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 0.5.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF3F4F6))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = onPreviousMonth,
+                            modifier = Modifier.clip(CircleShape).background(Color(0xFFF3F4F6))
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Prev", modifier = Modifier.size(18.dp))
+                        }
+                        
+                        Text(
+                            text = uiState.currentMonth.format(formatter),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF111827)
+                        )
+                        
+                        IconButton(
+                            onClick = onNextMonth,
+                            modifier = Modifier.clip(CircleShape).background(Color(0xFFF3F4F6))
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, "Next", modifier = Modifier.size(18.dp))
+                        }
+                    }
+        
+                    Spacer(modifier = Modifier.height(16.dp))
+        
+                    CalendarMonthGrid(
+                        currentMonth = uiState.currentMonth,
+                        selectedDate = uiState.selectedDate,
+                        appointments = uiState.appointments,
+                        onSelectDay = onDateSelected
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Schedule Section
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomEnd = 0.dp, bottomStart = 0.dp))
+                    .background(Color.White)
+                    .padding(top = 24.dp)
+            ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -216,16 +226,24 @@ private fun CalendarContent(
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 40.dp),
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, bottom = 40.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(dailyAppointments) { appointment ->
-                        ScheduleStickyNote(appointment)
+                    dailyAppointments.forEach { appointment ->
+                        ScheduleStickyNote(
+                            appointment = appointment,
+                            onMoreClick = {
+                                selectedAppointment = appointment
+                                showAppointmentDetail = true
+                            }
+                        )
                     }
                 }
             }
+        }
         }
 
         if (showReminder) {
@@ -238,11 +256,28 @@ private fun CalendarContent(
                 ReminderSheetContent(onClose = { showReminder = false })
             }
         }
+
+        if (showAppointmentDetail && selectedAppointment != null) {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
+                onDismissRequest = { showAppointmentDetail = false },
+                sheetState = sheetState,
+                containerColor = Color.White
+            ) {
+                AppointmentDetailSheet(
+                    appointment = selectedAppointment!!,
+                    onClose = { showAppointmentDetail = false }
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun ScheduleStickyNote(appointment: Appointment) {
+private fun ScheduleStickyNote(
+    appointment: Appointment,
+    onMoreClick: () -> Unit
+) {
     val time = appointment.appointmentAt.atZone(java.time.ZoneId.systemDefault()).toLocalTime()
     
     // Aesthetic colors based on service type or ID for \"notes\" feel
@@ -320,12 +355,207 @@ private fun ScheduleStickyNote(appointment: Appointment) {
                 }
             }
 
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = null,
-                tint = textColor.copy(alpha = 0.5f)
+            IconButton(onClick = onMoreClick) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = null,
+                    tint = textColor.copy(alpha = 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppointmentDetailSheet(
+    appointment: Appointment,
+    onClose: () -> Unit
+) {
+    val dateFormatter = remember {
+        DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.getDefault())
+    }
+    val timeFormatter = remember {
+        DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+    }
+    val zonedDateTime = remember(appointment.appointmentAt) {
+        appointment.appointmentAt.atZone(java.time.ZoneId.systemDefault())
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Chi tiết lịch hẹn",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+            TextButton(onClick = onClose) {
+                Text("Đóng")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = appointment.veterinarianName.ifEmpty { "Bác sĩ thú y" },
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF111827)
+        )
+
+        if (appointment.clinicName.isNotBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = appointment.clinicName,
+                fontSize = 14.sp,
+                color = Color.Gray
             )
         }
+
+        if (appointment.clinicAddress.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = Brand,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = appointment.clinicAddress,
+                    fontSize = 13.sp,
+                    color = Color(0xFF4B5563)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Event,
+                contentDescription = null,
+                tint = Brand,
+                modifier = Modifier.size(20.dp)
+            )
+            Column {
+                Text(
+                    text = zonedDateTime.toLocalDate().format(dateFormatter),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "${zonedDateTime.toLocalTime().format(timeFormatter)} • ${appointment.durationMinutes} phút",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        if (appointment.petNames.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Pets,
+                    contentDescription = null,
+                    tint = Brand,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Thú cưng: ${appointment.petNames.joinToString()}",
+                    fontSize = 13.sp,
+                    color = Color(0xFF4B5563)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val isPast = appointment.appointmentAt.isBefore(Instant.now())
+            val normalizedStatus = appointment.status.uppercase()
+            val effectiveStatusLabel = if (isPast && normalizedStatus == "UPCOMING") {
+                "COMPLETED"
+            } else {
+                appointment.status
+            }
+            val (statusBg, statusFg) = if (isPast && normalizedStatus == "UPCOMING") {
+                Color(0xFFE5E7EB) to Color(0xFF374151) // neutral gray for past appointments
+            } else {
+                Color(0xFFE0F2FE) to Color(0xFF0369A1) // blue for active/upcoming or other states
+            }
+
+            StatusChip(
+                label = effectiveStatusLabel,
+                background = statusBg,
+                foreground = statusFg
+            )
+
+            StatusChip(
+                label = appointment.paymentStatus,
+                background = Color(0xFFDCFCE7),
+                foreground = Color(0xFF15803D)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Giá: ${"%,.0f".format(appointment.totalPrice).replace(",", ".")}đ",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF111827)
+        )
+
+        if (!appointment.notes.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Ghi chú",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = appointment.notes.orEmpty(),
+                fontSize = 13.sp,
+                color = Color(0xFF4B5563)
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusChip(
+    label: String,
+    background: Color,
+    foreground: Color
+) {
+    Surface(
+        color = background,
+        shape = RoundedCornerShape(999.dp)
+    ) {
+        Text(
+            text = label,
+            color = foreground,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
     }
 }
 

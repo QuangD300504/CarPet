@@ -1,7 +1,9 @@
 package com.example.vetbook.presentation.screens.store
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -18,8 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.store.ProductCard
-import com.example.vetbook.presentation.components.store.StoreHeader
-import com.example.vetbook.presentation.previews.PreviewNavScaffold
 import com.example.vetbook.presentation.viewmodels.StoreViewModel
 import com.example.vetbook.presentation.viewmodels.StoreUiState
 import com.example.vetbook.presentation.theme.HealthPrimary
@@ -42,6 +42,9 @@ fun ProductsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(category) {
+        // When opening this screen from navigation, initialize filters once
+        searchQuery = ""
+        viewModel.setSearchQuery("")
         viewModel.setCategory(category)
     }
 
@@ -68,7 +71,44 @@ fun ProductsScreen(
                     searchQuery = it
                     viewModel.setSearchQuery(it)
                 },
+                onCategoryChange = { newCategory ->
+                    viewModel.setCategory(newCategory)
+                },
                 onAddToCart = viewModel::addToCart
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterChip(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (selected) HealthPrimary else HealthSurface,
+        tonalElevation = if (selected) 2.dp else 0.dp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (selected) Color.White else HealthPrimary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (selected) Color.White else TextPrimary
             )
         }
     }
@@ -80,6 +120,7 @@ private fun ProductsContent(
     uiState: StoreUiState,
     searchQuery: String,
     onSearchChange: (String) -> Unit,
+    onCategoryChange: (String?) -> Unit,
     onAddToCart: (String) -> Unit
 ) {
     Column(
@@ -130,6 +171,33 @@ private fun ProductsContent(
             fontWeight = FontWeight.Bold,
             color = TextPrimary
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Category chips (including "All") so users can filter directly on this screen
+        val categories = listOf(
+            Triple("Tất cả", null, Icons.Default.GridView),
+            Triple("Thức ăn", "foods", Icons.Default.Restaurant),
+            Triple("Đồ chơi", "toys", Icons.Default.SportsEsports),
+            Triple("Phụ kiện", "accessories", Icons.Default.ShoppingBag),
+            Triple("Vệ sinh", "hygiene", Icons.Default.Spa),
+            Triple("Chuồng nuôi", "habitat", Icons.Default.Home)
+        )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(categories) { (label, key, icon) ->
+                val isSelected = uiState.selectedCategory == key
+                FilterChip(
+                    label = label,
+                    icon = icon,
+                    selected = isSelected,
+                    onClick = { onCategoryChange(key) }
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

@@ -3,9 +3,9 @@ package com.example.vetbook.presentation.theme
 import androidx.compose.ui.graphics.Color
 
 // ── Brand ──────────────────────────────────────────────
-val Brand         = Color(0xFFF5C518) // Primary gold accent
-val BrandDark     = Color(0xFFD4A914) // Pressed / darker gold
-val BrandSurface  = Color(0xFFFFF8DC) // Tinted bg for chips, pills
+val Brand         = Color(0xFF14B8A6) // Primary Teal accent
+val BrandDark     = Color(0xFF0D9488) // Pressed / darker Teal
+val BrandSurface  = Color(0xFFF0FDFA) // Tinted bg for chips, pills
 
 // ── Healthcare / Pro Max ───────────────────────────────
 val HealthPrimary = Color(0xFF164E63) // Deep Calm Cyan for trust

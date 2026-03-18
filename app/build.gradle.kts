@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.androidx.foundation.layout)
     implementation(libs.androidx.benchmark.traceprocessor)
     implementation(libs.androidx.foundation)
+    implementation(libs.foundation)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 

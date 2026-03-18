@@ -4,6 +4,8 @@ import { db } from '../../firebase/config';
 import { PackageSearch, Mail } from 'lucide-react';
 import Pagination from '../../components/Common/Pagination';
 import { usePagination } from '../../hooks/usePagination';
+import { formatVND } from '../../utils/format';
+
 
 export interface Order {
     id: string;
@@ -61,7 +63,7 @@ export default function OrdersList() {
 
     const statusColors = {
         pending: 'bg-yellow-100 text-yellow-800',
-        processing: 'bg-blue-100 text-blue-800',
+        processing: 'bg-primary-100 text-primary-800',
         shipped: 'bg-indigo-100 text-indigo-800',
         delivered: 'bg-green-100 text-green-800',
         cancelled: 'bg-red-100 text-red-800',
@@ -107,7 +109,7 @@ export default function OrdersList() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 font-medium text-slate-900">
-                                        {(order.totalAmount || 0).toLocaleString('vi-VN')} ₫
+                                        {formatVND(order.totalAmount || 0)}
                                     </td>
                                     <td className="px-6 py-4">
                                         <select 

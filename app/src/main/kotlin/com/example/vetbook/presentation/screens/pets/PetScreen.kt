@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import com.example.vetbook.presentation.theme.TextSecondary
 import com.example.vetbook.presentation.theme.HealthMuted
 import com.example.vetbook.presentation.theme.Background
 import com.example.vetbook.presentation.viewmodels.PetListViewModel
+import com.example.vetbook.presentation.components.common.VetBookImage
 
 @Composable
 fun PetScreen(
@@ -197,11 +199,13 @@ private fun PetHeroCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            AsyncImage(
-                model = pet.imageUrl?.ifBlank { "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop" },
+            VetBookImage(
+                model = pet.imageUrl,
                 contentDescription = pet.name,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                shape = RoundedCornerShape(32.dp),
+                fallbackIcon = Icons.Default.Pets,
+                fallbackIconSize = 64.dp
             )
 
             // Dynamic Gradient Overlay

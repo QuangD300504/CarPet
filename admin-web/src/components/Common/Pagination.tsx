@@ -86,7 +86,7 @@ export default function Pagination({
                                 aria-current={currentPage === page ? 'page' : undefined}
                                 className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 transition-all ${
                                     currentPage === page
-                                        ? 'z-10 bg-blue-600 text-white border-blue-600'
+                                        ? 'z-10 bg-primary-600 text-white border-primary-600'
                                         : 'text-slate-900 border border-slate-300 bg-white hover:bg-slate-50'
                                 }`}
                             >

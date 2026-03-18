@@ -40,6 +40,7 @@ import com.example.vetbook.domain.models.Veterinarian
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
+import com.example.vetbook.presentation.components.common.VetBookImage
 
 @Composable
 fun DoctorProfileScreen(
@@ -98,25 +99,14 @@ private fun DoctorProfileContent(
                     .fillMaxWidth()
                     .height(320.dp)
             ) {
-                if (!doctor.imageUrl.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(doctor.imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = doctor.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Image(
-                        painter            = painterResource(R.drawable.pawns),
-                        contentDescription = null,
-                        modifier           = Modifier.fillMaxSize(),
-                        contentScale       = ContentScale.Crop,
-                        alpha = 0.8f
-                    )
-                }
+                VetBookImage(
+                    model = doctor.imageUrl,
+                    contentDescription = doctor.name,
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RoundedCornerShape(0.dp),
+                    initials = doctor.initials,
+                    fallbackIcon = Icons.Default.Person
+                )
                 
                 // Gradient overlay
                 Box(

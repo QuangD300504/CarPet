@@ -38,6 +38,7 @@ import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.theme.HealthMuted
 import androidx.compose.material.icons.filled.Pets
+import com.example.vetbook.presentation.components.common.VetBookImage
 
 @Composable
 fun ProfileScreen(
@@ -112,18 +113,19 @@ fun ProfileScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box {
-                    AsyncImage(
-                        model = avatarOverride ?: uiState.user?.profileImageUrl ?: R.drawable.pawns,
+                    VetBookImage(
+                        model = avatarOverride ?: uiState.user?.profileImageUrl,
                         contentDescription = "Profile",
                         modifier = Modifier
                             .size(100.dp)
-                            .clip(CircleShape)
                             .border(
                                 width = 3.dp,
                                 color = Color.White.copy(alpha = 0.3f),
                                 shape = CircleShape
                             ),
-                        contentScale = ContentScale.Crop
+                        shape = CircleShape,
+                        fallbackIcon = Icons.Default.Person,
+                        fallbackIconSize = 48.dp
                     )
                     IconButton(
                         onClick = onAvatarClick,

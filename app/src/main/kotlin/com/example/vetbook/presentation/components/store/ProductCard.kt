@@ -26,6 +26,8 @@ import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.theme.HealthMuted
 import com.example.vetbook.presentation.theme.TextPrimary
 
+import com.example.vetbook.presentation.components.common.VetBookImage
+
 @Composable
 fun ProductCard(
     product: Product,
@@ -48,16 +50,18 @@ fun ProductCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
-                    .background(HealthSurface.copy(alpha = 0.3f)),
+                    .background(Color.White),
                 contentAlignment = Alignment.TopEnd
             ) {
-                AsyncImage(
+                VetBookImage(
                     model = product.imageUrl,
                     contentDescription = product.name,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(id = R.drawable.ic_launcher_background),
-                    error = painterResource(id = R.drawable.ic_launcher_background)
+                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                    containerColor = Color.White,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    fallbackIcon = Icons.Default.Inventory,
+                    fallbackIconSize = 40.dp
                 )
                 if (showFavorite) {
                     IconButton(

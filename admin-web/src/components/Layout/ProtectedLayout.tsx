@@ -24,8 +24,9 @@ export const ProtectedLayout = () => {
         <div className="min-h-screen bg-slate-50 flex">
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
-                <div className="p-6 border-b border-slate-200">
-                    <h1 className="text-xl font-bold text-slate-800">VetBook Admin</h1>
+                <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+                    <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
+                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">VetBook Admin</h1>
                 </div>
                 
                 <nav className="flex-1 p-4 space-y-1">
@@ -41,7 +42,7 @@ export const ProtectedLayout = () => {
                                 to={item.path}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
                                     active 
-                                    ? 'bg-blue-50 text-blue-700 shadow-sm' 
+                                    ? 'bg-primary-50 text-primary-700 shadow-sm shadow-primary-100/50' 
                                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                 }`}
                             >

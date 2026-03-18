@@ -43,6 +43,7 @@ import com.example.vetbook.presentation.theme.Error
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
+import com.example.vetbook.presentation.components.common.VetBookImage
 
 @Composable
 fun VeterinariansScreen(
@@ -196,40 +197,15 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
             modifier          = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
+            VetBookImage(
+                model = vet.imageUrl,
+                contentDescription = vet.name,
                 modifier = Modifier.size(72.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = HealthPrimary.copy(alpha = 0.1f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (!vet.imageUrl.isNullOrEmpty()) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(vet.imageUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = vet.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Image(
-                            painter            = painterResource(R.drawable.pawns),
-                            contentDescription = null,
-                            modifier           = Modifier.size(48.dp),
-                            alpha = 0.6f
-                        )
-                        if (vet.initials.isNotEmpty()) {
-                            Text(
-                                text = vet.initials,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = HealthPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
+                initials = vet.initials,
+                fallbackIcon = Icons.Default.Person,
+                fallbackIconSize = 32.dp
+            )
 
             Spacer(modifier = Modifier.width(16.dp))
 
