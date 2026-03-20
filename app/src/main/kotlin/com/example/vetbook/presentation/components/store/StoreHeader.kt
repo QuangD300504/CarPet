@@ -46,13 +46,15 @@ fun StoreHeader(
     searchValue: String = "",
     hasUnreadNotifications: Boolean = false,
     onBackClick: (() -> Unit)? = null,
+    onFilterClick: (() -> Unit)? = null,
+    applyStatusBarPadding: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(Color.White)
-            .statusBarsPadding()
+            .then(if (applyStatusBarPadding) Modifier.statusBarsPadding() else Modifier)
             .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
         // Location and icons row
@@ -197,7 +199,7 @@ fun StoreHeader(
                 
                 // Filter icon
                 Surface(
-                    onClick = { },
+                    onClick = { onFilterClick?.invoke() },
                     shape = RoundedCornerShape(12.dp),
                     color = HealthPrimary,
                     modifier = Modifier.size(52.dp)

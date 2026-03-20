@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,9 +33,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.presentation.theme.Brand
+import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.viewmodels.CalendarUiState
 import com.example.vetbook.presentation.viewmodels.CalendarViewModel
-import java.time.Instant
+import com.example.vetbook.presentation.components.calendar.RateDoctorDialog
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -42,16 +44,39 @@ import java.util.Locale
 
 @Composable
 fun CalendarScreen(
-    viewModel: CalendarViewModel = hiltViewModel()
+    viewModel: CalendarViewModel = hiltViewModel(),
+    veterinariansViewModel: com.example.vetbook.presentation.viewmodels.VeterinariansViewModel = hiltViewModel(),
+    onSubmitReview: (appointmentId: String, doctorId: String, rating: Int, comment: String?) -> Unit = { _, _, _, _ -> },
+    onContinuePayment: (checkoutUrl: String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val reviewMessage by veterinariansViewModel.reviewMessage.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Handle retry payment URL from viewmodel
+    LaunchedEffect(uiState.paymentUrl) {
+        uiState.paymentUrl?.let { url ->
+            viewModel.clearPaymentUrl()
+            onContinuePayment(url)
+        }
+    }
+
+    LaunchedEffect(reviewMessage) {
+        reviewMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            veterinariansViewModel.clearReviewMessage()
+        }
+    }
 
     CalendarContent(
         uiState = uiState,
         onPreviousMonth = viewModel::onPreviousMonth,
         onNextMonth = viewModel::onNextMonth,
         onDateSelected = viewModel::onDateSelected,
-        getAppointmentsForDate = viewModel::getAppointmentsForDate
+        getAppointmentsForDate = viewModel::getAppointmentsForDate,
+        onSubmitReview = onSubmitReview,
+        onContinuePayment = { apptId -> viewModel.retryPayment(apptId) },
+        snackbarHostState = snackbarHostState
     )
 }
 
@@ -61,19 +86,26 @@ private fun CalendarContent(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
-    getAppointmentsForDate: (LocalDate) -> List<Appointment>
+    getAppointmentsForDate: (LocalDate) -> List<Appointment>,
+    onSubmitReview: (appointmentId: String, doctorId: String, rating: Int, comment: String?) -> Unit,
+    onContinuePayment: (appointmentId: String) -> Unit,
+    snackbarHostState: SnackbarHostState
 ) {
     var showReminder by remember { mutableStateOf(false) }
     var showAppointmentDetail by remember { mutableStateOf(false) }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
+    var showRateDialog by remember { mutableStateOf(false) }
+    var rateTargetAppointment by remember { mutableStateOf<Appointment?>(null) }
     val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF9FAFB))
-    ) {
-        // App Bar / Title and Calendar should scroll together with the schedule
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
+        Box(modifier = Modifier.padding(scaffoldPadding)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF9FAFB))
+            ) {
+                // App Bar / Title and Calendar should scroll together with the schedule
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -243,8 +275,10 @@ private fun CalendarContent(
                     }
                 }
             }
-        }
-        }
+        }  // end appointments Column
+            }  // end Schedule Section Column
+        }  // end inner scrollable Column
+        }  // end outer Column
 
         if (showReminder) {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -266,11 +300,33 @@ private fun CalendarContent(
             ) {
                 AppointmentDetailSheet(
                     appointment = selectedAppointment!!,
-                    onClose = { showAppointmentDetail = false }
+                    onClose = { showAppointmentDetail = false },
+                    onContinuePayment = { apptId -> onContinuePayment(apptId) },
+                    onRateDoctor = { appointment ->
+                        rateTargetAppointment = appointment
+                        showRateDialog = true
+                        showAppointmentDetail = false
+                    }
                 )
             }
         }
-    }
+
+        if (showRateDialog && rateTargetAppointment != null) {
+            RateDoctorDialog(
+                doctorName = rateTargetAppointment!!.veterinarianName.ifEmpty { "Bác sĩ" },
+                onDismiss = {
+                    showRateDialog = false
+                    rateTargetAppointment = null
+                },
+                onSubmit = { rating, comment ->
+                    val appt = rateTargetAppointment!!
+                    onSubmitReview(appt.id, appt.veterinarianId, rating, comment)
+                    showRateDialog = false
+                    rateTargetAppointment = null
+                }
+            )
+        } // end Box
+    } // end Scaffold
 }
 
 @Composable
@@ -369,7 +425,9 @@ private fun ScheduleStickyNote(
 @Composable
 private fun AppointmentDetailSheet(
     appointment: Appointment,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onContinuePayment: ((String) -> Unit)? = null,
+    onRateDoctor: ((Appointment) -> Unit)? = null
 ) {
     val dateFormatter = remember {
         DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.getDefault())
@@ -487,21 +545,17 @@ private fun AppointmentDetailSheet(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val isPast = appointment.appointmentAt.isBefore(Instant.now())
             val normalizedStatus = appointment.status.uppercase()
-            val effectiveStatusLabel = if (isPast && normalizedStatus == "UPCOMING") {
-                "COMPLETED"
-            } else {
-                appointment.status
-            }
-            val (statusBg, statusFg) = if (isPast && normalizedStatus == "UPCOMING") {
-                Color(0xFFE5E7EB) to Color(0xFF374151) // neutral gray for past appointments
-            } else {
-                Color(0xFFE0F2FE) to Color(0xFF0369A1) // blue for active/upcoming or other states
+            val (statusBg, statusFg) = when (normalizedStatus) {
+                "COMPLETED" -> Color(0xFFE8F5E9) to Color(0xFF22C55E)
+                "CANCELLED" -> Color(0xFFFFEBEE) to Color(0xFFEF4444)
+                "UPCOMING", "CONFIRMED" -> Color(0xFFE0F2FE) to Color(0xFF0369A1)
+                "PENDING_PAYMENT" -> Color(0xFFFFF8E1) to Color(0xFFF59E0B)
+                else -> Color(0xFFE5E7EB) to Color(0xFF374151)
             }
 
             StatusChip(
-                label = effectiveStatusLabel,
+                label = appointment.status,
                 background = statusBg,
                 foreground = statusFg
             )
@@ -522,6 +576,19 @@ private fun AppointmentDetailSheet(
             color = Color(0xFF111827)
         )
 
+        // Continue payment button for PENDING_PAYMENT appointments
+        if (appointment.status.uppercase() == "PENDING_PAYMENT" && onContinuePayment != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { onContinuePayment.invoke(appointment.id) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Tiếp tục thanh toán", fontWeight = FontWeight.Bold)
+            }
+        }
+
         if (!appointment.notes.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
@@ -535,6 +602,25 @@ private fun AppointmentDetailSheet(
                 fontSize = 13.sp,
                 color = Color(0xFF4B5563)
             )
+        }
+
+        // Rate doctor button — only for COMPLETED appointments
+        if (onRateDoctor != null && appointment.status.uppercase() == "COMPLETED") {
+            Spacer(modifier = Modifier.height(20.dp))
+            OutlinedButton(
+                onClick = { onRateDoctor.invoke(appointment) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Đánh giá bác sĩ", fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }

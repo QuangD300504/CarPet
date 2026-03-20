@@ -48,6 +48,8 @@ import com.example.vetbook.utils.PayosLauncher
 import com.example.vetbook.utils.DeepLinkHandler
 import com.example.vetbook.presentation.viewmodels.BookAppointmentViewModel
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
+import com.example.vetbook.presentation.components.calendar.SlotGrid
+import com.example.vetbook.presentation.components.calendar.SlotOption
 import com.example.vetbook.R
 import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.lazy.items
@@ -72,13 +74,31 @@ fun BookAppointmentScreen(
     val pets by bookingViewModel.pets.collectAsState()
     val selectedPetIds by bookingViewModel.selectedPetIds.collectAsState()
     val bookedSlots by bookingViewModel.bookedSlots.collectAsState()
+    val timeSlots = bookingViewModel.timeSlots
 
     var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
-    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
+    var selectedSlot by remember { mutableStateOf<String?>(null) }
     var noteText by remember { mutableStateOf("") }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // Compute past slots — only when selected date is today, slots before current time are disabled
+    val pastSlots = remember(selectedDateMillis) {
+        val today = LocalDate.now()
+        val selectedDate = selectedDateMillis?.let {
+            Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+        }
+        if (selectedDate != today) {
+            emptySet()
+        } else {
+            val now = LocalTime.now()
+            SlotOption.defaults
+                .filter { it.time.isBefore(now) || it.time.equals(now) }
+                .map { it.label }
+                .toSet()
+        }
+    }
 
     // Reload locked slots whenever the doctor or selected date changes
     LaunchedEffect(doctorId, selectedDateMillis) {
@@ -135,20 +155,24 @@ fun BookAppointmentScreen(
             pets              = pets,
             selectedPetIds    = selectedPetIds,
             selectedDateMillis = selectedDateMillis,
-            selectedTime      = selectedTime,
+            selectedSlot      = selectedSlot,
             noteText          = noteText,
             bookingState      = bookingState,
             snackbarHostState = snackbarHostState,
             bookedSlots       = bookedSlots,
+            pastSlots         = pastSlots,
+            timeSlots         = timeSlots,
             onBackClick       = onBackClick,
             onPetToggle       = { bookingViewModel.togglePetSelection(it) },
             onDateSelect      = { selectedDateMillis = it },
-            onTimeSelect      = { selectedTime = it },
+            onSlotSelect      = { selectedSlot = it },
             onNoteChange      = { noteText = it },
             onConfirmClick    = {
                 val date = selectedDateMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() }
-                val time = selectedTime
-                if (date != null && time != null) {
+                val slotLabel = selectedSlot
+                if (date != null && slotLabel != null) {
+                    val time = SlotOption.defaults.find { it.label == slotLabel }?.time
+                        ?: LocalTime.parse(slotLabel)
                     val appointmentAt = Date.from(date.atTime(time).atZone(ZoneId.systemDefault()).toInstant())
                     bookingViewModel.confirmAndPay(
                         veterinarianId  = doctorId,
@@ -177,20 +201,21 @@ private fun BookAppointmentContent(
     pets: List<com.example.vetbook.domain.models.Pet>,
     selectedPetIds: Set<String>,
     selectedDateMillis: Long?,
-    selectedTime: LocalTime?,
+    selectedSlot: String?,
     noteText: String,
     bookingState: BookAppointmentViewModel.UiState,
     snackbarHostState: SnackbarHostState,
     bookedSlots: Set<String> = emptySet(),
+    pastSlots: Set<String> = emptySet(),
+    timeSlots: List<String> = emptyList(),
     onBackClick: () -> Unit = {},
     onPetToggle: (String) -> Unit,
     onDateSelect: (Long?) -> Unit,
-    onTimeSelect: (LocalTime?) -> Unit,
+    onSlotSelect: (String?) -> Unit,
     onNoteChange: (String) -> Unit,
     onConfirmClick: () -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState(
         selectableDates = object : SelectableDates {
@@ -220,44 +245,6 @@ private fun BookAppointmentContent(
         ) {
             DatePicker(state = datePickerState)
         }
-    }
-
-    if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = selectedTime?.hour ?: 9,
-            initialMinute = selectedTime?.minute ?: 0
-        )
-        AlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val pickedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                    val now = LocalDateTime.now()
-                    val pickedDateTime = selectedDateMillis?.let {
-                        Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().atTime(pickedTime)
-                    }
-                    
-                    if (pickedDateTime != null && pickedDateTime.isBefore(now.plusMinutes(2))) {
-                        // In reality, we'd show a snackbar or error here.
-                    } else {
-                        onTimeSelect(pickedTime)
-                    }
-                    showTimePicker = false
-                }) {
-                    Text("Chọn")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text("Hủy")
-                }
-            },
-            text = {
-                Box(modifier = Modifier.padding(top = 16.dp)) {
-                    TimePicker(state = timePickerState)
-                }
-            }
-        )
     }
 
     Scaffold(
@@ -292,7 +279,7 @@ private fun BookAppointmentContent(
                     }
                     Button(
                         onClick = onConfirmClick,
-                        enabled = selectedDateMillis != null && selectedTime != null && selectedPetIds.isNotEmpty() && bookingState !is BookAppointmentViewModel.UiState.Loading,
+                        enabled = selectedDateMillis != null && selectedSlot != null && selectedPetIds.isNotEmpty() && bookingState !is BookAppointmentViewModel.UiState.Loading,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = HealthPrimary,
@@ -389,18 +376,26 @@ private fun BookAppointmentContent(
                 // Section: Time
                 SectionTitle(title = "Chọn Giờ Khám", icon = Icons.Default.Schedule)
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary)
-                ) {
-                    Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    val timeText = selectedTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Chọn khung giờ"
-                    Text(timeText, style = MaterialTheme.typography.bodyLarge)
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                if (selectedDateMillis == null) {
+                    OutlinedButton(
+                        onClick = { },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary),
+                        enabled = false
+                    ) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Vui lòng chọn ngày trước", style = MaterialTheme.typography.bodyLarge)
+                    }
+                } else {
+                    SlotGrid(
+                        slots = SlotOption.defaults,
+                        bookedSlots = bookedSlots,
+                        pastSlots = pastSlots,
+                        selectedSlot = selectedSlot,
+                        onSlotSelected = { onSlotSelect(it) }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -498,7 +493,7 @@ fun BookAppointmentScreenPreview() {
             name = "BS. Nguyễn Văn A",
             specialty = "Chuyên gia tim mạch",
             experience = "5 năm",
-            rating = "4.9",
+            rating = 4.9,
             reviewsCount = 95,
             initials = "NA",
             bio = "",
@@ -509,13 +504,15 @@ fun BookAppointmentScreenPreview() {
         ),
         selectedPetIds = setOf("1"),
         selectedDateMillis = null,
-        selectedTime = null,
+        selectedSlot = null,
         noteText = "",
         bookingState = BookAppointmentViewModel.UiState.Idle,
         snackbarHostState = remember { SnackbarHostState() },
+        bookedSlots = emptySet(),
+        timeSlots = listOf("09:00", "09:30", "10:00"),
         onPetToggle = {},
         onDateSelect = {},
-        onTimeSelect = {},
+        onSlotSelect = {},
         onNoteChange = {},
         onConfirmClick = {}
     )

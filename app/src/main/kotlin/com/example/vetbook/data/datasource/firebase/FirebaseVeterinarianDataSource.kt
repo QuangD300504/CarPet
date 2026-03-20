@@ -1,6 +1,7 @@
 package com.example.vetbook.data.datasource.firebase
 
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
+import com.example.vetbook.data.models.DoctorReviewDto
 import com.example.vetbook.data.models.VeterinarianDto
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 private const val VETERINARIANS_COLLECTION = "veterinarians"
+private const val REVIEWS_COLLECTION = "reviews"
 
 /**
  * Firebase Firestore implementation of RemoteVeterinarianDataSource.
@@ -96,6 +98,73 @@ class FirebaseVeterinarianDataSource(
                 .await()
         } catch (e: Exception) {
             // Handle error appropriately
+        }
+    }
+
+    override suspend fun submitReview(review: DoctorReviewDto): Result<Unit> {
+        return try {
+            val docRef = firestore.collection(REVIEWS_COLLECTION).document()
+            val reviewWithId = review.copy(id = docRef.id)
+            docRef.set(reviewWithId).await()
+            // Recalculate and persist the doctor's aggregate rating
+            updateDoctorRating(review.doctorId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateDoctorRating(doctorId: String) {
+        try {
+            val snapshot = firestore.collection(REVIEWS_COLLECTION)
+                .whereEqualTo("doctorId", doctorId)
+                .get()
+                .await()
+
+            val count = snapshot.documents.size
+            if (count == 0) return
+
+            val total = snapshot.documents.mapNotNull {
+                it.getLong("rating")?.toInt()
+            }.sum()
+            val average = total.toDouble() / count
+
+            firestore.collection(VETERINARIANS_COLLECTION)
+                .document(doctorId)
+                .update(
+                    mapOf(
+                        "rating" to average,
+                        "reviewsCount" to count,
+                        "updatedAt" to System.currentTimeMillis()
+                    )
+                )
+                .await()
+        } catch (e: Exception) {
+            // Log but don't propagate — review was already saved
+            android.util.Log.e("VetDataSource", "Failed to update doctor rating", e)
+        }
+    }
+
+    override suspend fun getDoctorReviews(doctorId: String): List<DoctorReviewDto> {
+        return try {
+            val snapshot = firestore.collection(REVIEWS_COLLECTION)
+                .whereEqualTo("doctorId", doctorId)
+                .get()
+                .await()
+            snapshot.documents.mapNotNull { doc ->
+                DoctorReviewDto(
+                    id = doc.id,
+                    appointmentId = doc.getString("appointmentId") ?: "",
+                    doctorId = doc.getString("doctorId") ?: "",
+                    userId = doc.getString("userId") ?: "",
+                    userName = doc.getString("userName") ?: "",
+                    rating = doc.getLong("rating")?.toInt() ?: 0,
+                    comment = doc.getString("comment"),
+                    createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
+                )
+            }.sortedByDescending { it.createdAt }
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.vetbook.presentation.screens.pets
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -16,10 +17,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import coil3.compose.AsyncImage
 import com.example.vetbook.domain.models.Pet
 import com.example.vetbook.presentation.viewmodels.PetProfileViewModel
@@ -36,9 +40,25 @@ fun PetProfileScreen(
     viewModel: PetProfileViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onEditClick: (String) -> Unit = {},
-    onDeleted: () -> Unit = {}
+    onDeleted: () -> Unit = {},
+    onVaccinationsViewAll: (petId: String, petName: String) -> Unit = { _, _ -> },
+    onVaccinationClick: (vaccinationId: String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Reload pet + vaccinations whenever the screen resumes
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -86,10 +106,12 @@ fun PetProfileScreen(
 
             uiState.pet != null -> {
                 PetProfileContent(
-                    pet = uiState.pet!!, 
+                    pet = uiState.pet!!,
                     onBackClick = onBackClick,
                     onEditClick = { onEditClick(petId) },
-                    onDeleteClick = { showDeleteDialog = true }
+                    onDeleteClick = { showDeleteDialog = true },
+                    onVaccinationsViewAll = onVaccinationsViewAll,
+                    onVaccinationClick = onVaccinationClick
                 )
             }
         }
@@ -101,7 +123,9 @@ private fun PetProfileContent(
     pet: Pet,
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onVaccinationsViewAll: (String, String) -> Unit,
+    onVaccinationClick: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -120,7 +144,7 @@ private fun PetProfileContent(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            
+
             // Soft gradient overlay at the top for back button visibility
             Box(
                 modifier = Modifier
@@ -175,7 +199,7 @@ private fun PetProfileContent(
                             color = HealthMuted
                         )
                     }
-                    
+
                     Surface(
                         color = HealthSurface,
                         shape = RoundedCornerShape(14.dp)
@@ -224,18 +248,41 @@ private fun PetProfileContent(
                     Spacer(Modifier.height(36.dp))
                 }
 
-                if (pet.vaccinations.isNotEmpty()) {
-                    Section(title = "Lịch sử tiêm chủng") {
-                        pet.vaccinations.forEach { vaccination ->
-                            VaccinationCard(vaccination)
+                // Always show vaccination section so user can navigate to vaccination list
+                Section(title = "Lịch sử tiêm chủng") {
+                    if (pet.vaccinations.isEmpty()) {
+                        Text(
+                            text = "Chưa có lịch tiêm chủng",
+                            color = TextSecondary,
+                            fontSize = 14.sp
+                        )
+                    } else {
+                        pet.vaccinations.take(3).forEach { vaccination ->
+                            VaccinationCard(
+                                vaccination = vaccination,
+                                onClick = { onVaccinationClick(vaccination.id) }
+                            )
                             Spacer(Modifier.height(12.dp))
                         }
                     }
-                    Spacer(Modifier.height(36.dp))
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(
+                        onClick = { onVaccinationsViewAll(pet.id, pet.name) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (pet.vaccinations.isEmpty()) "Thêm lịch tiêm chủng"
+                                   else if (pet.vaccinations.size > 3) "Xem tất cả (${pet.vaccinations.size}) →"
+                                   else "Xem chi tiết →",
+                            color = HealthPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-                
+                Spacer(Modifier.height(36.dp))
+
                 Spacer(Modifier.height(48.dp))
-                
+
                 Button(
                     onClick = onEditClick,
                     modifier = Modifier.fillMaxWidth().height(60.dp),
@@ -254,7 +301,7 @@ private fun PetProfileContent(
                 ) {
                     Text("Xóa hồ sơ thú cưng", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
-                
+
                 Spacer(Modifier.height(32.dp))
             }
         }
@@ -295,9 +342,14 @@ private fun RowScope.StatBox(label: String, value: String) {
     }
 }
 @Composable
-private fun VaccinationCard(vaccination: com.example.vetbook.domain.models.Vaccination) {
+private fun VaccinationCard(
+    vaccination: com.example.vetbook.domain.models.Vaccination,
+    onClick: () -> Unit = {}
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9))
@@ -306,15 +358,30 @@ private fun VaccinationCard(vaccination: com.example.vetbook.domain.models.Vacci
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val isCompleted = vaccination.status == com.example.vetbook.domain.models.VaccinationStatus.COMPLETED
+            val isOverdue = vaccination.status == com.example.vetbook.domain.models.VaccinationStatus.OVERDUE
+
             Surface(
-                color = if (vaccination.isCompleted) Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
+                color = when {
+                    isCompleted -> Color(0xFFE8F5E9)
+                    isOverdue -> Color(0xFFFFEBEE)
+                    else -> Color(0xFFFFF3E0)
+                },
                 shape = CircleShape,
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = if (vaccination.isCompleted) "✓" else "!",
-                        color = if (vaccination.isCompleted) Color(0xFF2E7D32) else Color(0xFFEF6C00),
+                        text = when {
+                            isCompleted -> "✓"
+                            isOverdue -> "!"
+                            else -> "○"
+                        },
+                        color = when {
+                            isCompleted -> Color(0xFF2E7D32)
+                            isOverdue -> Color(0xFFC62828)
+                            else -> Color(0xFFEF6C00)
+                        },
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -330,14 +397,35 @@ private fun VaccinationCard(vaccination: com.example.vetbook.domain.models.Vacci
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
+
+                val dateText = when {
+                    vaccination.completedDate != null -> {
+                        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        vaccination.completedDate.atZone(java.time.ZoneId.systemDefault()).format(formatter)
+                    }
+                    vaccination.scheduledDate != null -> {
+                        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        vaccination.scheduledDate.atZone(java.time.ZoneId.systemDefault()).format(formatter)
+                    }
+                    else -> "Chưa xếp lịch"
+                }
+
                 Text(
-                    text = vaccination.date ?: "Chưa xếp lịch",
+                    text = dateText,
                     fontSize = 13.sp,
                     color = HealthMuted
                 )
+
+                vaccination.veterinarianName?.let { vetName ->
+                    Text(
+                        text = "👨‍⚕️ $vetName",
+                        fontSize = 12.sp,
+                        color = HealthMuted
+                    )
+                }
             }
 
-            if (vaccination.isCompleted) {
+            if (isCompleted) {
                 Surface(
                     color = Color(0xFFE8F5E9),
                     shape = RoundedCornerShape(8.dp)

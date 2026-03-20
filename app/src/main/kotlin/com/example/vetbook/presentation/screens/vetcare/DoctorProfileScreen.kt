@@ -17,6 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,11 +39,15 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.vetbook.R
 import com.example.vetbook.domain.models.Clinic
+import com.example.vetbook.domain.models.DoctorReview
 import com.example.vetbook.domain.models.Veterinarian
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
 import com.example.vetbook.presentation.components.common.VetBookImage
+import com.example.vetbook.presentation.components.calendar.RateDoctorDialog
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun DoctorProfileScreen(
@@ -50,21 +57,67 @@ fun DoctorProfileScreen(
     onBookClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val clinic   by viewModel.clinic.collectAsState()
-    val doctor   = uiState.veterinarians.find { it.id == doctorId }
+    val clinic by viewModel.clinic.collectAsState()
+    val reviews by viewModel.reviews.collectAsState()
+    val reviewMessage by viewModel.reviewMessage.collectAsState()
+    val doctor = uiState.veterinarians.find { it.id == doctorId }
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showRateDialog by remember { mutableStateOf(false) }
 
     // Trigger clinic fetch when doctor is resolved
     LaunchedEffect(doctor?.clinicId) {
         doctor?.clinicId?.let { viewModel.fetchClinic(it) }
     }
 
-    if (doctor != null) {
-        DoctorProfileContent(
-            doctor      = doctor,
-            clinic      = clinic,
-            onBackClick = onBackClick,
-            onBookClick = onBookClick
+    // Load reviews when screen opens
+    LaunchedEffect(doctorId) {
+        viewModel.loadReviews(doctorId)
+    }
+
+    // Show snackbar for review submission result + reload reviews so new one appears
+    LaunchedEffect(reviewMessage) {
+        reviewMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearReviewMessage()
+            // Reload reviews list so the newly submitted review appears
+            viewModel.loadReviews(doctorId)
+        }
+    }
+
+    if (showRateDialog && doctor != null) {
+        RateDoctorDialog(
+            doctorName = doctor.name,
+            onDismiss = { showRateDialog = false },
+            onSubmit = { rating, comment ->
+                val review = DoctorReview(
+                    id = "",
+                    appointmentId = "",  // not tied to a specific appointment here
+                    doctorId = doctorId,
+                    userId = "",
+                    userName = "Người dùng",
+                    rating = rating,
+                    comment = comment,
+                    createdAt = System.currentTimeMillis()
+                )
+                viewModel.submitReview(review)
+                showRateDialog = false
+            }
         )
+    }
+
+    if (doctor != null) {
+        Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                DoctorProfileContent(
+                    doctor = doctor,
+                    clinic = clinic,
+                    reviews = reviews,
+                    onBackClick = onBackClick,
+                    onBookClick = onBookClick,
+                    onWriteReviewClick = { showRateDialog = true }
+                )
+            }
+        }
     } else {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (uiState.isLoading) {
@@ -80,8 +133,10 @@ fun DoctorProfileScreen(
 private fun DoctorProfileContent(
     doctor: Veterinarian,
     clinic: Clinic?,
+    reviews: List<com.example.vetbook.domain.models.DoctorReview> = emptyList(),
     onBackClick: () -> Unit = {},
-    onBookClick: () -> Unit
+    onBookClick: () -> Unit,
+    onWriteReviewClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -197,7 +252,7 @@ private fun DoctorProfileContent(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text       = doctor.rating,
+                                    text       = doctor.ratingLabel,
                                     style      = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                     color      = Color(0xFF2D3142)
                                 )
@@ -214,8 +269,8 @@ private fun DoctorProfileContent(
                     ) {
                         StatCard(
                             icon = Icons.Default.People,
-                            value = "116+",
-                            label = "Bệnh nhân",
+                            value = "${doctor.reviewsCount}+",
+                            label = "Đánh giá",
                             modifier = Modifier.weight(1f)
                         )
                         StatCard(
@@ -326,6 +381,60 @@ private fun DoctorProfileContent(
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(color = HealthPrimary, modifier = Modifier.size(24.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Reviews section
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Đánh giá (${reviews.size})",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = Color(0xFF2D3142)
+                        )
+                        TextButton(onClick = onWriteReviewClick) {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = HealthPrimary)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Viết đánh giá", color = HealthPrimary, fontSize = 13.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (reviews.isEmpty()) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFF9FAFB)
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Chưa có đánh giá nào",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    } else {
+                        reviews.take(5).forEach { review ->
+                            ReviewCard(review = review)
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                        if (reviews.size > 5) {
+                            TextButton(
+                                onClick = { /* TODO: Navigate to full reviews screen */ },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Xem tất cả ${reviews.size} đánh giá", color = HealthPrimary)
+                            }
                         }
                     }
 
@@ -455,6 +564,76 @@ fun StaticMapThumbnail(
 }
 
 @Composable
+private fun ReviewCard(review: com.example.vetbook.domain.models.DoctorReview) {
+    val dateFormatter = remember {
+        java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale("vi", "VN"))
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CircleShape,
+                        color = HealthPrimary.copy(alpha = 0.1f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = review.userName.take(1).uppercase(),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = HealthPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = review.userName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF2D3142)
+                    )
+                }
+                Text(
+                    text = dateFormatter.format(java.util.Date(review.createdAt)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Row {
+                repeat(5) { idx ->
+                    Icon(
+                        imageVector = if (idx < review.rating) Icons.Filled.Star else Icons.Filled.StarOutline,
+                        contentDescription = null,
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            if (!review.comment.isNullOrBlank()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = review.comment,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    lineHeight = 20.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun StatCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     value: String,
@@ -520,7 +699,7 @@ fun DoctorProfileScreenPreview() {
             name         = "Dr. Ali Uzair",
             specialty    = "Cardiologist and Surgeon",
             experience   = "3+ years",
-            rating       = "4.9",
+            rating       = 4.9,
             reviewsCount = 95,
             initials     = "DAU",
             bio          = "Experienced cardiologist and surgeon with expertise in treating various cardiac conditions in pets."

@@ -35,4 +35,6 @@ interface BookingRepository {
      */
     suspend fun getLockedSlots(veterinarianId: String, year: Int, month: Int, day: Int): Set<String>
     suspend fun markAppointmentAsPaid(appointmentId: String)
+
+    suspend fun markAppointmentCompleted(appointmentId: String)
 }

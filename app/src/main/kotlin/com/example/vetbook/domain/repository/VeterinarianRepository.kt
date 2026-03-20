@@ -1,6 +1,7 @@
 package com.example.vetbook.domain.repository
 
 import com.example.vetbook.domain.models.Veterinarian
+import com.example.vetbook.domain.models.DoctorReview
 import com.example.vetbook.data.models.VeterinarianDto
 import kotlinx.coroutines.flow.Flow
 
@@ -10,4 +11,7 @@ interface VeterinarianRepository {
     suspend fun createVeterinarian(veterinarian: VeterinarianDto): Result<VeterinarianDto>
     suspend fun updateVeterinarian(id: String, fields: Map<String, Any?>)
     suspend fun deleteVeterinarian(id: String)
+    suspend fun submitReview(review: DoctorReview): Result<Unit>
+    suspend fun getDoctorReviews(doctorId: String): List<DoctorReview>
+    suspend fun updateDoctorRating(doctorId: String)
 }

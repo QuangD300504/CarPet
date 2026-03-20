@@ -12,7 +12,7 @@ private const val VETERINARIANS_COLLECTION = "veterinarians"
 
 /**
  * Firebase implementation of RemoteVaccinationDataSource.
- * Handles vaccination records with relationships to Pet and Veterinarian.
+ * Enhanced to support new vaccination fields.
  */
 class FirebaseVaccinationDataSource(
     private val firestore: FirebaseFirestore
@@ -22,8 +22,8 @@ class FirebaseVaccinationDataSource(
         return try {
             val snapshot = firestore
                 .collection(VACCINATIONS_COLLECTION)
-                .whereEqualTo("petId", petId) // Query by foreign key
-                .orderBy("date", Query.Direction.DESCENDING)
+                .whereEqualTo("petId", petId)
+                .orderBy("scheduledDate", Query.Direction.DESCENDING)
                 .get()
                 .await()
 
@@ -31,7 +31,20 @@ class FirebaseVaccinationDataSource(
                 doc.toVaccinationDto()
             }
         } catch (e: Exception) {
-            emptyList()
+            // Fallback to older ordering if scheduledDate doesn't exist
+            try {
+                val snapshot = firestore
+                    .collection(VACCINATIONS_COLLECTION)
+                    .whereEqualTo("petId", petId)
+                    .get()
+                    .await()
+
+                snapshot.documents
+                    .map { it.toVaccinationDto() }
+                    .sortedByDescending { it.scheduledDate ?: it.completedDate ?: it.date ?: 0L }
+            } catch (e2: Exception) {
+                emptyList()
+            }
         }
     }
 
@@ -39,8 +52,8 @@ class FirebaseVaccinationDataSource(
         return try {
             val snapshot = firestore
                 .collection(VACCINATIONS_COLLECTION)
-                .whereEqualTo("veterinarianId", veterinarianId) // Query by foreign key
-                .orderBy("date", Query.Direction.DESCENDING)
+                .whereEqualTo("veterinarianId", veterinarianId)
+                .orderBy("scheduledDate", Query.Direction.DESCENDING)
                 .get()
                 .await()
 
@@ -54,7 +67,6 @@ class FirebaseVaccinationDataSource(
 
     override suspend fun createVaccination(vaccination: VaccinationRecordDto): Result<VaccinationRecordDto> {
         return try {
-            // Validate pet exists (required foreign key)
             if (vaccination.petId.isBlank()) {
                 return Result.failure(Exception("Pet ID is required"))
             }
@@ -68,7 +80,6 @@ class FirebaseVaccinationDataSource(
                 return Result.failure(Exception("Pet not found: ${vaccination.petId}"))
             }
 
-            // Validate veterinarian exists if provided (optional foreign key)
             if (vaccination.veterinarianId != null && vaccination.veterinarianId.isNotBlank()) {
                 val vetDoc = firestore.collection(VETERINARIANS_COLLECTION)
                     .document(vaccination.veterinarianId)
@@ -80,7 +91,6 @@ class FirebaseVaccinationDataSource(
                 }
             }
 
-            // Create vaccination document
             val docRef = if (vaccination.id.isBlank()) {
                 firestore.collection(VACCINATIONS_COLLECTION).document()
             } else {
@@ -90,7 +100,8 @@ class FirebaseVaccinationDataSource(
             val now = System.currentTimeMillis()
             val vaccinationData = vaccination.copy(
                 id = docRef.id,
-                createdAt = now
+                createdAt = now,
+                updatedAt = now
             )
 
             docRef.set(vaccinationData.toMap()).await()
@@ -106,7 +117,6 @@ class FirebaseVaccinationDataSource(
                 return Result.failure(Exception("Vaccination ID is required for update"))
             }
 
-            // Validate pet exists if petId is being changed
             if (vaccination.petId.isNotBlank()) {
                 val petDoc = firestore.collection(PETS_COLLECTION)
                     .document(vaccination.petId)
@@ -118,7 +128,6 @@ class FirebaseVaccinationDataSource(
                 }
             }
 
-            // Validate veterinarian exists if veterinarianId is being changed
             if (vaccination.veterinarianId != null && vaccination.veterinarianId.isNotBlank()) {
                 val vetDoc = firestore.collection(VETERINARIANS_COLLECTION)
                     .document(vaccination.veterinarianId)
@@ -130,9 +139,13 @@ class FirebaseVaccinationDataSource(
                 }
             }
 
+            val updatedData = vaccination.copy(
+                updatedAt = System.currentTimeMillis()
+            )
+
             firestore.collection(VACCINATIONS_COLLECTION)
                 .document(vaccination.id)
-                .update(vaccination.toMap())
+                .update(updatedData.toMap())
                 .await()
 
             Result.success(Unit)
@@ -180,29 +193,68 @@ class FirebaseVaccinationDataSource(
     }
 }
 
-// Extension functions for data conversion
+// Enhanced extension functions for data conversion
 private fun com.google.firebase.firestore.DocumentSnapshot.toVaccinationDto(): VaccinationRecordDto {
     return VaccinationRecordDto(
         id = id,
         petId = getString("petId") ?: "",
         veterinarianId = getString("veterinarianId"),
+        veterinarianName = getString("veterinarianName"),
+        clinicName = getString("clinicName"),
+
         title = getString("title") ?: "",
-        isCompleted = getBoolean("isCompleted") ?: false,
-        date = getLong("date"),
+        type = getString("type") ?: "CORE",
+        manufacturer = getString("manufacturer"),
+        batchNumber = getString("batchNumber"),
+
+        status = getString("status") ?: "SCHEDULED",
+        scheduledDate = getLong("scheduledDate"),
+        completedDate = getLong("completedDate"),
+        nextDueDate = getLong("nextDueDate"),
+
+        certificateUrl = getString("certificateUrl"),
         notes = getString("notes"),
-        createdAt = getLong("createdAt") ?: 0L
+        sideEffects = getString("sideEffects"),
+
+        createdAt = getLong("createdAt") ?: 0L,
+        updatedAt = getLong("updatedAt") ?: 0L,
+
+        reminderEnabled = getBoolean("reminderEnabled") ?: true,
+        reminderDaysBefore = getLong("reminderDaysBefore")?.toInt() ?: 7,
+
+        isCompleted = getBoolean("isCompleted") ?: false,
+        date = getLong("date")
     )
 }
 
 private fun VaccinationRecordDto.toMap(): Map<String, Any?> {
-    return mapOf(
-        "petId" to petId,
-        "veterinarianId" to veterinarianId,
-        "title" to title,
-        "isCompleted" to isCompleted,
-        "date" to date,
-        "notes" to notes,
-        "createdAt" to createdAt
-    )
-}
+    return buildMap {
+        put("petId", petId)
+        put("veterinarianId", veterinarianId)
+        put("veterinarianName", veterinarianName)
+        put("clinicName", clinicName)
 
+        put("title", title)
+        put("type", type)
+        put("manufacturer", manufacturer)
+        put("batchNumber", batchNumber)
+
+        put("status", status)
+        put("scheduledDate", scheduledDate)
+        put("completedDate", completedDate)
+        put("nextDueDate", nextDueDate)
+
+        put("certificateUrl", certificateUrl)
+        put("notes", notes)
+        put("sideEffects", sideEffects)
+
+        put("createdAt", createdAt)
+        put("updatedAt", updatedAt)
+
+        put("reminderEnabled", reminderEnabled)
+        put("reminderDaysBefore", reminderDaysBefore)
+
+        put("isCompleted", status == "COMPLETED")
+        put("date", scheduledDate ?: completedDate)
+    }
+}

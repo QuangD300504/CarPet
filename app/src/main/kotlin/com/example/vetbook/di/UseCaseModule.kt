@@ -98,4 +98,32 @@ object UseCaseModule {
     ): GetAccommodationByIdUseCase {
         return GetAccommodationByIdUseCase(repository)
     }
+
+    @Provides
+    fun provideObserveOrdersUseCase(
+        repository: StoreRepository
+    ): ObserveOrdersUseCase {
+        return ObserveOrdersUseCase(repository)
+    }
+
+    @Provides
+    fun provideGetStoreProductByIdUseCase(
+        repository: StoreRepository
+    ): GetStoreProductByIdUseCase {
+        return GetStoreProductByIdUseCase(repository)
+    }
+
+    @Provides
+    fun provideSubmitDoctorReviewUseCase(
+        repository: VeterinarianRepository
+    ): SubmitDoctorReviewUseCase {
+        return SubmitDoctorReviewUseCase(repository)
+    }
+
+    @Provides
+    fun provideGetDoctorReviewsUseCase(
+        repository: VeterinarianRepository
+    ): GetDoctorReviewsUseCase {
+        return GetDoctorReviewsUseCase(repository)
+    }
 }

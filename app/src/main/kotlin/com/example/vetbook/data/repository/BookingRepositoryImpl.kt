@@ -1,5 +1,6 @@
 package com.example.vetbook.data.repository
 
+import android.app.Application
 import com.example.vetbook.data.mappers.toDomain
 import com.example.vetbook.data.models.AppointmentDto
 import com.example.vetbook.data.network.PayosApiService
@@ -8,6 +9,7 @@ import com.example.vetbook.data.util.PayosHelper
 import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.domain.models.PaymentLink
 import com.example.vetbook.domain.repository.BookingRepository
+import com.example.vetbook.notification.ReminderNotificationHelper
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,6 +20,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -29,7 +33,8 @@ import javax.inject.Singleton
 class BookingRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth,
-    private val payosApi: PayosApiService
+    private val payosApi: PayosApiService,
+    private val application: Application
 ) : BookingRepository {
 
     private fun makeLockId(veterinarianId: String, appointmentAt: Date): String {
@@ -88,7 +93,8 @@ class BookingRepositoryImpl @Inject constructor(
                     "id" to lockId,
                     "veterinarianId" to veterinarianId,
                     "appointmentAt" to Timestamp(appointmentAt),
-                    "createdAt" to Timestamp.now()
+                    "createdAt" to Timestamp.now(),
+                    "expiresAt" to Timestamp(Date(System.currentTimeMillis() + 15 * 60 * 1000))
                 )
             )
 
@@ -132,6 +138,10 @@ class BookingRepositoryImpl @Inject constructor(
             tx.delete(lockRef)
             tx.delete(appointmentRef)
         }.await()
+        ReminderNotificationHelper.cancelAppointmentReminder(
+            application,
+            "appointment_reminder_$appointmentId"
+        )
     }
 
     override suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink {
@@ -236,11 +246,44 @@ class BookingRepositoryImpl @Inject constructor(
 
     override suspend fun markAppointmentAsPaid(appointmentId: String) {
         val appointmentRef = firestore.collection("appointments").document(appointmentId)
+
+        // Read appointment data for the reminder
+        val apptDoc = appointmentRef.get().await()
+        val vetName = apptDoc.getString("veterinarianName") ?: ""
+        val petNamesRaw = apptDoc.get("petNames") as? List<*>
+        val petNames = petNamesRaw?.filterIsInstance<String>()?.joinToString(", ") ?: ""
+        val appointmentAtTs = apptDoc.getTimestamp("appointmentAt")
+        val appointmentAtDate = appointmentAtTs?.toDate()
+
         appointmentRef.update(
             "status", "UPCOMING",
             "paymentStatus", "PAID",
             "updatedAt", Timestamp.now(),
             "paidAt", Timestamp.now()
+        ).await()
+
+        // Schedule reminder: 24h before the appointment
+        if (appointmentAtDate != null) {
+            val reminderMillis = appointmentAtDate.time - (24 * 60 * 60 * 1000)
+            val timeStr = appointmentAtDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy"))
+            ReminderNotificationHelper.scheduleAppointmentReminder(
+                context = application,
+                workName = "appointment_reminder_$appointmentId",
+                vetName = vetName,
+                petName = petNames,
+                appointmentTime = timeStr,
+                reminderTimeMillis = reminderMillis
+            )
+        }
+    }
+
+    override suspend fun markAppointmentCompleted(appointmentId: String) {
+        val appointmentRef = firestore.collection("appointments").document(appointmentId)
+        appointmentRef.update(
+            "status", "COMPLETED",
+            "updatedAt", Timestamp.now()
         ).await()
     }
 

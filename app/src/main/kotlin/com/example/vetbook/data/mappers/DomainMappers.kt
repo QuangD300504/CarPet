@@ -45,6 +45,32 @@ fun CartLineDto.toDomain(): CartLine =
 
 // endregion
 
+// region Store Orders
+
+fun StoreOrderDto.toDomain(): StoreOrder = StoreOrder(
+    id = id,
+    uid = uid,
+    orderCode = orderCode,
+    items = items.map { it.toDomain() },
+    itemCount = itemCount,
+    subtotal = subtotal,
+    discount = discount,
+    deliveryCharges = deliveryCharges,
+    total = total,
+    status = com.example.vetbook.domain.models.OrderStatus.fromString(status),
+    createdAt = createdAt
+)
+
+fun OrderItemDto.toDomain(): com.example.vetbook.domain.models.OrderItem =
+    com.example.vetbook.domain.models.OrderItem(
+        productId = productId,
+        productName = productName,
+        quantity = quantity,
+        lineTotal = lineTotal
+    )
+
+// endregion
+
 // region Pets
 
 fun PetDto.toDomain(vaccinations: List<Vaccination> = emptyList()): Pet =
@@ -68,16 +94,76 @@ fun PetDto.toDomain(vaccinations: List<Vaccination> = emptyList()): Pet =
 
 // region Vaccinations
 
-fun VaccinationRecordDto.toDomain(): Vaccination =
-    Vaccination(
+fun VaccinationRecordDto.toDomain(): Vaccination {
+    return Vaccination(
         id = id,
-        petId = petId, // Foreign key relationship
-        veterinarianId = veterinarianId, // Optional foreign key relationship
+        petId = petId,
+        veterinarianId = veterinarianId,
+        veterinarianName = veterinarianName,
+        clinicName = clinicName,
+
         title = title,
-        isCompleted = isCompleted,
-        date = date?.toString(),
-        notes = notes
+        type = when (type) {
+            "CORE" -> VaccinationType.CORE
+            "NON_CORE" -> VaccinationType.NON_CORE
+            "OPTIONAL" -> VaccinationType.OPTIONAL
+            else -> VaccinationType.CORE
+        },
+        manufacturer = manufacturer,
+        batchNumber = batchNumber,
+
+        status = when (status) {
+            "SCHEDULED" -> VaccinationStatus.SCHEDULED
+            "COMPLETED" -> VaccinationStatus.COMPLETED
+            "OVERDUE" -> VaccinationStatus.OVERDUE
+            "SKIPPED" -> VaccinationStatus.SKIPPED
+            else -> VaccinationStatus.SCHEDULED
+        },
+        scheduledDate = scheduledDate?.let { java.time.Instant.ofEpochMilli(it) },
+        completedDate = completedDate?.let { java.time.Instant.ofEpochMilli(it) },
+        nextDueDate = nextDueDate?.let { java.time.Instant.ofEpochMilli(it) },
+
+        certificateUrl = certificateUrl,
+        notes = notes,
+        sideEffects = sideEffects,
+
+        createdAt = java.time.Instant.ofEpochMilli(createdAt),
+        updatedAt = java.time.Instant.ofEpochMilli(updatedAt),
+
+        reminderEnabled = reminderEnabled,
+        reminderDaysBefore = reminderDaysBefore
     )
+}
+
+fun Vaccination.toDto(): VaccinationRecordDto {
+    return VaccinationRecordDto(
+        id = id,
+        petId = petId,
+        veterinarianId = veterinarianId,
+        veterinarianName = veterinarianName,
+        clinicName = clinicName,
+
+        title = title,
+        type = type.name,
+        manufacturer = manufacturer,
+        batchNumber = batchNumber,
+
+        status = status.name,
+        scheduledDate = scheduledDate?.toEpochMilli(),
+        completedDate = completedDate?.toEpochMilli(),
+        nextDueDate = nextDueDate?.toEpochMilli(),
+
+        certificateUrl = certificateUrl,
+        notes = notes,
+        sideEffects = sideEffects,
+
+        createdAt = createdAt.toEpochMilli(),
+        updatedAt = updatedAt.toEpochMilli(),
+
+        reminderEnabled = reminderEnabled,
+        reminderDaysBefore = reminderDaysBefore
+    )
+}
 
 // endregion
 
@@ -117,13 +203,29 @@ fun VeterinarianDto.toDomain(): Veterinarian =
         name = name,
         specialty = specialty,
         experience = experience,
-        rating = rating.toString(),
+        rating = rating,
         reviewsCount = reviewsCount,
         initials = initials,
         bio = bio,
         imageUrl = imageUrl,
         clinicId = clinicId ?: "",
         servicePrice = servicePrice
+    )
+
+// endregion
+
+// region Doctor Reviews
+
+fun DoctorReviewDto.toDomain(): DoctorReview =
+    DoctorReview(
+        id = id,
+        appointmentId = appointmentId,
+        doctorId = doctorId,
+        userId = userId,
+        userName = userName,
+        rating = rating,
+        comment = comment,
+        createdAt = createdAt
     )
 
 // endregion
@@ -159,5 +261,3 @@ fun PetServiceDetailDto.toDomain(): PetServiceDetail =
     )
 
 // endregion
-
-

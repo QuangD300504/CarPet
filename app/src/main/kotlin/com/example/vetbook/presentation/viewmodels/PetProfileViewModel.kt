@@ -60,6 +60,10 @@ class PetProfileViewModel @Inject constructor(
         }
     }
 
+    fun refresh() {
+        loadPetDetails()
+    }
+
     fun deletePet(onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }

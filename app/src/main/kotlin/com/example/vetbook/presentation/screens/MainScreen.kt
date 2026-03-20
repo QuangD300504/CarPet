@@ -277,7 +277,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val bottomNavController = rememberNavController()
     val homeViewModel: HomeViewModel = hiltViewModel()
     val profileViewModel: ProfileViewModel = hiltViewModel()
+    val storeViewModel: StoreViewModel = hiltViewModel()
     val sharedNotifViewModel: SharedNotificationViewModel = hiltViewModel()
+    val veterinariansViewModel: VeterinariansViewModel = hiltViewModel()
     val categories by homeViewModel.categories.collectAsState()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -346,10 +348,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onBackClick = { bottomNavController.popBackStack() }
                     )
                 }
-                currentRoute == Routes.Store.route || currentRoute?.startsWith(Routes.Products.route.substringBefore("?")) == true -> {
+                currentRoute == Routes.Store.route -> {
                     StoreHeader(
                         currentLocation = "Ho Chi Minh City",
-                        onLocationClick = { 
+                        onLocationClick = {
                             showStoreLocationDropdown = !showStoreLocationDropdown
                         },
                         onCartClick = {
@@ -361,14 +363,12 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onProfileClick = {
                             bottomNavController.navigate(Routes.Profile.route)
                         },
-                        onBackClick = if (currentRoute != Routes.Store.route) {
-                            { bottomNavController.popBackStack() }
-                        } else null,
+                        onBackClick = null,
                         profileImageUrl = profileImageUrl,
-                        showSearchBar = currentRoute == Routes.Store.route,
+                        showSearchBar = true,
                         searchPlaceholder = "Search for your items",
-                        onSearchChange = { /* handled inside screen state for now */ },
-                        searchValue = "",
+                        onSearchChange = { storeViewModel.setSearchQuery(it) },
+                        searchValue = storeViewModel.uiState.value.searchQuery,
                         hasUnreadNotifications = hasUnread
                     )
                 }
@@ -426,7 +426,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 Routes.PaymentResult.route,
                 Routes.Products.route,
                 Routes.Cart.route,
-                "in_app_payment?url={url}"
+                "in_app_payment?url={url}",
+                Routes.VaccinationList.route,
+                Routes.AddVaccination.route,
+                Routes.VaccinationDetail.route,
+                Routes.ProductDetail.route,
+                Routes.OrderHistory.route,
+                Routes.OrderDetail.route
             )
 
             if (currentRoute !in hideBottomBarRoutes) {
@@ -532,7 +538,26 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 popExitTransition = { getPopExitTransition() }
             ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
-                    com.example.vetbook.presentation.screens.calendar.CalendarScreen()
+                    com.example.vetbook.presentation.screens.calendar.CalendarScreen(
+                        veterinariansViewModel = veterinariansViewModel,
+                        onSubmitReview = { appointmentId, doctorId, rating, comment ->
+                            val userName = profileUiState.user?.name ?: "Người dùng"
+                            val review = com.example.vetbook.domain.models.DoctorReview(
+                                id = "",
+                                appointmentId = appointmentId,
+                                doctorId = doctorId,
+                                userId = currentUserId ?: "",
+                                userName = userName,
+                                rating = rating,
+                                comment = comment,
+                                createdAt = System.currentTimeMillis()
+                            )
+                            veterinariansViewModel.submitReview(review)
+                        },
+                        onContinuePayment = { url ->
+                            bottomNavController.navigate(Routes.InAppPayment.createRoute(url))
+                        }
+                    )
                 }
             }
 
@@ -574,6 +599,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     StoreScreen(
+                        showHeader = false,
                         onProductsClick = {
                             bottomNavController.navigate(Routes.Products.route)
                         },
@@ -671,21 +697,23 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 popExitTransition = { getPopExitTransition() }
             ) { backStackEntry ->
                 val category = backStackEntry.arguments?.getString("category")
-                Box(modifier = Modifier.padding(top = topBarPadding)) {
-                    ProductsScreen(
-                        category = category,
-                        onBackClick = { bottomNavController.popBackStack() },
-                        onCartClick = {
-                            bottomNavController.navigate(Routes.Cart.route)
-                        },
-                        onNotificationClick = {
-                            bottomNavController.navigate(Routes.Notifications.route)
-                        },
-                        onProfileClick = {
-                            bottomNavController.navigate(Routes.Profile.route)
-                        }
-                    )
-                }
+                ProductsScreen(
+                    viewModel = storeViewModel,
+                    category = category,
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onCartClick = {
+                        bottomNavController.navigate(Routes.Cart.route)
+                    },
+                    onNotificationClick = {
+                        bottomNavController.navigate(Routes.Notifications.route)
+                    },
+                    onProfileClick = {
+                        bottomNavController.navigate(Routes.Profile.route)
+                    },
+                    onProductClick = { productId ->
+                        bottomNavController.navigate(Routes.ProductDetail.createRoute(productId))
+                    }
+                )
             }
 
             composable(
@@ -703,6 +731,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         },
                         onProductClick = { productId ->
                             bottomNavController.navigate(Routes.ProductDetail.createRoute(productId))
+                        },
+                        onOrderHistoryClick = {
+                            bottomNavController.navigate(Routes.OrderHistory.route)
                         }
                     )
                 }
@@ -863,7 +894,133 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         scope.launch {
                             snackbarHostState.showSnackbar("Đã xóa thú cưng thành công")
                         }
+                    },
+                    onVaccinationsViewAll = { id, name ->
+                        bottomNavController.navigate(Routes.VaccinationList.createRoute(id, name))
+                    },
+                    onVaccinationClick = { vaccinationId ->
+                        bottomNavController.navigate(Routes.VaccinationDetail.createRoute(vaccinationId))
                     }
+                )
+            }
+
+            composable(
+                route = Routes.VaccinationList.route,
+                arguments = listOf(
+                    navArgument("petId") { type = NavType.StringType },
+                    navArgument("petName") { type = NavType.StringType }
+                ),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) { backStackEntry ->
+                val petId = backStackEntry.arguments?.getString("petId") ?: ""
+                val petName = backStackEntry.arguments?.getString("petName") ?: ""
+                val viewModel: com.example.vetbook.presentation.viewmodels.VaccinationViewModel = hiltViewModel()
+                com.example.vetbook.presentation.screens.pets.VaccinationListScreen(
+                    petId = petId,
+                    petName = petName,
+                    viewModel = viewModel,
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onAddClick = {
+                        bottomNavController.navigate(Routes.AddVaccination.createRoute(petId, petName))
+                    },
+                    onVaccinationClick = { vaccinationId ->
+                        bottomNavController.navigate(Routes.VaccinationDetail.createRoute(vaccinationId))
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.AddVaccination.route,
+                arguments = listOf(
+                    navArgument("petId") { type = NavType.StringType },
+                    navArgument("petName") { type = NavType.StringType }
+                ),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) { backStackEntry ->
+                val petId = backStackEntry.arguments?.getString("petId") ?: ""
+                val petName = backStackEntry.arguments?.getString("petName") ?: ""
+                com.example.vetbook.presentation.screens.pets.AddVaccinationScreen(
+                    petId = petId,
+                    petName = petName,
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onSaved = {
+                        bottomNavController.popBackStack()
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.VaccinationDetail.route,
+                arguments = listOf(navArgument("vaccinationId") { type = NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) { backStackEntry ->
+                val vaccinationId = backStackEntry.arguments?.getString("vaccinationId") ?: ""
+                com.example.vetbook.presentation.screens.pets.VaccinationDetailScreen(
+                    vaccinationId = vaccinationId,
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onVetClick = { doctorId ->
+                        bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
+                    },
+                    onBookAppointment = { doctorId ->
+                        bottomNavController.navigate(Routes.BookAppointment.createRoute(doctorId))
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.ProductDetail.route,
+                arguments = listOf(navArgument("productId") { type = NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) { backStackEntry ->
+                val productId = backStackEntry.arguments?.getString("productId") ?: ""
+                com.example.vetbook.presentation.screens.store.ProductDetailScreen(
+                    productId = productId,
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onNavigateToCart = {
+                        bottomNavController.navigate(Routes.Cart.route)
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.OrderHistory.route,
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) {
+                com.example.vetbook.presentation.screens.store.OrderHistoryScreen(
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onOrderClick = { orderId ->
+                        bottomNavController.navigate(Routes.OrderDetail.createRoute(orderId))
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.OrderDetail.route,
+                arguments = listOf(navArgument("orderId") { type = NavType.StringType }),
+                enterTransition = { getEnterTransition() },
+                exitTransition = { getExitTransition() },
+                popEnterTransition = { getPopEnterTransition() },
+                popExitTransition = { getPopExitTransition() }
+            ) { backStackEntry ->
+                val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+                com.example.vetbook.presentation.screens.store.OrderDetailScreen(
+                    orderId = orderId,
+                    onBackClick = { bottomNavController.popBackStack() }
                 )
             }
 

@@ -1,22 +1,40 @@
 package com.example.vetbook.data.models
 
-/**
- * Firestore document representing a vaccination record.
- * Can be stored as subcollection `pets/{petId}/vaccinations` or in `vaccinations` collection.
- * 
- * Relationships:
- * - petId: Foreign key to Pet (required)
- * - veterinarianId: Foreign key to Veterinarian (optional)
- */
 data class VaccinationRecordDto(
     val id: String = "",
-    val petId: String = "", // Foreign key to Pet (required)
-    val veterinarianId: String? = null, // Foreign key to Veterinarian (optional)
+    val petId: String = "",
+    val veterinarianId: String? = null,
+    val veterinarianName: String? = null,
+    val clinicName: String? = null,
+    
+    // Vaccination details
     val title: String = "",
-    val isCompleted: Boolean = false,
-    val date: Long? = null,
+    val type: String = "CORE",
+    val manufacturer: String? = null,
+    val batchNumber: String? = null,
+    
+    // Status & Dates (milliseconds)
+    val status: String = "SCHEDULED",
+    val scheduledDate: Long? = null,
+    val completedDate: Long? = null,
+    val nextDueDate: Long? = null,
+    
+    // Documentation
+    val certificateUrl: String? = null,
     val notes: String? = null,
-    val createdAt: Long = 0L
+    val sideEffects: String? = null,
+    
+    // Metadata
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L,
+    
+    // Reminder
+    val reminderEnabled: Boolean = true,
+    val reminderDaysBefore: Int = 7,
+    
+    // Legacy fields (backward compatibility)
+    @Deprecated("Use status instead")
+    val isCompleted: Boolean = false,
+    @Deprecated("Use scheduledDate or completedDate")
+    val date: Long? = null
 )
-
-

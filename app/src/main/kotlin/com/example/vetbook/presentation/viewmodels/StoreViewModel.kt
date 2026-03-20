@@ -19,6 +19,14 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import android.util.Log
+
+enum class SortOption(val label: String) {
+    NEWEST("Mới nhất"),
+    PRICE_LOW_TO_HIGH("Giá thấp → cao"),
+    PRICE_HIGH_TO_LOW("Giá cao → thấp"),
+    BEST_SELLING("Bán chạy")
+}
 
 data class StoreUiState(
     val isLoading: Boolean = true,
@@ -27,7 +35,12 @@ data class StoreUiState(
     val selectedCategory: String? = null,
     val searchQuery: String = "",
     val cartCount: Int = 0,
-    val message: String? = null
+    val message: String? = null,
+    val sortOption: SortOption = SortOption.NEWEST,
+    val priceRangeMin: Float = 0f,
+    val priceRangeMax: Float = 5_000_000f,
+    val inStockOnly: Boolean = false,
+    val isFilterSheetVisible: Boolean = false
 )
 
 @HiltViewModel
@@ -58,7 +71,27 @@ class StoreViewModel @Inject constructor(
     }
 
     fun setSearchQuery(query: String) {
+        android.util.Log.d("StoreViewModel", "setSearchQuery: '$query'")
         searchQuery.value = query
+    }
+
+    fun setSortOption(option: SortOption) {
+        _uiState.value = _uiState.value.copy(sortOption = option)
+        selectedCategory.value = selectedCategory.value // re-trigger
+    }
+
+    fun setPriceRange(min: Float, max: Float) {
+        _uiState.value = _uiState.value.copy(priceRangeMin = min, priceRangeMax = max)
+        selectedCategory.value = selectedCategory.value
+    }
+
+    fun setInStockOnly(inStock: Boolean) {
+        _uiState.value = _uiState.value.copy(inStockOnly = inStock)
+        selectedCategory.value = selectedCategory.value
+    }
+
+    fun setFilterSheetVisible(visible: Boolean) {
+        _uiState.value = _uiState.value.copy(isFilterSheetVisible = visible)
     }
 
     fun addToCart(productId: String) {
@@ -105,22 +138,49 @@ class StoreViewModel @Inject constructor(
                                     imageUrl = p.imageUrl,
                                     shopName = p.shopName,
                                     category = p.category ?: "",
-                                    description = p.description
+                                    description = p.description,
+                                    createdAt = p.createdAt
                                 )
                             }
+                            Log.d("StoreViewModel", "observeStore: raw products=${mapped.size}, category=$category, query='$query'")
                             val filtered = mapped.filter { p ->
                                 val matchesCategory = category == null || p.category.equals(category, ignoreCase = true)
                                 val matchesQuery = query.isBlank() || p.name.contains(query, ignoreCase = true)
+                                Log.d("StoreViewModel", "filter check: name='${p.name}', matchesCategory=$matchesCategory, matchesQuery=$matchesQuery")
                                 matchesCategory && matchesQuery
+                            }
+                            Log.d("StoreViewModel", "observeStore: filtered=${filtered.size} products")
+
+                            val priceMin = _uiState.value.priceRangeMin
+                            val priceMax = _uiState.value.priceRangeMax
+                            val inStockOnly = _uiState.value.inStockOnly
+                            val sortOption = _uiState.value.sortOption
+
+                            val priceFiltered = filtered.filter { p ->
+                                val price = p.price.toDoubleOrNull() ?: 0.0
+                                price >= priceMin && price <= priceMax &&
+                                    (!inStockOnly || p.stock > 0)
+                            }
+
+                            val sorted = when (sortOption) {
+                                SortOption.NEWEST -> priceFiltered.sortedByDescending { it.createdAt?.let { ts -> ts } ?: 0L }
+                                SortOption.PRICE_LOW_TO_HIGH -> priceFiltered.sortedBy { it.price.toDoubleOrNull() ?: Double.MAX_VALUE }
+                                SortOption.PRICE_HIGH_TO_LOW -> priceFiltered.sortedByDescending { it.price.toDoubleOrNull() ?: 0.0 }
+                                SortOption.BEST_SELLING -> priceFiltered // placeholder
                             }
 
                             StoreUiState(
                                 isLoading = false,
-                                products = filtered,
+                                products = sorted,
                                 errorMessage = null,
                                 selectedCategory = category,
                                 searchQuery = query,
-                                cartCount = cartLines.sumOf { it.quantity }
+                                cartCount = cartLines.sumOf { it.quantity },
+                                sortOption = sortOption,
+                                priceRangeMin = priceMin,
+                                priceRangeMax = priceMax,
+                                inStockOnly = inStockOnly,
+                                isFilterSheetVisible = _uiState.value.isFilterSheetVisible
                             )
                         }
                         .onStart { emit(_uiState.value.copy(isLoading = true, errorMessage = null)) }

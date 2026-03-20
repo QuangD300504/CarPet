@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.domain.repository.BookingRepository
+import com.example.vetbook.domain.models.PaymentLink
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,8 @@ data class CalendarUiState(
     val selectedWeekStart: LocalDate = LocalDate.now().with(java.time.DayOfWeek.MONDAY),
     val appointments: List<Appointment> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val paymentUrl: String? = null
 )
 
 @HiltViewModel
@@ -40,11 +42,22 @@ class CalendarViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             viewModelScope.launch {
                 bookingRepository.getUserAppointments(userId).collect { appointments ->
-                    _uiState.update { 
+                    // Auto-complete past UPCOMING appointments
+                    val now = java.time.Instant.now()
+                    val pastUpcoming = appointments.filter {
+                        it.status == "UPCOMING" &&
+                        it.appointmentAt.isBefore(now)
+                    }
+                    pastUpcoming.forEach { appt ->
+                        launch {
+                            bookingRepository.markAppointmentCompleted(appt.id)
+                        }
+                    }
+                    _uiState.update {
                         it.copy(
                             appointments = appointments,
                             isLoading = false
-                        ) 
+                        )
                     }
                 }
             }
@@ -94,5 +107,24 @@ class CalendarViewModel @Inject constructor(
      */
     fun hasAppointments(date: LocalDate): Boolean {
         return getAppointmentsForDate(date).isNotEmpty()
+    }
+
+    /**
+     * Retry payment for a PENDING_PAYMENT appointment.
+     * Generates a new PayOS checkout URL.
+     */
+    fun retryPayment(appointmentId: String) {
+        viewModelScope.launch {
+            try {
+                val paymentLink = bookingRepository.createPaymentLinkForAppointment(appointmentId)
+                _uiState.update { it.copy(paymentUrl = paymentLink.checkoutUrl) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Không thể tạo liên kết thanh toán: ${e.message}") }
+            }
+        }
+    }
+
+    fun clearPaymentUrl() {
+        _uiState.update { it.copy(paymentUrl = null) }
     }
 }

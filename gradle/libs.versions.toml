@@ -23,6 +23,7 @@ foundationLayout = "1.10.4"
 benchmarkTraceprocessor = "1.4.1"
 foundation = "1.10.4"
 foundationVersion = "1.10.5"
+workmanager = "2.9.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

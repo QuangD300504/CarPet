@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.presentation.components.store.ProductCard
+import com.example.vetbook.presentation.components.store.StoreHeader
 import com.example.vetbook.presentation.components.topbars.HomeTopBar
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthSurface
@@ -42,7 +43,8 @@ fun StoreScreen(
     onCartClick: () -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
     onNotificationClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    showHeader: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var currentLocation by remember { mutableStateOf("TP. Hồ Chí Minh") }
@@ -61,17 +63,35 @@ fun StoreScreen(
             .fillMaxSize()
             .background(Background)
     ) {
-        StoreContent(
-            uiState = uiState,
-            onProductsClick = onProductsClick,
-        onCategoryClick = { category ->
-            viewModel.setCategory(category)
-            onCategoryClick(category)
-        },
-        onAddToCart = viewModel::addToCart,
-        modifier = Modifier.fillMaxSize()
-    )
-        
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (showHeader) {
+                StoreHeader(
+                    currentLocation = currentLocation,
+                    onLocationClick = { /* TODO: location picker */ },
+                    onCartClick = onCartClick,
+                    onNotificationClick = onNotificationClick,
+                    onProfileClick = onProfileClick,
+                    showSearchBar = true,
+                    searchValue = uiState.searchQuery,
+                    onSearchChange = viewModel::setSearchQuery,
+                    profileImageUrl = null
+                )
+            }
+            StoreContent(
+                uiState = uiState,
+                onProductsClick = onProductsClick,
+                onCategoryClick = { category ->
+                    viewModel.setCategory(category)
+                    onCategoryClick(category)
+                },
+                onAddToCart = viewModel::addToCart,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .align(Alignment.Start)
+            )
+        }
+
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
