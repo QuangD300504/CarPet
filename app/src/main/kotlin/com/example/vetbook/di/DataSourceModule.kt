@@ -71,14 +71,13 @@ object DataSourceModule {
     @Singleton
     fun provideRemoteAccommodationDataSource(
         firestore: FirebaseFirestore
-    ): com.example.vetbook.data.datasource.RemoteAccommodationDataSource = 
+    ): com.example.vetbook.data.datasource.RemoteAccommodationDataSource =
         com.example.vetbook.data.datasource.firebase.FirebaseAccommodationDataSource(firestore)
 
     @Provides
     @Singleton
     fun provideNotificationDataSource(
         firestore: FirebaseFirestore
-    ): com.example.vetbook.data.datasource.NotificationDataSource = com.example.vetbook.data.datasource.firebase.FirebaseNotificationDataSource(firestore)
+    ): com.example.vetbook.data.datasource.NotificationDataSource =
+        com.example.vetbook.data.datasource.firebase.FirebaseNotificationDataSource(firestore)
 }
-
-

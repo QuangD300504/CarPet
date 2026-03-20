@@ -1,10 +1,12 @@
 package com.example.vetbook.di
 
+import android.app.Application
 import com.example.vetbook.data.datasource.RemoteCommunityDataSource
 import com.example.vetbook.data.datasource.RemotePetDataSource
 import com.example.vetbook.data.datasource.RemoteServiceDataSource
 import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.datasource.RemoteUserDataSource
+import com.example.vetbook.data.datasource.RemoteVaccinationDataSource
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
 import com.example.vetbook.data.network.CloudinaryService
 import com.example.vetbook.data.network.PayosApiService
@@ -92,12 +94,14 @@ object RepositoryModule {
     fun provideBookingRepository(
         firestore: FirebaseFirestore,
         auth: FirebaseAuth,
-        payosApi: PayosApiService
+        payosApi: PayosApiService,
+        application: Application
     ): BookingRepository {
         return BookingRepositoryImpl(
             firestore = firestore,
             auth = auth,
-            payosApi = payosApi
+            payosApi = payosApi,
+            application = application
         )
     }
 
@@ -125,4 +129,10 @@ object RepositoryModule {
         return AccommodationRepositoryImpl(remoteDataSource)
     }
 
+    @Provides
+@Singleton
+fun provideVaccinationRepository(
+        remoteDataSource: RemoteVaccinationDataSource,
+        imageRepository: CloudinaryImageRepository
+): VaccinationRepository = VaccinationRepositoryImpl(remoteDataSource, imageRepository)
 }

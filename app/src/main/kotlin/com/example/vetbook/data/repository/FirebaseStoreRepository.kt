@@ -3,6 +3,7 @@ package com.example.vetbook.data.repository
 import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.mappers.toDomain
 import com.example.vetbook.domain.models.CartLine
+import com.example.vetbook.domain.models.StoreOrder
 import com.example.vetbook.domain.models.StoreProduct
 import com.example.vetbook.domain.repository.StoreRepository
 import kotlinx.coroutines.flow.Flow
@@ -43,6 +44,15 @@ class FirebaseStoreRepository(
 
     override suspend fun deleteProduct(productId: String): Result<Unit> {
         return remoteStoreDataSource.deleteProduct(productId)
+    }
+
+    // === Order observation ===
+    override fun observeOrders(uid: String): Flow<List<StoreOrder>> {
+        return remoteStoreDataSource.observeOrders(uid).map { list -> list.map { it.toDomain() } }
+    }
+
+    override suspend fun getOrderById(orderId: String): StoreOrder? {
+        return remoteStoreDataSource.getOrderById(orderId)?.toDomain()
     }
 }
 

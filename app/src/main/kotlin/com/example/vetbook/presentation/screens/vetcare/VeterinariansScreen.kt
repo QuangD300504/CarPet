@@ -240,7 +240,7 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = vet.rating,
+                        text = vet.ratingLabel,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFF2D3142)
                     )
@@ -273,8 +273,8 @@ fun VeterinariansScreenPreview() {
     VeterinariansContent(
         uiState = VeterinariansUiState(
             veterinarians = listOf(
-                Veterinarian("1", "Dr. Hamza Tariq", "Senior Surgeon", "10 years", rating = "4.9", reviewsCount = 12, initials = "DHT"),
-                Veterinarian("2", "Dr. Alina Fatima", "Cardiologist", "8 years", rating = "5.0", reviewsCount = 15, initials = "DAF")
+                Veterinarian("1", "Dr. Hamza Tariq", "Senior Surgeon", "10 years", rating = 4.9, reviewsCount = 12, initials = "DHT"),
+                Veterinarian("2", "Dr. Alina Fatima", "Cardiologist", "8 years", rating = 5.0, reviewsCount = 15, initials = "DAF")
             )
         ),
         onBackClick = {},

@@ -40,6 +40,10 @@ sealed class Routes(val route: String) {
     object ProductDetail : Routes("product_detail/{productId}") {
         fun createRoute(productId: String) = "product_detail/$productId"
     }
+    object OrderHistory : Routes("order_history")
+    object OrderDetail : Routes("order_detail/{orderId}") {
+        fun createRoute(orderId: String) = "order_detail/$orderId"
+    }
     object Notifications : Routes("notifications")
     object EditProfile : Routes("edit_profile")
     object Language : Routes("language")
@@ -56,4 +60,15 @@ sealed class Routes(val route: String) {
     object ContinueLogin : Routes("continue_login")
     object ContinueLoginStart : Routes("continue_login_start")
     object ContinueLoginPassword : Routes("continue_login_password")
+
+    // Vaccination screens
+    object VaccinationList : Routes("vaccination_list/{petId}/{petName}") {
+        fun createRoute(petId: String, petName: String) = "vaccination_list/$petId/$petName"
+    }
+    object AddVaccination : Routes("add_vaccination/{petId}/{petName}") {
+        fun createRoute(petId: String, petName: String) = "add_vaccination/$petId/$petName"
+    }
+    object VaccinationDetail : Routes("vaccination_detail/{vaccinationId}") {
+        fun createRoute(vaccinationId: String) = "vaccination_detail/$vaccinationId"
+    }
 }

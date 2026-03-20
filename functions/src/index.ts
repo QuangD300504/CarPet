@@ -314,7 +314,7 @@ export const payosWebhook = onRequest(
           .where("orderCode", "==", webhookData.orderCode.toString())
           .limit(1)
           .get();
-        
+
         if (!orderQuery.empty) {
           const orderDoc = orderQuery.docs[0];
           await orderDoc.ref.update({
@@ -328,6 +328,49 @@ export const payosWebhook = onRequest(
     } catch (error: any) {
       logger.error("PayOS webhook error", error);
       res.status(200).json({success: false, message: error.message});
+    }
+  }
+);
+
+/**
+ * Cleans up expired doctorSlotLocks — locks that were created but never
+ * had their payment confirmed within the 15-minute TTL window.
+ * Run via Cloud Scheduler every 5 minutes.
+ */
+export const cleanupExpiredSlotLocks = onRequest(
+  {
+    region: "asia-southeast1",
+    invoker: "public",
+  },
+  async (req, res) => {
+    try {
+      const db = admin.firestore();
+      const now = Timestamp.now();
+
+      const expiredQuery = await db
+        .collection("doctorSlotLocks")
+        .where("expiresAt", "<", now)
+        .get();
+
+      if (expiredQuery.empty) {
+        res.json({ cleaned: 0 });
+        return;
+      }
+
+      const batch = db.batch();
+      let cleaned = 0;
+
+      for (const lockDoc of expiredQuery.docs) {
+        batch.delete(lockDoc.ref);
+        cleaned++;
+      }
+
+      await batch.commit();
+      logger.info(`Cleaned up ${cleaned} expired slot locks`);
+      res.json({ cleaned });
+    } catch (error: any) {
+      logger.error("cleanupExpiredSlotLocks error", error);
+      res.status(500).json({ error: error.message });
     }
   }
 );

@@ -2,6 +2,7 @@ package com.example.vetbook.store
 
 import com.example.vetbook.data.datasource.RemoteStoreDataSource
 import com.example.vetbook.data.models.CartLineDto
+import com.example.vetbook.data.models.StoreOrderDto
 import com.example.vetbook.data.models.StoreProductDto
 import com.example.vetbook.data.repository.FirebaseStoreRepository
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,10 @@ private class FakeRemoteStoreDataSource(
     }
 
     override fun observeUserCart(uid: String): Flow<List<CartLineDto>> = cartFlow
+
+    override fun observeOrders(uid: String): Flow<List<StoreOrderDto>> = kotlinx.coroutines.flow.emptyFlow()
+
+    override suspend fun getOrderById(orderId: String): StoreOrderDto? = null
 
     override suspend fun setCartQuantity(uid: String, productId: String, quantity: Int): Result<Unit> {
         return Result.success(Unit)

@@ -8,7 +8,8 @@ data class Product(
     val imageUrl: String? = null,
     val shopName: String = "VetBook Shop",
     val category: String = "",
-    val description: String? = null
+    val description: String? = null,
+    val createdAt: Long? = null
 )
 
 data class CartItem(

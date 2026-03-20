@@ -18,3 +18,24 @@ data class CartLineDto(
     val addedAt: Long? = null
 )
 
+data class StoreOrderDto(
+    val id: String = "",
+    val uid: String = "",
+    val orderCode: String = "",
+    val items: List<OrderItemDto> = emptyList(),
+    val itemCount: Int = 0,
+    val subtotal: Double = 0.0,
+    val discount: Double = 0.0,
+    val deliveryCharges: Double = 0.0,
+    val total: Double = 0.0,
+    val status: String = "PENDING",
+    val createdAt: Long = 0L
+)
+
+data class OrderItemDto(
+    val productId: String = "",
+    val productName: String = "",
+    val quantity: Int = 0,
+    val lineTotal: Double = 0.0
+)
+

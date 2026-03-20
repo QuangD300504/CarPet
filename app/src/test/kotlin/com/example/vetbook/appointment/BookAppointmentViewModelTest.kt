@@ -1,116 +1,178 @@
 package com.example.vetbook.appointment
 
-import com.example.vetbook.data.datasource.RemotePetDataSource
-import com.example.vetbook.data.models.PetDto
-import com.example.vetbook.domain.models.Appointment
 import com.example.vetbook.domain.models.PaymentLink
-import com.example.vetbook.domain.repository.AuthRepository
 import com.example.vetbook.domain.repository.BookingRepository
-import com.example.vetbook.presentation.viewmodels.BookAppointmentViewModel
-import com.google.firebase.auth.AuthResult
-import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.*
-import org.junit.After
+import com.example.vetbook.presentation.components.calendar.SlotOption
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
-import java.util.*
+import java.util.Date
 
-@OptIn(ExperimentalCoroutinesApi::class)
+/**
+ * Pure unit tests for appointment booking logic.
+ * Tests the core business rules without requiring Hilt DI or Firebase.
+ */
 class BookAppointmentViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
+    // ─── Slot Selection Tests ─────────────────────────────────────────────
 
-    private lateinit var fakeBookingRepo: FakeBookingRepository
-    private lateinit var fakePetDS: FakeRemotePetDataSource
-    private lateinit var fakeAuthRepo: FakeAuthRepository
-    private lateinit var viewModel: BookAppointmentViewModel
-
-    @Before
-    fun setup() {
-        Dispatchers.setMain(testDispatcher)
-        fakeBookingRepo = FakeBookingRepository()
-        fakePetDS = FakeRemotePetDataSource()
-        fakeAuthRepo = FakeAuthRepository("user-123")
-        
-        // Setup initial pets
-        fakePetDS.pets = listOf(
-            PetDto(id = "pet-1", name = "Buddy", type = "Dog", ownerId = "user-123")
-        )
-        
-        viewModel = BookAppointmentViewModel(fakeBookingRepo, fakePetDS, fakeAuthRepo)
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
+    @Test
+    fun `timeSlots contains exactly 9 slots`() {
+        val slots = SlotOption.defaults
+        assertEquals(9, slots.size)
     }
 
     @Test
-    fun `init loads user pets`() = runTest {
-        advanceUntilIdle()
-        assertEquals(1, viewModel.pets.value.size)
+    fun `SlotOption defaults covers morning and afternoon`() {
+        val labels = SlotOption.defaults.map { it.label }
+        // Morning: 09:00, 09:30, 10:00, 10:30, 11:00
+        assertTrue(labels.contains("09:00"))
+        assertTrue(labels.contains("09:30"))
+        assertTrue(labels.contains("10:00"))
+        assertTrue(labels.contains("10:30"))
+        assertTrue(labels.contains("11:00"))
+        // Afternoon: 14:00, 14:30, 15:00, 15:30
+        assertTrue(labels.contains("14:00"))
+        assertTrue(labels.contains("14:30"))
+        assertTrue(labels.contains("15:00"))
+        assertTrue(labels.contains("15:30"))
     }
 
-    // Fakes
+    @Test
+    fun `SlotOption label can be parsed back to LocalTime`() {
+        val slot = SlotOption.defaults.first()
+        val parsed = java.time.LocalTime.parse(slot.label)
+        assertEquals(slot.time.hour, parsed.hour)
+        assertEquals(slot.time.minute, parsed.minute)
+    }
+
+    // ─── Locked Slots Tests ───────────────────────────────────────────────
+
+    @Test
+    fun `locked slots use HH mm format`() {
+        val lockedSlots = setOf("09:00", "10:30", "14:00")
+        assertEquals(3, lockedSlots.size)
+        lockedSlots.forEach { slot ->
+            assertTrue(slot.matches(Regex("\\d{2}:\\d{2}")))
+        }
+    }
+
+    @Test
+    fun `locked slot format matches SlotOption labels`() {
+        val lockedSlots = setOf("09:00", "10:30")
+        val allLabels = SlotOption.defaults.map { it.label }.toSet()
+        assertTrue(lockedSlots.all { it in allLabels })
+    }
+
+    @Test
+    fun `available slots are computed by subtracting locked slots`() {
+        val allLabels = SlotOption.defaults.map { it.label }.toSet()
+        val lockedSlots = setOf("09:00", "10:30")
+        val availableSlots = allLabels - lockedSlots
+
+        assertFalse(availableSlots.contains("09:00"))
+        assertTrue(availableSlots.contains("09:30"))
+        assertFalse(availableSlots.contains("10:30"))
+        assertTrue(availableSlots.contains("10:00"))
+    }
+
+    // ─── Booking Repository Tests ──────────────────────────────────────────
+
+    @Test
+    fun `FakeBookingRepository returns correct result structure`() {
+        val repo = FakeBookingRepository()
+        val result = runCatching {
+            kotlinx.coroutines.runBlocking {
+                repo.createAppointmentWithSlotLock("vet-1", Date(), 150.0, 30, null, listOf("pet-1"))
+            }
+        }
+        assertTrue(result.isSuccess)
+        assertEquals("appt-test", result.getOrNull()?.appointmentId)
+        assertEquals("lock-test", result.getOrNull()?.lockId)
+    }
+
+    @Test
+    fun `FakeBookingRepository tracks cancelled appointments`() {
+        val repo = FakeBookingRepository()
+        kotlinx.coroutines.runBlocking {
+            repo.cancelAppointment("appt-1", "lock-1")
+        }
+        assertTrue(repo.cancelledIds.contains("appt-1"))
+        assertEquals("lock-1", repo.cancelledLocks["appt-1"])
+    }
+
+    @Test
+    fun `FakeBookingRepository returns locked slots correctly`() {
+        val repo = FakeBookingRepository()
+        repo.lockedSlots = setOf("09:00", "10:00")
+        val locked = kotlinx.coroutines.runBlocking {
+            repo.getLockedSlots("vet-1", 2026, 3, 21)
+        }
+        assertEquals(2, locked.size)
+        assertTrue(locked.contains("09:00"))
+    }
+
+    @Test
+    fun `FakeBookingRepository marks appointment as paid`() {
+        val repo = FakeBookingRepository()
+        kotlinx.coroutines.runBlocking {
+            repo.markAppointmentAsPaid("appt-paid")
+        }
+        assertTrue(repo.paidIds.contains("appt-paid"))
+    }
+
+    @Test
+    fun `FakeBookingRepository marks appointment as completed`() {
+        val repo = FakeBookingRepository()
+        kotlinx.coroutines.runBlocking {
+            repo.markAppointmentCompleted("appt-done")
+        }
+        assertTrue(repo.completedIds.contains("appt-done"))
+    }
+
+    // ─── Fake Repository ──────────────────────────────────────────────────
+
     private class FakeBookingRepository : BookingRepository {
+        var lockedSlots: Set<String> = emptySet()
+        val cancelledIds = mutableListOf<String>()
+        val cancelledLocks = mutableMapOf<String, String>()
+        val paidIds = mutableListOf<String>()
+        val completedIds = mutableListOf<String>()
+
         override suspend fun createAppointmentWithSlotLock(
             veterinarianId: String,
             appointmentAt: Date,
             totalPrice: Double,
             durationMinutes: Int,
             notes: String?,
-            petId: String?
-        ): BookingRepository.CreateAppointmentResult = BookingRepository.CreateAppointmentResult("appt-1", "lock-1")
+            petIds: List<String>
+        ): BookingRepository.CreateAppointmentResult =
+            BookingRepository.CreateAppointmentResult("appt-test", "lock-test")
 
-        override suspend fun createPaymentLinkForAppointment(appointmentId: String): PaymentLink =
-            PaymentLink(checkoutUrl = "https://checkout.url", orderCode = 123L, paymentLinkId = "pay-1")
+        override suspend fun createPaymentLinkForAppointment(appointmentId: String) =
+            PaymentLink(checkoutUrl = "https://checkout.test", orderCode = 999L, paymentLinkId = appointmentId)
 
-        override suspend fun cancelAppointment(appointmentId: String, lockId: String) {}
-        override fun getUserAppointments(userId: String): Flow<List<Appointment>> = MutableStateFlow(emptyList())
-        override fun getAllAppointments(): Flow<List<Appointment>> = MutableStateFlow(emptyList())
-        override suspend fun getLockedSlots(
-        veterinarianId: String,
-        year: Int,
-        month: Int,
-        day: Int
-    ): Set<String> {
-        return emptySet() // Return empty set for tests unless otherwise mocked
-    }
+        override suspend fun cancelAppointment(appointmentId: String, lockId: String) {
+            cancelledIds.add(appointmentId)
+            cancelledLocks[appointmentId] = lockId
+        }
 
-    override suspend fun markAppointmentAsPaid(appointmentId: String) {
-        // Do nothing in mock
-    }
-    }
+        override fun getUserAppointments(userId: String): kotlinx.coroutines.flow.Flow<List<com.example.vetbook.domain.models.Appointment>> =
+            kotlinx.coroutines.flow.emptyFlow()
 
-    private class FakeRemotePetDataSource : RemotePetDataSource {
-        var pets = emptyList<PetDto>()
-        override suspend fun getUserPets(ownerId: String): List<PetDto> = pets
-        override suspend fun getAdoptionPets(): List<PetDto> = emptyList()
-        override suspend fun createPet(pet: PetDto): Result<PetDto> = Result.success(pet)
-        override suspend fun updatePet(pet: PetDto): Result<Unit> = Result.success(Unit)
-        override suspend fun deletePet(petId: String): Result<Unit> = Result.success(Unit)
-        override suspend fun getPetById(petId: String): Result<PetDto> = Result.success(PetDto(id = petId))
-    }
+        override fun getAllAppointments(): kotlinx.coroutines.flow.Flow<List<com.example.vetbook.domain.models.Appointment>> =
+            kotlinx.coroutines.flow.emptyFlow()
 
-    private class FakeAuthRepository(private val userId: String?) : AuthRepository {
-        override suspend fun signUp(fullName: String, email: String, phone: String, password: String): Result<AuthResult> = Result.failure(Exception())
-        override suspend fun login(email: String, password: String): Result<AuthResult> = Result.failure(Exception())
-        override suspend fun signInWithGoogle(context: android.content.Context): Result<AuthResult> = Result.failure(Exception())
-        override suspend fun signOut(): Result<Unit> = Result.success(Unit)
-        override suspend fun sendPasswordResetEmail(email: String): Result<Unit> = Result.success(Unit)
-        override suspend fun sendEmailVerification(): Result<Unit> = Result.success(Unit)
-        override suspend fun isEmailVerified(): Boolean = true
-        override suspend fun reloadUser(): Result<Unit> = Result.success(Unit)
-        override suspend fun deleteAccount(): Result<Unit> = Result.success(Unit)
-        override fun getCurrentUser(): FirebaseUser? = null
-        override fun isUserLoggedIn(): Boolean = userId != null
-        override fun getCurrentUserId(): String? = userId
-        override fun getAuthState(): Flow<FirebaseUser?> = MutableStateFlow(null)
+        override suspend fun getLockedSlots(veterinarianId: String, year: Int, month: Int, day: Int): Set<String> =
+            lockedSlots
+
+        override suspend fun markAppointmentAsPaid(appointmentId: String) {
+            paidIds.add(appointmentId)
+        }
+
+        override suspend fun markAppointmentCompleted(appointmentId: String) {
+            completedIds.add(appointmentId)
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.vetbook.domain.repository
 
 import com.example.vetbook.domain.models.CartLine
+import com.example.vetbook.domain.models.StoreOrder
 import com.example.vetbook.domain.models.StoreProduct
 import kotlinx.coroutines.flow.Flow
 
@@ -15,5 +16,9 @@ interface StoreRepository {
     suspend fun updateProduct(product: StoreProduct): Result<Unit>
 
     suspend fun deleteProduct(productId: String): Result<Unit>
+
+    // === Order observation ===
+    fun observeOrders(uid: String): Flow<List<StoreOrder>>
+    suspend fun getOrderById(orderId: String): StoreOrder?
 }
 

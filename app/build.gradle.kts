@@ -108,6 +108,9 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+
     // Testing & Tooling
 
     // Testing & Tooling

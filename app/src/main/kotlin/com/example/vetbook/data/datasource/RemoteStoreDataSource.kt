@@ -1,15 +1,17 @@
 package com.example.vetbook.data.datasource
 
 import com.example.vetbook.data.models.CartLineDto
+import com.example.vetbook.data.models.StoreOrderDto
 import com.example.vetbook.data.models.StoreProductDto
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Remote data source for Store (products + user cart).
+ * Remote data source for Store (products + user cart + orders).
  *
  * Collections:
  * - products/{productId}
  * - users/{uid}/cart/{productId}
+ * - storeOrders/{orderId}
  */
 interface RemoteStoreDataSource {
 
@@ -28,5 +30,9 @@ interface RemoteStoreDataSource {
     suspend fun updateProduct(product: StoreProductDto): Result<Unit>
 
     suspend fun deleteProduct(productId: String): Result<Unit>
+
+    // === Order observation ===
+    fun observeOrders(uid: String): Flow<List<StoreOrderDto>>
+    suspend fun getOrderById(orderId: String): StoreOrderDto?
 }
 

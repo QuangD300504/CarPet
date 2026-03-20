@@ -44,7 +44,8 @@ fun CartScreen(
     viewModel: CheckoutViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onCheckoutClick: () -> Unit = {},
-    onProductClick: (String) -> Unit = {}
+    onProductClick: (String) -> Unit = {},
+    onOrderHistoryClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -77,6 +78,7 @@ fun CartScreen(
             onQuantityChange = { productId, qty -> viewModel.setQuantity(productId, qty) },
             onCheckoutClick = onCheckoutClick,
             onProductClick = onProductClick,
+            onOrderHistoryClick = onOrderHistoryClick,
             modifier = Modifier.padding(padding)
         )
     }
@@ -90,6 +92,7 @@ private fun CartContent(
     onQuantityChange: (String, Int) -> Unit,
     onCheckoutClick: () -> Unit,
     onProductClick: (String) -> Unit,
+    onOrderHistoryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -154,7 +157,11 @@ private fun CartContent(
                     color = Color.White,
                     shadowElevation = 8.dp
                 ) {
-                    Box(modifier = Modifier.padding(20.dp).navigationBarsPadding()) {
+                    Column(
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .navigationBarsPadding()
+                    ) {
                         Button(
                             onClick = onCheckoutClick,
                             modifier = Modifier
@@ -171,6 +178,19 @@ private fun CartContent(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        TextButton(
+                            onClick = onOrderHistoryClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Xem lịch sử đơn hàng",
+                                color = HealthPrimary,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
