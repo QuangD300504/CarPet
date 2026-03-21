@@ -28,6 +28,7 @@ import java.util.Locale
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -50,11 +51,15 @@ import com.example.vetbook.presentation.viewmodels.BookAppointmentViewModel
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
 import com.example.vetbook.presentation.components.calendar.SlotGrid
 import com.example.vetbook.presentation.components.calendar.SlotOption
+import com.example.vetbook.presentation.components.common.SnackbarType
+import com.example.vetbook.presentation.components.common.VetBookSnackbar
+import com.example.vetbook.presentation.components.common.VetBookSnackbarHost
 import com.example.vetbook.R
 import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
 import java.time.LocalDateTime
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +69,7 @@ fun BookAppointmentScreen(
     bookingViewModel: BookAppointmentViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onShowPayment: (checkoutUrl: String) -> Unit = {},
-    onPaymentFinished: (isSuccess: Boolean) -> Unit = {}
+    onPaymentFinished: (isSuccess: Boolean, appointmentId: String, vetName: String?, appointmentAt: java.util.Date?) -> Unit = { _, _, _, _ -> }
 ) {
     val uiState by vetsViewModel.uiState.collectAsState()
     val doctor = uiState.veterinarians.find { it.id == doctorId }
@@ -113,7 +118,7 @@ fun BookAppointmentScreen(
     LaunchedEffect(bookingState) {
         when (val state = bookingState) {
             is BookAppointmentViewModel.UiState.Error -> {
-                snackbarHostState.showSnackbar(state.message)
+                scope.launch { VetBookSnackbar.show(snackbarHostState, state.message, SnackbarType.Error) }
                 bookingViewModel.reset()
             }
             is BookAppointmentViewModel.UiState.PaymentReady -> {
@@ -139,7 +144,12 @@ fun BookAppointmentScreen(
                     bookingViewModel.cancelAppointment(apptId, lockId)
                 }
                 DeepLinkHandler.clear()
-                onPaymentFinished(isSuccess)
+                onPaymentFinished(
+    isSuccess,
+    bookingViewModel.pendingAppointmentId ?: "",
+    bookingViewModel.pendingVetName,
+    bookingViewModel.pendingAppointmentAt
+)
                 
                 selectedDateMillis?.let { millis ->
                     val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -174,13 +184,16 @@ fun BookAppointmentScreen(
                     val time = SlotOption.defaults.find { it.label == slotLabel }?.time
                         ?: LocalTime.parse(slotLabel)
                     val appointmentAt = Date.from(date.atTime(time).atZone(ZoneId.systemDefault()).toInstant())
-                    bookingViewModel.confirmAndPay(
-                        veterinarianId  = doctorId,
-                        appointmentAt   = appointmentAt,
-                        totalPrice      = doctor.servicePrice * selectedPetIds.size,
-                        durationMinutes = 30,
-                        notes           = if (noteText.isBlank()) null else noteText
-                    )
+                    val selectedPetName = pets.firstOrNull { it.id in selectedPetIds }?.name ?: "Thú cưng"
+bookingViewModel.confirmAndPay(
+    veterinarianId  = doctorId,
+    appointmentAt   = appointmentAt,
+    totalPrice      = doctor.servicePrice * selectedPetIds.size,
+    durationMinutes = 30,
+    notes           = if (noteText.isBlank()) null else noteText,
+    vetName         = doctor.name,
+    petName         = selectedPetName
+)
                 }
             }
         )
@@ -248,7 +261,7 @@ private fun BookAppointmentContent(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { VetBookSnackbarHost(snackbarHostState) },
         containerColor = HealthSurface,
         bottomBar = {
             Surface(

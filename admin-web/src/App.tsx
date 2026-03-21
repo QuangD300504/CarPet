@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { ProtectedLayout } from './components/Layout/ProtectedLayout';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 
@@ -22,6 +23,7 @@ import SettingsLayout from './pages/settings/SettingsLayout';
 import SponsorsList from './pages/settings/SponsorsList';
 import SponsorForm from './pages/settings/SponsorForm';
 import ServicesList from './pages/settings/ServicesList';
+import ServiceForm from './pages/settings/ServiceForm';
 
 const router = createBrowserRouter([
   {
@@ -68,7 +70,9 @@ const router = createBrowserRouter([
             { path: 'sponsors', element: <SponsorsList /> },
             { path: 'sponsors/new', element: <SponsorForm /> },
             { path: 'sponsors/edit/:id', element: <SponsorForm /> },
-            { path: 'services', element: <ServicesList /> }
+            { path: 'services', element: <ServicesList /> },
+            { path: 'services/new', element: <ServiceForm /> },
+            { path: 'services/edit/:id', element: <ServiceForm /> }
         ]
       }
     ]
@@ -82,7 +86,9 @@ const router = createBrowserRouter([
 function App() {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </AuthProvider>
   );
 }

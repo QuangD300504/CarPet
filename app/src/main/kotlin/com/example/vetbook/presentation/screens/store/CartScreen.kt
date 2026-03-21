@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
+import com.example.vetbook.presentation.components.common.SnackbarType
+import com.example.vetbook.presentation.components.common.VetBookSnackbar
+import com.example.vetbook.presentation.components.common.VetBookSnackbarHost
 import com.example.vetbook.presentation.components.store.OrderSummaryCard
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
 import com.example.vetbook.presentation.models.CartItem
@@ -48,6 +52,8 @@ fun CartScreen(
     onOrderHistoryClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val cartItems = uiState.lines.map { line ->
         CartItem(
@@ -69,13 +75,33 @@ fun CartScreen(
     )
 
     Scaffold(
+        snackbarHost = { VetBookSnackbarHost(snackbarHostState) },
         containerColor = Background
     ) { padding ->
         CartContent(
             uiState = uiState,
             cartItems = cartItems,
             orderSummary = orderSummary,
-            onQuantityChange = { productId, qty -> viewModel.setQuantity(productId, qty) },
+            snackbarHostState = snackbarHostState,
+            scope = scope,
+            onQuantityChange = { productId, qty ->
+                val item = cartItems.find { it.productId == productId }
+                val newQty = qty
+                if (newQty == 0) {
+                    scope.launch {
+                        VetBookSnackbar.show(snackbarHostState, "${item?.productName} đã được xóa khỏi giỏ", SnackbarType.Info)
+                    }
+                } else if ((item?.quantity ?: 0) < newQty) {
+                    scope.launch {
+                        VetBookSnackbar.show(snackbarHostState, "Đã tăng số lượng ${item?.productName}", SnackbarType.Success)
+                    }
+                } else {
+                    scope.launch {
+                        VetBookSnackbar.show(snackbarHostState, "Đã giảm số lượng ${item?.productName}", SnackbarType.Info)
+                    }
+                }
+                viewModel.setQuantity(productId, qty)
+            },
             onCheckoutClick = onCheckoutClick,
             onProductClick = onProductClick,
             onOrderHistoryClick = onOrderHistoryClick,
@@ -89,6 +115,8 @@ private fun CartContent(
     uiState: CheckoutViewModel.UiState,
     cartItems: List<CartItem>,
     orderSummary: OrderSummary,
+    snackbarHostState: SnackbarHostState,
+    scope: kotlinx.coroutines.CoroutineScope,
     onQuantityChange: (String, Int) -> Unit,
     onCheckoutClick: () -> Unit,
     onProductClick: (String) -> Unit,

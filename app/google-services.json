@@ -40,6 +40,8 @@
         }
       ],
       "services": {
+        "messaging_sender_id": "1074707230062",
+        "gcm_sender_id": "1074707230062",
         "appinvite_service": {
           "other_platform_oauth_client": [
             {

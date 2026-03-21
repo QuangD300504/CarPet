@@ -22,7 +22,9 @@ data class VaccinationUiState(
     val completed: List<Vaccination> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    /** Records generated from WSAVA templates, pending user confirmation */
+    val generatedRecords: List<Vaccination> = emptyList()
 )
 
 @HiltViewModel
@@ -52,23 +54,29 @@ class VaccinationViewModel @Inject constructor(
     }
 
     private fun scheduleReminder(vaccination: Vaccination) {
-        if (!vaccination.reminderEnabled || vaccination.nextDueDate == null) return
-        val reminderInstant = vaccination.nextDueDate
-            .atZone(ZoneId.systemDefault())
-            .minusDays(vaccination.reminderDaysBefore.toLong())
-            .toInstant()
-        val dueDateFormatted = vaccination.nextDueDate
-            .atZone(ZoneId.systemDefault())
-            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        ReminderNotificationHelper.scheduleVaccinationReminder(
-            context = application,
-            workName = "vaccination_reminder_${vaccination.id}",
-            petName = petName,
-            vaccineName = vaccination.title,
-            dueDate = dueDateFormatted,
-            reminderTimeMillis = reminderInstant.toEpochMilli()
-        )
+    val dueDate = vaccination.scheduledDate ?: vaccination.nextDueDate ?: run {
+        android.util.Log.d("VetBook", "scheduleReminder: skipping ${vaccination.title} — no date")
+        return
     }
+    if (!vaccination.reminderEnabled) return
+    android.util.Log.d("VetBook", "scheduleReminder: scheduling ${vaccination.title} in 10s")
+    val reminderInstant = dueDate
+        .atZone(ZoneId.systemDefault())
+        .minusDays(vaccination.reminderDaysBefore.toLong())
+        .toInstant()
+    val dueDateFormatted = dueDate
+        .atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+    ReminderNotificationHelper.scheduleVaccinationReminder(
+        context = application,
+        workName = "vaccination_reminder_${vaccination.id}",
+        petName = petName,
+        vaccineName = vaccination.title,
+        dueDate = dueDateFormatted,
+        reminderTimeMillis = reminderInstant.toEpochMilli()
+        // reminderTimeMillis = System.currentTimeMillis() + 10_000L
+    )
+}
 
     fun loadVaccinations() {
         viewModelScope.launch {
@@ -79,9 +87,9 @@ class VaccinationViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             vaccinations = vaccinations,
-                            upcoming = vaccinations.filter { v -> v.status == VaccinationStatus.SCHEDULED },
-                            overdue = vaccinations.filter { v -> v.status == VaccinationStatus.OVERDUE },
-                            completed = vaccinations.filter { v -> v.status == VaccinationStatus.COMPLETED },
+                            upcoming = vaccinations.filter { v -> v.status == VaccinationStatus.SCHEDULED || v.status == VaccinationStatus.PENDING },
+overdue = vaccinations.filter { v -> v.status == VaccinationStatus.OVERDUE },
+completed = vaccinations.filter { v -> v.status == VaccinationStatus.COMPLETED },
                             isLoading = false
                         )
                     }
@@ -191,4 +199,88 @@ class VaccinationViewModel @Inject constructor(
     fun clearMessages() {
         _uiState.update { it.copy(error = null, successMessage = null) }
     }
+
+    /**
+     * Generates WSAVA-aligned vaccine records for a pet.
+     * Stores them in uiState.generatedRecords (does NOT persist).
+     * Call confirmGeneratedSchedule() to actually save them.
+     */
+    fun generateSchedule(pet: com.example.vetbook.domain.models.Pet) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                val records = vaccinationRepository.generateSchedule(pet)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        generatedRecords = records,
+                        successMessage = if (records.isEmpty()) {
+                            "Không thể tạo lịch: cần ngày sinh của thú cưng và loài hỗ trợ (chó/mèo)"
+                        } else null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, error = "Lỗi tạo lịch: ${e.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Saves a list of vaccination records to Firestore.
+     * Called after the user confirms the review modal.
+     */
+    fun confirmGeneratedSchedule(selectedRecords: List<Vaccination>) {
+    viewModelScope.launch {
+        if (selectedRecords.isEmpty()) return@launch
+        _uiState.update { it.copy(isLoading = true, error = null) }
+
+        var saved = 0
+var failed = 0
+selectedRecords.forEach { record ->
+            val result = vaccinationRepository.addVaccination(record)
+            if (result.isSuccess) {
+                result.getOrNull()?.let { scheduleReminder(it) }
+                saved++
+            } else failed++
+        }
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                generatedRecords = emptyList(),
+                successMessage = "Đã tạo $saved lịch tiêm chủng${if (failed > 0) " ($failed thất bại)" else ""}"
+            )
+        }
+        loadVaccinations()
+    }
+}
+
+    /** Clears the pending generated records (user cancelled review). */
+    fun clearGeneratedRecords() {
+        _uiState.update { it.copy(generatedRecords = emptyList()) }
+    }
+
+    fun linkAppointment(
+    vaccinationId: String,
+    appointmentId: String,
+    scheduledDate: java.util.Date?,
+    vetName: String?,
+    clinicName: String?
+) {
+    viewModelScope.launch {
+        val record = _uiState.value.vaccinations.find { it.id == vaccinationId } ?: return@launch
+        val updated = record.copy(
+            linkedBookingId = appointmentId,
+            scheduledDate = scheduledDate?.toInstant(),
+            status = VaccinationStatus.SCHEDULED,
+            veterinarianName = vetName,
+            clinicName = clinicName,
+            updatedAt = java.time.Instant.now()
+        )
+        vaccinationRepository.updateVaccination(updated)
+        loadVaccinations()
+    }
+}
 }

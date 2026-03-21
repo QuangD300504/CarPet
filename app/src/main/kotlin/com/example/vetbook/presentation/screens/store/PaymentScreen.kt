@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
+import com.example.vetbook.presentation.components.common.VetBookSnackbar
+import com.example.vetbook.presentation.components.common.SnackbarType
 import com.example.vetbook.presentation.components.store.OrderSummaryCard
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
 import com.example.vetbook.presentation.models.OrderSummary
@@ -35,6 +37,7 @@ import com.example.vetbook.presentation.theme.TextPrimary
 import com.example.vetbook.presentation.theme.Background
 import com.example.vetbook.presentation.theme.Divider
 import com.example.vetbook.presentation.viewmodels.CheckoutViewModel
+import com.example.vetbook.presentation.components.common.VetBookSnackbarHost
 import com.example.vetbook.utils.PayosLauncher
 
 @Composable
@@ -90,19 +93,19 @@ fun PaymentScreen(
             try {
                 val url = viewModel.fetchPayosUrl()
                 if (url.isBlank()) {
-                    snackbarHostState.showSnackbar("Không thể tạo liên kết thanh toán. Vui lòng thử lại.")
+                    VetBookSnackbar.show(snackbarHostState, "Không thể tạo liên kết thanh toán. Vui lòng thử lại.", SnackbarType.Error)
                     return@launch
                 }
                 onShowPayment(url)
             } catch (e: Exception) {
                 Log.e("PayOS", "fetchPayosUrl failed: ${e.message}")
-                snackbarHostState.showSnackbar("Lỗi thanh toán: ${e.message ?: "Lỗi không xác định"}")
+                VetBookSnackbar.show(snackbarHostState, "Lỗi thanh toán: ${e.message ?: "Lỗi không xác định"}", SnackbarType.Error)
             }
         }
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { VetBookSnackbarHost(snackbarHostState) },
         containerColor = Background
     ) { scaffoldPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(scaffoldPadding)) {

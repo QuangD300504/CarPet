@@ -4,6 +4,7 @@ import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { ArrowLeft, Save, Loader2, MapPin, Building2, Phone, Search, X, Navigation } from 'lucide-react';
 import type { Clinic } from './ClinicsList';
+import { useToast } from '../../contexts/ToastContext';
 
 /** TomTom Fuzzy Search result — coords come directly in autocomplete response (no detail call needed) */
 interface TomTomResult {
@@ -125,6 +126,7 @@ export default function ClinicForm() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditing = id !== 'new' && id !== undefined;
+    const { toast } = useToast();
 
     const [loading, setLoading] = useState(isEditing);
     const [saving, setSaving] = useState(false);
@@ -151,7 +153,7 @@ export default function ClinicForm() {
             (async () => {
                 const snap = await getDoc(doc(db, 'clinics', id));
                 if (snap.exists()) setClinic({ id: snap.id, ...snap.data() } as Clinic);
-                else { alert('Clinic not found'); navigate('/vets/clinics'); }
+                else { toast('Clinic not found', 'error'); navigate('/vets/clinics'); }
                 setLoading(false);
             })();
         }
@@ -263,8 +265,8 @@ export default function ClinicForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!clinic.name || !clinic.address) { alert('Name and address are required.'); return; }
-        if (!hasPin) { alert('Please click the map or press Enter after typing an address to set the pin.'); return; }
+        if (!clinic.name || !clinic.address) { toast('Name and address are required.', 'error'); return; }
+        if (!hasPin) { toast('Please click the map or press Enter after typing an address to set the pin.', 'error'); return; }
         setSaving(true);
         try {
             const now = Date.now();
@@ -279,7 +281,7 @@ export default function ClinicForm() {
             navigate('/vets/clinics');
         } catch (err) {
             console.error(err);
-            alert('Error saving clinic.');
+            toast('Error saving clinic.', 'error');
         } finally { setSaving(false); }
     };
 

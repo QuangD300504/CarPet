@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { 
-    Users, 
-    ShoppingBag, 
-    CalendarCheck, 
-    Stethoscope, 
-    TrendingUp, 
+import {
+    ShoppingBag,
+    CalendarCheck,
+    Stethoscope,
+    TrendingUp,
     AlertCircle,
     ArrowUpRight
 } from 'lucide-react';
-import { 
-    AreaChart, 
-    Area, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
+import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
     ResponsiveContainer,
     BarChart,
     Bar,
     Cell
 } from 'recharts';
+import { Link } from 'react-router-dom';
 
 import { formatVND } from '../utils/format';
 
@@ -40,9 +40,13 @@ const StatCard = ({ title, value, subValue, icon: Icon, color, trend }: StatCard
             <div className={`p-3 rounded-xl ${color}`}>
                 <Icon className="h-6 w-6 text-white" />
             </div>
-            {trend !== undefined && trend !== 0 && (
-                <div className={`flex items-center gap-1 text-xs font-bold ${trend > 0 ? 'text-emerald-600' : 'text-red-600'} bg-slate-50 px-2 py-1 rounded-full`}>
-                    {trend > 0 ? '+' : ''}{trend}% 
+            {trend !== undefined && (
+                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${
+                    trend > 0 ? 'text-emerald-600 bg-emerald-50' :
+                    trend < 0 ? 'text-red-600 bg-red-50' :
+                    'text-slate-400 bg-slate-50'
+                }`}>
+                    {trend > 0 ? '+' : ''}{trend}%
                     <ArrowUpRight className="h-3 w-3" />
                 </div>
             )}
@@ -55,6 +59,22 @@ const StatCard = ({ title, value, subValue, icon: Icon, color, trend }: StatCard
     </div>
 );
 
+function getPeriodOrders(orders: any[], days: number): any[] {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return orders.filter(o => {
+        const createdAt = o.createdAt instanceof Timestamp
+            ? o.createdAt.toDate()
+            : o.createdAt ? new Date(o.createdAt) : null;
+        return createdAt && createdAt >= cutoff;
+    });
+}
+
+function calcTrend(current: number, previous: number): number {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+}
+
 export default function Dashboard() {
     const [stats, setStats] = useState({
         totalUsers: 0,
@@ -62,104 +82,166 @@ export default function Dashboard() {
         totalRevenue: 0,
         totalVets: 0,
         pendingAppointments: 0,
-        lowStock: 0
+        lowStock: 0,
+        revenueTrend: 0,
+        usersTrend: 0,
     });
+    const [products, setProducts] = useState<any[]>([]);
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [recentAppts, setRecentAppts] = useState<any[]>([]);
-    const [chartData, setChartData] = useState<any[]>([]); // Added for dynamic chart
-    const [healthData, setHealthData] = useState<any[]>([]); // Added for health chart
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [healthData, setHealthData] = useState<any[]>([]);
+    const [topProducts, setTopProducts] = useState<{ name: string; count: number }[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                // Fetch core data
-                const [users, orders, vets, prods, allAppts] = await Promise.all([
-                    getDocs(collection(db, 'users')),
-                    getDocs(collection(db, 'orders')),
-                    getDocs(collection(db, 'veterinarians')),
-                    getDocs(collection(db, 'products')),
-                    getDocs(collection(db, 'appointments'))
-                ]);
+        const now = new Date();
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(now);
+            d.setDate(d.getDate() - (6 - i));
+            return d;
+        });
 
-                // 1. Calculate Revenue & Group by Date (Last 7 Days)
-                let totalRevenue = 0;
-                const dailyRevenue: Record<string, number> = {};
-                const now = new Date();
-                const last7Days = Array.from({length: 7}, (_, i) => {
-                    const d = new Date();
-                    d.setDate(now.getDate() - (6 - i));
-                    return d.toLocaleDateString('en-US', { weekday: 'short' });
-                });
+        const dayLabel = (d: Date) => d.toLocaleDateString('en-US', { weekday: 'short' });
+        const initRevenue = Object.fromEntries(last7Days.map(d => [dayLabel(d), 0]));
+        const initOrders = Object.fromEntries(last7Days.map(d => [dayLabel(d), 0]));
 
-                // Initialize empty counts
-                last7Days.forEach(day => dailyRevenue[day] = 0);
+        let unsubs: (() => void)[] = [];
+        let usersData: any[] = [];
+        let ordersData: any[] = [];
+        let vetsData: any[] = [];
+        let apptsData: any[] = [];
 
-                const orderData: any[] = [];
-                orders.forEach(doc => {
-                    const data = doc.data();
-                    const amount = data.totalAmount || data.totalPrice || 0;
-                    totalRevenue += amount;
-                    orderData.push({ id: doc.id, ...data });
-
-                    const createdAt = data.createdAt?.toDate?.() || (data.createdAt ? new Date(data.createdAt) : null);
-                    if (createdAt) {
-                        const day = createdAt.toLocaleDateString('en-US', { weekday: 'short' });
-                        if (dailyRevenue[day] !== undefined) dailyRevenue[day] += amount;
-                    }
-                });
-
-                setChartData(last7Days.map(day => ({ name: day, value: dailyRevenue[day] })));
-
-                // 2. Appointment Distribution logic
-                const statusMap: Record<string, number> = {};
-                allAppts.forEach(doc => {
-                    const status = doc.data().status?.toUpperCase() || 'PENDING';
-                    statusMap[status] = (statusMap[status] || 0) + 1;
-                });
-
-                const health = Object.entries(statusMap).map(([name, value]) => ({
-                    name,
-                    value,
-                    color: name.includes('PENDING') ? '#f59e0b' : 
-                           name.includes('CONFIRMED') || name.includes('UPCOMING') ? '#0d9488' : 
-                           name.includes('DELIVERED') || name.includes('COMPLETED') ? '#10b981' : '#94a3b8'
-                })).sort((a,b) => b.value - a.value);
-
-                setHealthData(health);
-
-                // 3. Low Stock & General Stats
-                let lowStockCount = 0;
-                prods.forEach(doc => {
-                    if (doc.data().stock < 10) lowStockCount++;
-                });
-
-                setStats({
-                    totalUsers: users.size,
-                    totalOrders: orders.size,
-                    totalRevenue: totalRevenue,
-                    totalVets: vets.size,
-                    pendingAppointments: statusMap['PENDING'] || 0,
-                    lowStock: lowStockCount
-                });
-
-                // 4. Activity Lists
-                setRecentOrders(orderData.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 5));
-                
-                const topAppts = allAppts.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0))
-                    .slice(0, 5);
-                setRecentAppts(topAppts);
-
-                setLoading(false);
-            } catch (err) {
-                console.error("Dashboard error:", err);
-                setLoading(false);
+        const tick = () => {
+            if ([usersData, ordersData, vetsData, apptsData].every(d => d.length > 0)) {
+                buildDashboard(usersData, ordersData, vetsData, apptsData);
             }
         };
 
-        fetchStats();
+        const buildDashboard = (
+            users: any[],
+            orders: any[],
+            vets: any[],
+            appts: any[]
+        ) => {
+            // ── Revenue + chart ──────────────────────────────────────────────
+            let totalRevenue = 0;
+            const dailyRevenue = { ...initRevenue };
+            const dailyOrders  = { ...initOrders };
+
+            orders.forEach(o => {
+                const amount = o.totalAmount || o.totalPrice || 0;
+                totalRevenue += amount;
+                const createdAt = o.createdAt instanceof Timestamp
+                    ? o.createdAt.toDate()
+                    : o.createdAt ? new Date(o.createdAt) : null;
+                if (createdAt) {
+                    const lbl = dayLabel(createdAt);
+                    if (lbl in dailyRevenue) dailyRevenue[lbl] += amount;
+                    if (lbl in dailyOrders)  dailyOrders[lbl]++;
+                }
+            });
+
+            // ── Trends: compare last-7 vs prev-7 ─────────────────────────────
+            const last7  = getPeriodOrders(orders, 7);
+            const prev7  = getPeriodOrders(orders, 14).filter(o => !last7.includes(o));
+            const revThis  = last7.reduce((s, o) => s + (o.totalAmount || o.totalPrice || 0), 0);
+            const revPrev  = prev7.reduce((s, o) => s + (o.totalAmount || o.totalPrice || 0), 0);
+            const revenueTrend  = calcTrend(revThis, revPrev);
+            const ordersTrend    = calcTrend(last7.length, prev7.length);
+
+            // ── Appointment distribution ─────────────────────────────────────
+            const statusMap: Record<string, number> = {};
+            appts.forEach(a => {
+                const s = (a.status || 'PENDING').toUpperCase();
+                statusMap[s] = (statusMap[s] || 0) + 1;
+            });
+            const health = Object.entries(statusMap).map(([name, value]) => ({
+                name,
+                value,
+                color: name.includes('PENDING')         ? '#f59e0b' :
+                       name.includes('CONFIRMED') ||
+                       name.includes('UPCOMING')         ? '#0d9488' :
+                       name.includes('COMPLETED') ||
+                       name.includes('DELIVERED')        ? '#10b981' : '#94a3b8',
+            })).sort((a, b) => b.value - a.value);
+
+            // ── Top selling products (by order-line qty) ─────────────────────
+            const salesCount: Record<string, number> = {};
+            orders.forEach(o => {
+                (o.items || []).forEach((item: any) => {
+                    const name = item.name || item.productId || 'Unknown';
+                    salesCount[name] = (salesCount[name] || 0) + (item.quantity || 1);
+                });
+            });
+            const topProducts = Object.entries(salesCount)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5)
+                .map(([name, count]) => ({ name, count }));
+
+            // ── Low stock ────────────────────────────────────────────────────
+            const lowStock = products.filter((p: any) => p.stock < 10).length;
+            setProducts(products);
+
+            setStats({
+                totalUsers: users.length,
+                totalOrders: orders.length,
+                totalRevenue,
+                totalVets: vets.length,
+                pendingAppointments: statusMap['PENDING'] || 0,
+                lowStock,
+                revenueTrend,
+                usersTrend: ordersTrend,
+            });
+
+            setChartData(last7Days.map(d => ({
+                name: dayLabel(d),
+                revenue: dailyRevenue[dayLabel(d)],
+                orders: dailyOrders[dayLabel(d)],
+            })));
+            setHealthData(health);
+            setTopProducts(topProducts);
+            setRecentOrders([...orders]
+                .sort((a, b) => {
+                    const ta = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+                    const tb = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+                    return tb - ta;
+                })
+                .slice(0, 5));
+            setRecentAppts([...appts]
+                .sort((a, b) => {
+                    const ta = a.appointmentAt instanceof Timestamp ? a.appointmentAt.toMillis() : 0;
+                    const tb = b.appointmentAt instanceof Timestamp ? b.appointmentAt.toMillis() : 0;
+                    return tb - ta;
+                })
+                .slice(0, 5));
+            setLoading(false);
+        };
+
+        const collections = [
+            { col: 'users',          set: (d: any[]) => { usersData = d; tick(); } },
+            { col: 'orders',          set: (d: any[]) => { ordersData = d; tick(); } },
+            { col: 'veterinarians',  set: (d: any[]) => { vetsData = d; tick(); } },
+            { col: 'appointments',    set: (d: any[]) => { apptsData = d; tick(); } },
+        ];
+
+        collections.forEach(({ col, set }) => {
+            const q = query(collection(db, col), orderBy('createdAt', 'desc'));
+            const unsub = onSnapshot(q, snap => {
+                set(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            }, err => console.error(`Dashboard ${col} listener error:`, err));
+            unsubs.push(unsub);
+        });
+
+        // Products tracked separately via state (used in JSX inventory alerts)
+        const unsubProducts = onSnapshot(
+            query(collection(db, 'products'), orderBy('createdAt', 'desc')),
+            snap => setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+            err => console.error('Dashboard products listener error:', err)
+        );
+        unsubs.push(unsubProducts);
+
+        return () => unsubs.forEach(u => u());
     }, []);
 
     if (loading) {
@@ -185,75 +267,69 @@ export default function Dashboard() {
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard 
-                    title="Gross Revenue" 
-                    value={formatVND(stats.totalRevenue)} 
-                    subValue="Total transaction volume"
-                    icon={TrendingUp} 
+                <StatCard
+                    title="Gross Revenue"
+                    value={formatVND(stats.totalRevenue)}
+                    subValue="Last 7 days vs prior 7 days"
+                    icon={TrendingUp}
                     color="bg-primary-600"
-                    trend={stats.totalRevenue > 0 ? 12.5 : 0}
+                    trend={stats.revenueTrend}
                 />
-                <StatCard 
-                    title="Active Pet Owners" 
-                    value={stats.totalUsers} 
-                    subValue="Users on the platform"
-                    icon={Users} 
+                <StatCard
+                    title="Total Orders"
+                    value={stats.totalOrders}
+                    subValue="Across all time"
+                    icon={ShoppingBag}
                     color="bg-violet-600"
-                    trend={stats.totalUsers > 0 ? 3.2 : 0}
+                    trend={stats.usersTrend}
                 />
-                <StatCard 
-                    title="Clinic Network" 
-                    value={stats.totalVets} 
+                <StatCard
+                    title="Clinic Network"
+                    value={stats.totalVets}
                     subValue="Certified veterinarians"
-                    icon={Stethoscope} 
+                    icon={Stethoscope}
                     color="bg-teal-600"
                 />
-                <StatCard 
-                    title="Pending Tasks" 
-                    value={stats.pendingAppointments} 
+                <StatCard
+                    title="Pending Tasks"
+                    value={stats.pendingAppointments}
                     subValue="New appointments to review"
-                    icon={AlertCircle} 
+                    icon={AlertCircle}
                     color="bg-amber-500"
                 />
             </div>
 
-            {/* Charts Section */}
+            {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Graph */}
                 <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
                     <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 border-l-4 border-primary-600 pl-3">Revenue Projection</h2>
-                            <p className="text-sm text-slate-400 mt-1">Comparing daily performance trends</p>
+                            <h2 className="text-xl font-bold text-slate-900 border-l-4 border-primary-600 pl-3">Revenue &amp; Orders</h2>
+                            <p className="text-sm text-slate-400 mt-1">Last 7 days</p>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-lg text-xs font-semibold text-slate-500">
-                            Last 7 Days
+                        <div className="flex items-center gap-4 text-xs font-semibold">
+                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-primary-500 rounded"></span> Revenue</span>
+                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 bg-violet-400 rounded-sm"></span> Orders</span>
                         </div>
                     </div>
                     <div className="h-72 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData}>
                                 <defs>
-                                    <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.1}/>
+                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15}/>
                                         <stop offset="95%" stopColor="#14b8a6" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
                                 <YAxis hide domain={['auto', 'auto']} />
-                                <Tooltip 
+                                <Tooltip
                                     contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
                                     itemStyle={{color: '#0d9488', fontWeight: 'bold'}}
+                                    formatter={(value) => [formatVND(value as number), 'Revenue']}
                                 />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey="value" 
-                                    stroke="#14b8a6" 
-                                    strokeWidth={3}
-                                    fillOpacity={1} 
-                                    fill="url(#colorVal)" 
-                                />
+                                <Area type="monotone" dataKey="revenue" stroke="#14b8a6" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -265,11 +341,8 @@ export default function Dashboard() {
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={healthData} layout="vertical" barSize={32}>
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 10}} width={100} />
-                                <Tooltip 
-                                    cursor={{fill: 'transparent'}}
-                                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                                />
+                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 10}} width={110} />
+                                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
                                 <Bar dataKey="value" radius={[0, 8, 8, 0]}>
                                     {healthData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -281,79 +354,99 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Analysis Row 2 */}
+            {/* Bottom Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Product Sales Analysis */}
+                {/* Top Selling Products */}
                 <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-                    <h2 className="text-xl font-bold text-slate-900 border-l-4 border-violet-500 pl-3 mb-8">Top Selling Products</h2>
-                    <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={recentOrders.slice(0,5).map(o => ({ name: `Order ${o.id.slice(-4)}`, value: o.totalAmount || o.totalPrice }))}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
-                                <YAxis hide />
-                                <Tooltip contentStyle={{borderRadius: '12px', border: 'none'}} />
-                                <Bar dataKey="value" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 border-l-4 border-violet-500 pl-3 mb-6">Top Selling Products</h2>
+                    {topProducts.length === 0 ? (
+                        <p className="text-slate-400 text-sm text-center py-8">No order data yet.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {topProducts.map((p, i) => {
+                                const pct = (p.count / topProducts[0].count) * 100;
+                                return (
+                                <div key={p.name} className="flex items-center gap-3">
+                                    <span className="w-5 text-xs font-bold text-slate-400">#{i + 1}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-slate-800 truncate">{p.name}</p>
+                                        <div className="w-full bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+                                            <div className="bg-violet-500 h-full rounded-full transition-all"
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-600">{p.count} sold</span>
+                                </div>
+                            );
+                        })}
+                        </div>
+                    )}
                 </div>
 
-                {/* Growth Stats */}
+                {/* Inventory Alerts */}
                 <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-                    <h2 className="text-xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-3 mb-8">Clinic Network Performance</h2>
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-end">
-                            <div>
-                                <p className="text-sm text-slate-500">Service Coverage</p>
-                                <p className="text-3xl font-black text-slate-800">98.2%</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg">+4.1% MoM</p>
-                            </div>
-                        </div>
-                        <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                            <div className="bg-emerald-500 h-full w-[92%]" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                            <div>
-                                <p className="text-[10px] text-slate-400 uppercase font-black">Active Vets</p>
-                                <p className="text-lg font-bold text-slate-700">{stats.totalVets}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] text-slate-400 uppercase font-black">Avg Rating</p>
-                                <p className="text-lg font-bold text-slate-700">4.9/5.0</p>
-                            </div>
-                        </div>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold text-slate-900 border-l-4 border-red-400 pl-3">Inventory Alerts</h2>
+                        <Link to="/store" className="text-xs text-blue-600 font-bold hover:underline">Manage Products</Link>
                     </div>
+                    {stats.lowStock === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                            <AlertCircle className="h-8 w-8 mb-2 text-emerald-400" />
+                            <p className="text-sm font-medium">All products are well-stocked</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {products
+                                .filter((p) => p.stock < 10)
+                                .sort((a, b) => a.stock - b.stock)
+                                .slice(0, 6)
+                                .map((p: any) => (
+                                    <div key={p.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                                        <div className="flex items-center gap-3">
+                                            {p.imageUrl
+                                                ? <img src={p.imageUrl} alt={p.name} className="h-8 w-8 rounded object-cover" />
+                                                : <div className="h-8 w-8 bg-slate-100 rounded flex items-center justify-center"><ShoppingBag className="h-4 w-4 text-slate-400" /></div>
+                                            }
+                                            <span className="text-sm font-medium text-slate-700 truncate max-w-[180px]">{p.name}</span>
+                                        </div>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                            p.stock === 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                        }`}>
+                                            {p.stock === 0 ? 'OUT OF STOCK' : `${p.stock} left`}
+                                        </span>
+                                    </div>
+                                ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Bottom Row Activity */}
+            {/* Activity Feed */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* Recent Orders */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                         <h3 className="font-bold text-slate-900">Recent Store Activity</h3>
-                        <button className="text-xs text-blue-600 font-bold hover:underline">View All Orders</button>
+                        <Link to="/store/orders" className="text-xs text-blue-600 font-bold hover:underline">View All Orders</Link>
                     </div>
-                    <div className="divide-y divide-slate-50 italic">
+                    <div className="divide-y divide-slate-50">
                         {recentOrders.length === 0 ? (
                             <p className="p-8 text-center text-slate-400">No recent orders found</p>
                         ) : recentOrders.map((order) => (
                             <div key={order.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
                                 <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-400">
-                                        <ShoppingBag className="h-5 w-5" />
+                                    <div className="h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center">
+                                        <ShoppingBag className="h-5 w-5 text-slate-400" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900 leading-none mb-1">Order #{order.id.slice(-6)}</p>
-                                        <p className="text-xs text-slate-500">{order.status || 'Pending'}</p>
+                                        <p className="text-sm font-bold text-slate-900">Order #{order.id.slice(-6)}</p>
+                                        <p className="text-xs text-slate-500 capitalize">{order.status || 'Pending'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm font-extrabold text-slate-900">{formatVND(order.totalAmount || 0)}</p>
-                                    <p className="text-[10px] text-slate-400 tracking-wider">SECURED PAYMENT</p>
+                                    <p className="text-[10px] text-slate-400">SECURED PAYMENT</p>
                                 </div>
                             </div>
                         ))}
@@ -361,41 +454,43 @@ export default function Dashboard() {
                 </div>
 
                 {/* Recent Appointments */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-sm">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                         <h3 className="font-bold text-slate-900">Clinic Schedule Spotlight</h3>
-                        <button className="text-xs text-blue-600 font-bold hover:underline">Full Calendar</button>
+                        <Link to="/vets/appointments" className="text-xs text-blue-600 font-bold hover:underline">Full Calendar</Link>
                     </div>
                     <div className="divide-y divide-slate-50">
                         {recentAppts.length === 0 ? (
-                            <p className="p-8 text-center text-slate-400 italic">No appointments booked today</p>
+                            <p className="p-8 text-center text-slate-400">No appointments booked</p>
                         ) : recentAppts.map((appt) => {
-                            const date = appt.appointmentAt?.toDate ? appt.appointmentAt.toDate().toLocaleDateString('vi-VN') : 'Unknown Date';
-                            const time = appt.appointmentAt?.toDate ? appt.appointmentAt.toDate().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time';
-                            const statusColor = appt.status === 'confirmed' || appt.status === 'delivered' || appt.status === 'UPCOMING'
-                                ? 'bg-emerald-100 text-emerald-700' 
-                                : appt.status === 'PENDING_PAYMENT' || appt.status === 'pending'
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-slate-100 text-slate-700';
-                            
+                            const date = appt.appointmentAt instanceof Timestamp
+                                ? appt.appointmentAt.toDate()
+                                : appt.appointmentAt ? new Date(appt.appointmentAt) : null;
+                            const statusColor =
+                                appt.status === 'confirmed' || appt.status === 'UPCOMING'  ? 'bg-emerald-100 text-emerald-700' :
+                                appt.status === 'PENDING_PAYMENT' || appt.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                'bg-slate-100 text-slate-700';
+
                             return (
                                 <div key={appt.id} className="p-6 flex items-center justify-between hover:bg-emerald-50/30 transition-colors">
                                     <div className="flex items-center gap-4">
-                                        <div className="h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600 font-bold">
-                                            <CalendarCheck className="h-5 w-5" />
+                                        <div className="h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center">
+                                            <CalendarCheck className="h-5 w-5 text-primary-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-slate-900 leading-none mb-1">{date}</p>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest">{time}</p>
+                                            <p className="text-sm font-bold text-slate-900">
+                                                {date ? date.toLocaleDateString('vi-VN') : 'Unknown Date'}
+                                            </p>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest">
+                                                {date ? date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div>
-                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${statusColor}`}>
-                                            {appt.status?.replace('_', ' ') || 'UNKNOWN'}
-                                        </span>
-                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${statusColor}`}>
+                                        {(appt.status || 'UNKNOWN').replace('_', ' ')}
+                                    </span>
                                 </div>
-                            )
+                            );
                         })}
                     </div>
                 </div>

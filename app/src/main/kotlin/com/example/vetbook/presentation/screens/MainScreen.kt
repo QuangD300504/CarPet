@@ -280,6 +280,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val storeViewModel: StoreViewModel = hiltViewModel()
     val sharedNotifViewModel: SharedNotificationViewModel = hiltViewModel()
     val veterinariansViewModel: VeterinariansViewModel = hiltViewModel()
+    val vaccinationViewModel: VaccinationViewModel = hiltViewModel()
+    var pendingVaccineId by remember { mutableStateOf<String?>(null) }
     val categories by homeViewModel.categories.collectAsState()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -301,7 +303,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var showStoreLocationDropdown by remember { mutableStateOf(false) }
 
     Scaffold(
-        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+        snackbarHost = { com.example.vetbook.presentation.components.common.VetBookSnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
@@ -311,8 +313,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         currentLocation = "Ho Chi Minh City",
                         onLocationClick = { 
                             // In a real app, this would open a Google Maps / TomTom picker
-                            // For now, we'll toggle a mock toast or dialog
-                            android.widget.Toast.makeText(context, "Location picker coming soon!", android.widget.Toast.LENGTH_SHORT).show()
+                            // For now, we'll show a snackbar
+                            scope.launch {
+                                com.example.vetbook.presentation.components.common.VetBookSnackbar.show(
+                                    snackbarHostState,
+                                    "Bộ chọn vị trí đang được phát triển",
+                                    com.example.vetbook.presentation.components.common.SnackbarType.Info
+                                )
+                            }
                         },
                         onCartClick = {
                             bottomNavController.navigate(Routes.Store.route)
@@ -851,8 +859,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             composable(
                 route = Routes.AddPet.route,
                 arguments = listOf(navArgument("petId") {
-                    type = NavType.StringType
-                    nullable = true
+    type = NavType.StringType
+    nullable = true
+    defaultValue = null
                 }),
                 enterTransition = { getEnterTransition() },
                 exitTransition = { getExitTransition() },
@@ -895,8 +904,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                             snackbarHostState.showSnackbar("Đã xóa thú cưng thành công")
                         }
                     },
-                    onVaccinationsViewAll = { id, name ->
-                        bottomNavController.navigate(Routes.VaccinationList.createRoute(id, name))
+                    onVaccinationsViewAll = { id, name, petType, birthDate ->
+                        bottomNavController.navigate(Routes.VaccinationList.createRoute(id, name, petType, birthDate?.toEpochMilli()))
                     },
                     onVaccinationClick = { vaccinationId ->
                         bottomNavController.navigate(Routes.VaccinationDetail.createRoute(vaccinationId))
@@ -907,9 +916,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             composable(
                 route = Routes.VaccinationList.route,
                 arguments = listOf(
-                    navArgument("petId") { type = NavType.StringType },
-                    navArgument("petName") { type = NavType.StringType }
-                ),
+    navArgument("petId") { type = NavType.StringType },
+    navArgument("petName") { type = NavType.StringType },
+    navArgument("petType") { type = NavType.StringType; defaultValue = "" },
+    navArgument("birthDate") { type = NavType.StringType; defaultValue = "" }
+),
                 enterTransition = { getEnterTransition() },
                 exitTransition = { getExitTransition() },
                 popEnterTransition = { getPopEnterTransition() },
@@ -917,11 +928,23 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) { backStackEntry ->
                 val petId = backStackEntry.arguments?.getString("petId") ?: ""
                 val petName = backStackEntry.arguments?.getString("petName") ?: ""
+                val petType = backStackEntry.arguments?.getString("petType") ?: ""
+                val birthDateStr = backStackEntry.arguments?.getString("birthDate") ?: ""
+                val birthDate: java.time.Instant? = if (birthDateStr.isNotBlank()) {
+                    birthDateStr.toLongOrNull()?.let { java.time.Instant.ofEpochMilli(it) }
+                } else null
+//                var pendingVaccineId by remember { mutableStateOf<String?>(null) }
                 val viewModel: com.example.vetbook.presentation.viewmodels.VaccinationViewModel = hiltViewModel()
                 com.example.vetbook.presentation.screens.pets.VaccinationListScreen(
                     petId = petId,
                     petName = petName,
+                    petType = petType,
+                    birthDate = birthDate,
                     viewModel = viewModel,
+                    onBookAppointment = { vaccinationId ->
+    pendingVaccineId = vaccinationId
+    bottomNavController.navigate(Routes.Veterinarians.route)
+},
                     onBackClick = { bottomNavController.popBackStack() },
                     onAddClick = {
                         bottomNavController.navigate(Routes.AddVaccination.createRoute(petId, petName))
@@ -970,9 +993,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     onVetClick = { doctorId ->
                         bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
                     },
-                    onBookAppointment = { doctorId ->
-                        bottomNavController.navigate(Routes.BookAppointment.createRoute(doctorId))
-                    }
+                    onBookAppointment = { vaccinationId, doctorId ->
+    pendingVaccineId = vaccinationId
+    if (doctorId.isBlank()) {
+        bottomNavController.navigate(Routes.Veterinarians.route)
+    } else {
+        bottomNavController.navigate(Routes.BookAppointment.createRoute(doctorId))
+    }
+}
                 )
             }
 
@@ -1072,13 +1100,25 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     onShowPayment = { url ->
                         bottomNavController.navigate(Routes.InAppPayment.createRoute(url))
                     },
-                    onPaymentFinished = { isSuccess ->
-                        bottomNavController.navigate(
-                            Routes.PaymentResult.createRoute(isSuccess, source = "vet")
-                        ) {
-                            popUpTo(Routes.Home.route) { inclusive = false }
-                        }
-                    }
+                    onPaymentFinished = { isSuccess, appointmentId, vetName, appointmentAt ->
+    if (isSuccess) {
+        pendingVaccineId?.let { vaccId ->
+            vaccinationViewModel.linkAppointment(
+                vaccinationId = vaccId,
+                appointmentId = appointmentId,
+                scheduledDate = appointmentAt,
+                vetName = vetName,
+                clinicName = null
+            )
+        }
+    }
+    pendingVaccineId = null
+    bottomNavController.navigate(
+        Routes.PaymentResult.createRoute(isSuccess, source = "vet")
+    ) {
+        popUpTo(Routes.Home.route) { inclusive = false }
+    }
+}
                 )
             }
 

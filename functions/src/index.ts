@@ -332,6 +332,8 @@ export const payosWebhook = onRequest(
   }
 );
 
+// ─── Cleanup ─────────────────────────────────────────────────────────────────
+
 /**
  * Cleans up expired doctorSlotLocks — locks that were created but never
  * had their payment confirmed within the 15-minute TTL window.

@@ -183,6 +183,7 @@ private fun PetDto.toMap(): Map<String, Any?> {
         "note" to note,
         "createdAt" to (createdAt ?: System.currentTimeMillis()),
         "updatedAt" to (updatedAt ?: System.currentTimeMillis()),
+        "birthDate" to birthDate,
         "isForAdoption" to isForAdoption
     )
 }

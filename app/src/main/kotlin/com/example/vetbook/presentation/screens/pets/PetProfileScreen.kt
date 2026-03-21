@@ -27,6 +27,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import coil3.compose.AsyncImage
 import com.example.vetbook.domain.models.Pet
 import com.example.vetbook.presentation.viewmodels.PetProfileViewModel
+import java.time.Instant
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.theme.TextPrimary
@@ -41,7 +42,7 @@ fun PetProfileScreen(
     onBackClick: () -> Unit = {},
     onEditClick: (String) -> Unit = {},
     onDeleted: () -> Unit = {},
-    onVaccinationsViewAll: (petId: String, petName: String) -> Unit = { _, _ -> },
+    onVaccinationsViewAll: (petId: String, petName: String, petType: String, birthDate: Instant?) -> Unit = { _, _, _, _ -> },
     onVaccinationClick: (vaccinationId: String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -124,7 +125,7 @@ private fun PetProfileContent(
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onVaccinationsViewAll: (String, String) -> Unit,
+    onVaccinationsViewAll: (String, String, String, Instant?) -> Unit,
     onVaccinationClick: (String) -> Unit
 ) {
     Column(
@@ -249,7 +250,7 @@ private fun PetProfileContent(
                 }
 
                 // Always show vaccination section so user can navigate to vaccination list
-                Section(title = "Lịch sử tiêm chủng") {
+                Section(title = "Lịch tiêm chủng") {
                     if (pet.vaccinations.isEmpty()) {
                         Text(
                             text = "Chưa có lịch tiêm chủng",
@@ -267,7 +268,7 @@ private fun PetProfileContent(
                     }
                     Spacer(Modifier.height(4.dp))
                     TextButton(
-                        onClick = { onVaccinationsViewAll(pet.id, pet.name) },
+                        onClick = { onVaccinationsViewAll(pet.id, pet.name, pet.type, pet.birthDate) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(

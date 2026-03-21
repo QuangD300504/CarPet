@@ -1,5 +1,7 @@
 package com.example.vetbook.domain.models
 
+import java.time.Instant
+
 /**
  * Represents a pet in the VetBook application (either owned by a user or available for adoption).
  */
@@ -16,5 +18,7 @@ data class Pet(
     val parasiticStatus: String = "", // e.g., "Healthy"
     val note: String = "",
     val realImgUrl: String? = null,
+    /** Used for WSAVA-aligned vaccine schedule generation. Null = age unknown. */
+    val birthDate: Instant? = null,
     val vaccinations: List<Vaccination> = emptyList()
 )

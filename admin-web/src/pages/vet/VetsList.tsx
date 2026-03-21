@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useEffect, useState, useMemo } from 'react';
+import { collection, onSnapshot, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { Plus, Edit2, Trash2, User as UserIcon, Star } from 'lucide-react';
+import { Plus, Edit2, Trash2, User as UserIcon, Star, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Pagination from '../../components/Common/Pagination';
 import { usePagination } from '../../hooks/usePagination';
@@ -28,52 +28,56 @@ export default function VetsList() {
     const [vets, setVets] = useState<Vet[]>([]);
     const [clinicsMap, setClinicsMap] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
-    const { 
-        currentPage, 
-        totalPages, 
-        paginatedItems, 
-        handlePageChange, 
-        totalItems, 
-        itemsPerPage 
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const {
+        currentPage,
+        totalPages,
+        paginatedItems,
+        handlePageChange,
+        totalItems,
+        itemsPerPage
     } = usePagination(vets, 8);
 
-    const fetchData = async () => {
-        try {
-            const [vetsSnap, clinicsSnap] = await Promise.all([
-                getDocs(collection(db, 'veterinarians')),
-                getDocs(collection(db, 'clinics'))
-            ]);
-
-            const cmap: Record<string, string> = {};
-            clinicsSnap.forEach(doc => {
-                cmap[doc.id] = doc.data().name;
-            });
-            setClinicsMap(cmap);
-
-            const data: Vet[] = [];
-            vetsSnap.forEach((doc) => {
-                data.push({ id: doc.id, ...doc.data() } as Vet);
-            });
-            setVets(data);
-        } catch (error) {
-            console.error("Error fetching data: ", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchData();
+        const unsubClinics = onSnapshot(collection(db, 'clinics'), snap => {
+            const cmap: Record<string, string> = {};
+            snap.forEach(d => { cmap[d.id] = d.data().name; });
+            setClinicsMap(cmap);
+        }, err => console.error('Clinics listener error:', err));
+
+        const q = query(collection(db, 'veterinarians'), orderBy('name', 'asc'));
+        const unsubVets = onSnapshot(q,
+            snap => {
+                setVets(snap.docs.map(d => ({ id: d.id, ...d.data() } as Vet)));
+                setLoading(false);
+            },
+            err => { console.error('Vets listener error:', err); setLoading(false); }
+        );
+
+        return () => { unsubVets(); unsubClinics(); };
     }, []);
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return vets.filter(v => {
+            const matchSearch = !q ||
+                v.name.toLowerCase().includes(q) ||
+                v.specialty?.toLowerCase().includes(q) ||
+                v.bio?.toLowerCase().includes(q);
+            const matchStatus = !statusFilter ||
+                (statusFilter === 'active' && v.isActive) ||
+                (statusFilter === 'hidden' && !v.isActive);
+            return matchSearch && matchStatus;
+        });
+    }, [vets, search, statusFilter]);
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Delete this veterinarian profile?")) {
             try {
                 await deleteDoc(doc(db, 'veterinarians', id));
-                setVets(vets.filter(v => v.id !== id));
             } catch (error) {
                 console.error("Error deleting vet", error);
-                alert("Failed to delete veterinarian.");
             }
         }
     };
@@ -84,6 +88,35 @@ export default function VetsList() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-slate-800">Veterinarians</h1>
+                <span className="text-sm text-slate-500">{filtered.length} vets</span>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+                <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Search by name, specialty, or bio..."
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); handlePageChange(1); }}
+                        className="w-full pl-9 pr-8 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                    />
+                    {search && (
+                        <button type="button" title="Clear search" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <X className="h-3.5 w-3.5 text-slate-400 hover:text-slate-600" />
+                        </button>
+                    )}
+                </div>
+                <select
+                    title="Filter by status"
+                    value={statusFilter}
+                    onChange={e => { setStatusFilter(e.target.value); handlePageChange(1); }}
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
+                >
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="hidden">Hidden</option>
+                </select>
                 <Link to="/vets/new" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                     <Plus className="h-5 w-5" />
                     Add Veterinarian
@@ -95,7 +128,7 @@ export default function VetsList() {
                     <thead>
                         <tr className="bg-slate-50 border-b border-slate-200">
                             <th className="px-6 py-4 font-semibold text-slate-600">Profile</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600">Specialty & Exp.</th>
+                            <th className="px-6 py-4 font-semibold text-slate-600">Specialty &amp; Exp.</th>
                             <th className="px-6 py-4 font-semibold text-slate-600">Clinic</th>
                             <th className="px-6 py-4 font-semibold text-slate-600">Rating</th>
                             <th className="px-6 py-4 font-semibold text-slate-600">Status</th>
@@ -103,14 +136,13 @@ export default function VetsList() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {vets.length === 0 && (
+                        {paginatedItems.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                                    No veterinarians found. Add a new one to get started.
+                                    {search || statusFilter ? 'No veterinarians match your filters.' : 'No veterinarians found. Add a new one to get started.'}
                                 </td>
                             </tr>
-                        )}
-                        {paginatedItems.map((vet) => (
+                        ) : paginatedItems.map((vet) => (
                             <tr key={vet.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-4">
@@ -159,7 +191,7 @@ export default function VetsList() {
                                         <Link to={`/vets/edit/${vet.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                             <Edit2 className="h-5 w-5" />
                                         </Link>
-                                        <button onClick={() => handleDelete(vet.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                        <button type="button" title="Delete veterinarian" onClick={() => handleDelete(vet.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                             <Trash2 className="h-5 w-5" />
                                         </button>
                                     </div>
@@ -169,7 +201,7 @@ export default function VetsList() {
                     </tbody>
                 </table>
             </div>
-            <Pagination 
+            <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}

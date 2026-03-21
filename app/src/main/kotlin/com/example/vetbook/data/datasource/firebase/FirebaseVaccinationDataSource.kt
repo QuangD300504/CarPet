@@ -71,14 +71,14 @@ class FirebaseVaccinationDataSource(
                 return Result.failure(Exception("Pet ID is required"))
             }
 
-            val petDoc = firestore.collection(PETS_COLLECTION)
-                .document(vaccination.petId)
-                .get()
-                .await()
+            // val petDoc = firestore.collection(PETS_COLLECTION)
+            //     .document(vaccination.petId)
+            //     .get()
+            //     .await()
 
-            if (!petDoc.exists()) {
-                return Result.failure(Exception("Pet not found: ${vaccination.petId}"))
-            }
+            // if (!petDoc.exists()) {
+            //     return Result.failure(Exception("Pet not found: ${vaccination.petId}"))
+            // }
 
             if (vaccination.veterinarianId != null && vaccination.veterinarianId.isNotBlank()) {
                 val vetDoc = firestore.collection(VETERINARIANS_COLLECTION)

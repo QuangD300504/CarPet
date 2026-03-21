@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +24,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.domain.models.VaccinationType
 import com.example.vetbook.presentation.components.CustomTextField
+import com.example.vetbook.presentation.components.common.SnackbarType
+import com.example.vetbook.presentation.components.common.VetBookSnackbar
+import com.example.vetbook.presentation.components.common.VetBookSnackbarHost
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthMuted
 import com.example.vetbook.presentation.theme.HealthSurface
@@ -52,10 +56,15 @@ fun AddVaccinationScreen(
     var showVetDropdown by remember { mutableStateOf(false) }
 
     val types = listOf(
-        VaccinationType.CORE to "Cốt lõi (Core)",
-        VaccinationType.NON_CORE to "Khuyến nghị (Non-Core)",
-        VaccinationType.OPTIONAL to "Tùy chọn (Optional)"
+        VaccinationType.CORE            to "Cốt lõi (Core)",
+        VaccinationType.REGIONAL        to "Vùng (Regional)",
+        VaccinationType.LIFESTYLE       to "Lối sống (Lifestyle)",
+        VaccinationType.NOT_RECOMMENDED to "Không khuyến khích",
+        VaccinationType.CUSTOM         to "Tùy chỉnh"
     )
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Date picker dialog
     if (showDatePicker) {
@@ -130,13 +139,16 @@ fun AddVaccinationScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Background)
-    ) {
-        // Top bar
-        TopAppBar(
+    Box(modifier = Modifier.fillMaxSize()) {
+        VetBookSnackbarHost(snackbarHostState, Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Background)
+        ) {
+            // Top bar
+            TopAppBar(
             title = {
                 Text("Thêm lịch tiêm chủng", fontWeight = FontWeight.Bold)
             },
@@ -446,7 +458,15 @@ fun AddVaccinationScreen(
 
             // Bottom Save button
             Button(
-                onClick = { viewModel.save(onSuccess = onSaved) },
+                onClick = {
+                    viewModel.save(onSuccess = {
+                        scope.launch {
+                            VetBookSnackbar.show(snackbarHostState, "Đã lưu lịch tiêm chủng!", SnackbarType.Success)
+                            kotlinx.coroutines.delay(600)
+                            onSaved()
+                        }
+                    })
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
@@ -477,5 +497,6 @@ fun AddVaccinationScreen(
                 }
             }
         }
+    }
     }
 }

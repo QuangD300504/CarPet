@@ -1,22 +1,27 @@
 package com.example.vetbook.presentation.viewmodels
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vetbook.data.datasource.RemotePetDataSource
 import com.example.vetbook.data.mappers.toDomain
 import com.example.vetbook.domain.repository.AuthRepository
 import com.example.vetbook.domain.repository.BookingRepository
-import kotlinx.coroutines.flow.update
+import com.example.vetbook.notification.ReminderNotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class BookAppointmentViewModel @Inject constructor(
+    private val application: Application,
     private val bookingRepository: BookingRepository,
     private val petDataSource: RemotePetDataSource,
     private val authRepository: AuthRepository
@@ -33,6 +38,12 @@ class BookAppointmentViewModel @Inject constructor(
         private set
     var pendingLockId: String? = null
         private set
+    var pendingVetName: String? = null
+    private set
+var pendingPetName: String? = null
+    private set
+var pendingAppointmentAt: Date? = null
+    private set
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -77,15 +88,14 @@ class BookAppointmentViewModel @Inject constructor(
         }
     }
 
-    /** Load which slots are already locked for [veterinarianId] on the given date. */
     fun loadBookedSlots(veterinarianId: String, year: Int, month: Int, day: Int) {
         viewModelScope.launch {
             try {
                 val locked = bookingRepository.getLockedSlots(
                     veterinarianId = veterinarianId,
-                    year  = year,
+                    year = year,
                     month = month,
-                    day   = day
+                    day = day
                 )
                 _bookedSlots.value = locked
             } catch (e: Exception) {
@@ -99,9 +109,14 @@ class BookAppointmentViewModel @Inject constructor(
         appointmentAt: Date,
         totalPrice: Double,
         durationMinutes: Int = 30,
-        notes: String? = null
+        notes: String? = null,
+        vetName: String = "Bác sĩ",
+        petName: String = "Thú cưng"
     ) {
         _uiState.value = UiState.Loading
+        pendingAppointmentAt = appointmentAt
+        pendingVetName = vetName
+        pendingPetName = petName
         viewModelScope.launch {
             try {
                 val created = bookingRepository.createAppointmentWithSlotLock(
@@ -127,7 +142,6 @@ class BookAppointmentViewModel @Inject constructor(
         }
     }
 
-
     fun onPaymentSuccess(appointmentId: String) {
         viewModelScope.launch {
             try {
@@ -135,8 +149,28 @@ class BookAppointmentViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Ignore failure
             }
+
+            val apptAt = pendingAppointmentAt
+            val vetName = pendingVetName ?: "Bác sĩ"
+            val petName = pendingPetName ?: "Thú cưng"
+            if (apptAt != null) {
+                val reminderMillis = apptAt.time - (24 * 60 * 60 * 1000L) // 1 day before
+                val apptFormatted = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(apptAt)
+                ReminderNotificationHelper.scheduleAppointmentReminder(
+                    context = application,
+                    workName = "appointment_reminder_$appointmentId",
+                    vetName = vetName,
+                    petName = petName,
+                    appointmentTime = apptFormatted,
+                    reminderTimeMillis = reminderMillis
+                )
+            }
+
             pendingAppointmentId = null
             pendingLockId = null
+            pendingAppointmentAt = null
+            pendingVetName = null
+            pendingPetName = null
         }
     }
 

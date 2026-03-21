@@ -18,6 +18,7 @@ data class PetDto(
     val weight: String = "",
     val parasiticStatus: String = "",
     val note: String = "",
+    val birthDate: Long? = null, // epoch millis — used for vaccine schedule generation
     val createdAt: Long? = null,
     val updatedAt: Long? = null,
     val isForAdoption: Boolean = false,

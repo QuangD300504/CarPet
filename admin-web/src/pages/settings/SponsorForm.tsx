@@ -5,6 +5,7 @@ import { db } from '../../firebase/config';
 import { uploadToCloudinary } from '../../utils/cloudinary';
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from 'lucide-react';
 import type { Sponsor } from './SponsorsList';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function SponsorForm() {
     const { id } = useParams<{ id: string }>();
@@ -12,6 +13,7 @@ export default function SponsorForm() {
     const isEditing = id !== 'new' && id !== undefined;
 
     const [loading, setLoading] = useState(isEditing);
+    const { toast } = useToast();
     const [saving, setSaving] = useState(false);
     const [sponsor, setSponsor] = useState<Partial<Sponsor>>({
         title: '',
@@ -34,7 +36,7 @@ export default function SponsorForm() {
                     setSponsor(docSnap.data() as Sponsor);
                     setPreviewUrl(docSnap.data().imageUrl);
                 } else {
-                    alert("Sponsor not found");
+                    toast("Sponsor not found", "error");
                     navigate('/settings/sponsors');
                 }
                 setLoading(false);
@@ -77,7 +79,7 @@ export default function SponsorForm() {
             navigate('/settings/sponsors');
         } catch (error) {
             console.error("Error saving sponsor: ", error);
-            alert("Error saving sponsor.");
+            toast("Failed to save sponsor.", "error");
         } finally {
             setSaving(false);
         }
@@ -89,7 +91,7 @@ export default function SponsorForm() {
         <div className="max-w-3xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate('/settings/sponsors')} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                    <button type="button" title="Go back" onClick={() => navigate('/settings/sponsors')} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                         <ArrowLeft className="h-6 w-6" />
                     </button>
                     <h1 className="text-2xl font-bold text-slate-800">
@@ -97,6 +99,7 @@ export default function SponsorForm() {
                     </h1>
                 </div>
                 <button
+                    type="button"
                     onClick={handleSubmit}
                     disabled={saving}
                     className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
@@ -121,7 +124,7 @@ export default function SponsorForm() {
                                         <p className="mb-2 text-sm text-slate-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                                     </div>
                                 )}
-                                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                                <input type="file" title="Upload sponsor image" className="hidden" accept="image/*" onChange={handleImageChange} />
                             </label>
                         </div>
 

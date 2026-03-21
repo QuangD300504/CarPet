@@ -29,9 +29,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
 import coil3.compose.AsyncImage
 import com.example.vetbook.presentation.components.CustomTextField
 import com.example.vetbook.presentation.components.topbars.SimpleTopBar
+import com.example.vetbook.presentation.components.pets.VaccineReviewModal
 import com.example.vetbook.utils.compressImageForAvatar
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.TextPrimary
@@ -49,12 +53,61 @@ fun AddPetScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
+    var showDatePicker by remember { mutableStateOf(false) }
+val datePickerState = rememberDatePickerState(
+    initialSelectedDateMillis = uiState.birthDateMillis
+)
+
+if (showDatePicker) {
+    DatePickerDialog(
+        onDismissRequest = { showDatePicker = false },
+        confirmButton = {
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { viewModel.setBirthDate(it) }
+                showDatePicker = false
+            }) { Text("Xác nhận", color = HealthPrimary) }
+        },
+        dismissButton = {
+            TextButton(onClick = { showDatePicker = false }) {
+                Text("Hủy", color = HealthMuted)
+            }
+        }
+    ) { DatePicker(state = datePickerState) }
+}
+    // Show vaccine review modal after saving a new pet
+    if (uiState.showVaccineReview) {
+        VaccineReviewModal(
+            generatedRecords = uiState.pendingVaccineRecords,
+            onConfirm = { selected ->
+                viewModel.confirmVaccineReview(selected) {
+                    onSaved(false)
+                }
+            },
+            onClose = {
+                viewModel.skipVaccineReview {
+                    onSaved(false)
+                }
+            }
+        )
+    }
 
     LaunchedEffect(petId) {
-        if (petId != null && !uiState.isEditMode) {
-            viewModel.loadPet(petId)
-        }
+    if (petId.isNullOrBlank() || petId.contains("{")) {
+        viewModel.resetToNewPet()
+    } else if (!uiState.isEditMode) {
+        viewModel.loadPet(petId)
     }
+}
+
+//The `contains("{")` catches the unsubstituted template string as a safety net.
+
+//**How vaccine dates are scheduled**
+
+//The algorithm preserves relative spacing from the WSAVA `offsetDays`. Starting from tomorrow:
+//DHPP #1  offsetDays=42  → today + 1 day        (the minimum, anchor point)
+//DHPP #2  offsetDays=70  → today + 1 + 28 days  (gap: 70-42=28)
+//DHPP #3  offsetDays=112 → today + 1 + 70 days  (gap: 112-42=70)
+//Rabies   offsetDays=112 → today + 1 + 70 days  (same day as DHPP #3 ✓)
 
     var typeExpanded by remember { mutableStateOf(false) }
     var genderExpanded by remember { mutableStateOf(false) }
@@ -263,26 +316,49 @@ fun AddPetScreen(
                 }
 
                 // Age + weight
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CustomTextField(
-                        value = uiState.ageYears,
-                        onValueChange = viewModel::setAgeYears,
-                        modifier = Modifier.weight(1f),
-                        placeholder = "Năm tuổi",
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next,
-                        onImeAction = { focusManager.moveFocus(FocusDirection.Right) }
-                    )
-                    CustomTextField(
-                        value = uiState.ageMonths,
-                        onValueChange = viewModel::setAgeMonths,
-                        modifier = Modifier.weight(1f),
-                        placeholder = "Tháng tuổi",
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next,
-                        onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
-                    )
-                }
+                // Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                //     CustomTextField(
+                //         value = uiState.ageYears,
+                //         onValueChange = viewModel::setAgeYears,
+                //         modifier = Modifier.weight(1f),
+                //         placeholder = "Năm tuổi",
+                //         keyboardType = KeyboardType.Number,
+                //         imeAction = ImeAction.Next,
+                //         onImeAction = { focusManager.moveFocus(FocusDirection.Right) }
+                //     )
+                //     CustomTextField(
+                //         value = uiState.ageMonths,
+                //         onValueChange = viewModel::setAgeMonths,
+                //         modifier = Modifier.weight(1f),
+                //         placeholder = "Tháng tuổi",
+                //         keyboardType = KeyboardType.Number,
+                //         imeAction = ImeAction.Next,
+                //         onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
+                //     )
+                // }
+                Box(modifier = Modifier.fillMaxWidth()) {
+    OutlinedTextField(
+        value = uiState.birthDateMillis?.let {
+            java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                .format(java.util.Date(it))
+        } ?: "",
+        onValueChange = {},
+        modifier = Modifier.fillMaxWidth(),
+        readOnly = true,
+        placeholder = { Text("Ngày sinh", color = HealthMuted) },
+        trailingIcon = { Text("📅", fontSize = 16.sp) },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = HealthSurface.copy(alpha = 0.5f),
+            unfocusedContainerColor = HealthSurface.copy(alpha = 0.5f),
+            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = Color.Transparent,
+            focusedTextColor = TextPrimary,
+            unfocusedTextColor = TextPrimary
+        ),
+        shape = RoundedCornerShape(16.dp)
+    )
+    Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
+}
 
                 CustomTextField(
                     value = uiState.weightKg,

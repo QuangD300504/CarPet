@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, type User, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, db } from '../firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
+import { subscribeToPush } from '../lib/pushNotifications';
 
 interface AuthUser extends User {
   isAdmin?: boolean;
@@ -39,6 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           
           setUser({ ...firebaseUser, isAdmin } as AuthUser);
+          // Subscribe to web push notifications
+          subscribeToPush(firebaseUser).catch(console.error);
         } catch (error) {
           console.error("Error fetching user data:", error);
           setUser(firebaseUser); // fallback without admin rights

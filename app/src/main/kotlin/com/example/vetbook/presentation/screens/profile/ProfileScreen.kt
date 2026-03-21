@@ -39,10 +39,13 @@ import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.theme.HealthMuted
 import androidx.compose.material.icons.filled.Pets
 import com.example.vetbook.presentation.components.common.VetBookImage
+import com.example.vetbook.presentation.viewmodels.SharedNotificationViewModel
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
+    sharedNotificationViewModel: SharedNotificationViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     avatarOverride: Any? = null,
     onAvatarClick: () -> Unit = {},
@@ -58,6 +61,7 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     ProfileScreenContent(
         uiState = uiState,
+        sharedNotificationViewModel = sharedNotificationViewModel,
         onBackClick = onBackClick,
         avatarOverride = avatarOverride,
         onAvatarClick = onAvatarClick,
@@ -75,6 +79,7 @@ fun ProfileScreen(
 @Composable
 fun ProfileScreenContent(
     uiState: ProfileUiState,
+    sharedNotificationViewModel: SharedNotificationViewModel? = null,
     onBackClick: () -> Unit = {},
     avatarOverride: Any? = null,
     onAvatarClick: () -> Unit = {},
@@ -89,6 +94,7 @@ fun ProfileScreenContent(
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var selectedLanguage by remember { mutableStateOf(uiState.selectedLanguage) }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -250,11 +256,24 @@ fun ProfileScreenContent(
                             label = "Thông báo",
                             onClick = onNotificationClick,
                             trailingContent = {
-                                Text(
-                                    text = if (notificationsEnabled) "Bật" else "Tắt",
-                                    fontSize = 13.sp,
-                                    color = HealthPrimary,
-                                    fontWeight = FontWeight.Bold
+                                Switch(
+                                    checked = notificationsEnabled,
+                                    onCheckedChange = { enabled ->
+                                        notificationsEnabled = enabled
+                                        if (enabled) {
+                                            sharedNotificationViewModel?.subscribeToPushWithPermission(
+                                            context as androidx.activity.ComponentActivity
+                                        )
+                                        } else {
+                                            sharedNotificationViewModel?.unsubscribeFromPush()
+                                        }
+                                    },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = HealthPrimary,
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedTrackColor = Color(0xFFE0E0E0)
+                                    )
                                 )
                             }
                         )

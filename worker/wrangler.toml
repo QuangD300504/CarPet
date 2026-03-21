@@ -10,3 +10,7 @@ FIREBASE_PROJECT_ID = "vetbookexe"
 # - PAYOS_API_KEY
 # - PAYOS_CHECKSUM_KEY
 # - FIREBASE_SERVICE_ACCOUNT_JSON
+
+# Cron: daily at 01:00 UTC = 08:00 Indochina Time
+[triggers]
+crons = ["0 1 * * *"]

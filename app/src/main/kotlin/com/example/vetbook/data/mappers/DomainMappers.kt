@@ -87,8 +87,26 @@ fun PetDto.toDomain(vaccinations: List<Vaccination> = emptyList()): Pet =
         parasiticStatus = parasiticStatus,
         note = note,
         realImgUrl = imageUrl,
+        birthDate = birthDate?.let { java.time.Instant.ofEpochMilli(it) },
         vaccinations = vaccinations
     )
+
+fun Pet.toDto(): PetDto = PetDto(
+    id = id,
+    ownerId = ownerId,
+    name = name,
+    type = type,
+    breed = breed,
+    imageUrl = realImgUrl,
+    age = age,
+    gender = gender,
+    weight = weight,
+    parasiticStatus = parasiticStatus,
+    note = note,
+    birthDate = birthDate?.toEpochMilli(),
+    createdAt = null, // set by Firestore on create
+    updatedAt = null
+)
 
 // endregion
 
@@ -98,19 +116,31 @@ fun VaccinationRecordDto.toDomain(): Vaccination {
     return Vaccination(
         id = id,
         petId = petId,
+        ownerId = ownerId,
+        petName = petName,
         veterinarianId = veterinarianId,
         veterinarianName = veterinarianName,
         clinicName = clinicName,
 
         title = title,
         type = when (type) {
-            "CORE" -> VaccinationType.CORE
-            "NON_CORE" -> VaccinationType.NON_CORE
-            "OPTIONAL" -> VaccinationType.OPTIONAL
-            else -> VaccinationType.CORE
+            "CORE"            -> VaccinationType.CORE
+            "REGIONAL"        -> VaccinationType.REGIONAL
+            "LIFESTYLE"       -> VaccinationType.LIFESTYLE
+            "NOT_RECOMMENDED" -> VaccinationType.NOT_RECOMMENDED
+            "CUSTOM"          -> VaccinationType.CUSTOM
+            // Legacy mappings
+            "NON_CORE"        -> VaccinationType.REGIONAL
+            "OPTIONAL"        -> VaccinationType.LIFESTYLE
+            else              -> VaccinationType.CORE
         },
+        alsoKnownAs = alsoKnownAs,
         manufacturer = manufacturer,
         batchNumber = batchNumber,
+        offsetDays = offsetDays,
+        isRecurring = isRecurring,
+        intervalDays = intervalDays,
+        lifestyleTrigger = lifestyleTrigger,
 
         status = when (status) {
             "SCHEDULED" -> VaccinationStatus.SCHEDULED
@@ -139,14 +169,21 @@ fun Vaccination.toDto(): VaccinationRecordDto {
     return VaccinationRecordDto(
         id = id,
         petId = petId,
+        ownerId = ownerId,
+        petName = petName,
         veterinarianId = veterinarianId,
         veterinarianName = veterinarianName,
         clinicName = clinicName,
 
         title = title,
         type = type.name,
+        alsoKnownAs = alsoKnownAs,
         manufacturer = manufacturer,
         batchNumber = batchNumber,
+        offsetDays = offsetDays,
+        isRecurring = isRecurring,
+        intervalDays = intervalDays,
+        lifestyleTrigger = lifestyleTrigger,
 
         status = status.name,
         scheduledDate = scheduledDate?.toEpochMilli(),

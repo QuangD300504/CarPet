@@ -3,12 +3,17 @@ package com.example.vetbook.data.repository
 import com.example.vetbook.data.datasource.RemoteVaccinationDataSource
 import com.example.vetbook.data.mappers.toDomain
 import com.example.vetbook.data.mappers.toDto
+import com.example.vetbook.domain.models.Pet
 import com.example.vetbook.domain.models.Vaccination
 import com.example.vetbook.domain.models.VaccinationStatus
+import com.example.vetbook.domain.models.VaccinationType
+import com.example.vetbook.domain.models.VaccineSpecies
+import com.example.vetbook.domain.models.VaccineTemplates
 import com.example.vetbook.domain.repository.VaccinationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.time.Instant
+import java.util.UUID
 import javax.inject.Inject
 
 class VaccinationRepositoryImpl @Inject constructor(
@@ -53,6 +58,13 @@ class VaccinationRepositoryImpl @Inject constructor(
 
     override suspend fun deleteVaccination(vaccinationId: String): Result<Unit> {
         return remoteDataSource.deleteVaccination(vaccinationId)
+    }
+
+    override suspend fun deleteVaccinationsForPet(petId: String): Result<Unit> = runCatching {
+        val all = remoteDataSource.getVaccinationsByPet(petId)
+        all.forEach { dto ->
+            remoteDataSource.deleteVaccination(dto.id)
+        }
     }
 
     override suspend fun getUpcomingVaccinations(petId: String): List<Vaccination> {
@@ -107,5 +119,104 @@ class VaccinationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun generateSchedule(pet: Pet): List<Vaccination> {
+        val species = VaccineTemplates.speciesFromPetType(pet.type) ?: return emptyList()
+        val birthInstant = pet.birthDate ?: return emptyList()
+
+        return VaccineTemplates.generatableFor(species)
+            .sortedBy { it.offsetDays }
+            .map { template ->
+                val today = java.time.LocalDate.now(java.time.ZoneId.systemDefault())
+val calculated = Instant.ofEpochMilli(birthInstant.toEpochMilli())
+    .atZone(java.time.ZoneId.systemDefault())
+    .toLocalDate()
+    .plusDays(template.offsetDays!!.toLong())
+val dateDue = maxOf(calculated, today.plusDays(1))
+    .atStartOfDay(java.time.ZoneId.systemDefault())
+    .toInstant()
+
+                val now = Instant.now()
+                val status = when {
+                    dateDue.isBefore(now) -> VaccinationStatus.OVERDUE
+                    dateDue.isBefore(now.plus(java.time.Duration.ofDays(7))) -> VaccinationStatus.SCHEDULED
+                    else -> VaccinationStatus.SCHEDULED
+                }
+
+                Vaccination(
+    id = UUID.randomUUID().toString(),
+    petId = pet.id,
+    ownerId = pet.ownerId ?: "",
+    petName = pet.name,
+    title = template.name,
+    alsoKnownAs = template.alsoKnownAs,
+    description = template.description,
+    type = template.type,
+    offsetDays = template.offsetDays,
+    isRecurring = template.isRecurring,
+    intervalDays = template.intervalDays,
+    lifestyleTrigger = template.lifestyleTrigger,
+    scheduledDate = null,
+    completedDate = null,
+    nextDueDate = null,
+    status = VaccinationStatus.PENDING,
+    createdAt = Instant.now(),
+    updatedAt = Instant.now(),
+    reminderEnabled = true,
+    reminderDaysBefore = 7
+)
+            }
+        }
+
+    override suspend fun markDone(
+        vaccination: Vaccination,
+        dateGiven: Instant
+    ): Result<Pair<Vaccination, Vaccination?>> = runCatching {
+        // 1. Mark the current record done
+        val completed = vaccination.copy(
+            status = VaccinationStatus.COMPLETED,
+            completedDate = dateGiven,
+            updatedAt = Instant.now()
+        )
+        val updateResult = remoteDataSource.updateVaccination(completed.toDto())
+        if (updateResult.isFailure) {
+            throw updateResult.exceptionOrNull() ?: Exception("Update failed")
+        }
+
+        // 2. If recurring, create the next booster dose
+        val nextRecord = if (vaccination.isRecurring && vaccination.intervalDays != null) {
+            val nextDue = dateGiven
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDate()
+                .plusDays(vaccination.intervalDays.toLong())
+                .atStartOfDay(java.time.ZoneId.systemDefault())
+                .toInstant()
+
+            val next = Vaccination(
+                id = UUID.randomUUID().toString(),
+                petId = vaccination.petId,
+                title = vaccination.title,
+                alsoKnownAs = vaccination.alsoKnownAs,
+                description = vaccination.description,
+                type = vaccination.type,
+                offsetDays = vaccination.offsetDays,
+                isRecurring = vaccination.isRecurring,
+                intervalDays = vaccination.intervalDays,
+                lifestyleTrigger = vaccination.lifestyleTrigger,
+                scheduledDate = nextDue,
+                completedDate = null,
+                nextDueDate = null,
+                status = VaccinationStatus.SCHEDULED,
+                createdAt = Instant.now(),
+                updatedAt = Instant.now(),
+                reminderEnabled = vaccination.reminderEnabled,
+                reminderDaysBefore = vaccination.reminderDaysBefore
+            )
+            remoteDataSource.createVaccination(next.toDto())
+            next
+        } else null
+
+        completed to nextRecord
     }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { Plus, Edit2, Trash2, HeartPulse, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -32,37 +32,25 @@ export default function ServicesList() {
         itemsPerPage 
     } = usePagination(services, 8);
 
-    const fetchServices = async () => {
-        try {
-            console.log("Fetching services from Firestore...");
-            const querySnapshot = await getDocs(collection(db, 'services'));
-            console.log(`Found ${querySnapshot.size} services`);
-            const data: Service[] = [];
-            querySnapshot.forEach((doc) => {
-                const docData = doc.data();
-                console.log("Service Doc:", doc.id, docData);
-                data.push({ id: doc.id, ...docData } as Service);
-            });
-            setServices(data);
-            setLoading(false);
-        } catch (error) {
-            console.error("Error fetching services: ", error);
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchServices();
+        const q = query(collection(db, 'services'), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q,
+            snap => {
+                const data: Service[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as Service));
+                setServices(data);
+                setLoading(false);
+            },
+            err => { console.error('Services listener error:', err); setLoading(false); }
+        );
+        return () => unsub();
     }, []);
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Are you sure you want to delete this service?")) {
             try {
                 await deleteDoc(doc(db, 'services', id));
-                setServices(services.filter(s => s.id !== id));
             } catch (error) {
                 console.error("Error deleting service", error);
-                alert("Failed to delete service.");
             }
         }
     };
@@ -73,9 +61,9 @@ export default function ServicesList() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-slate-800">Veterinary Services</h1>
-                <Link to="/settings/services/new" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors pointer-events-none opacity-50">
+                <Link to="/settings/services/new" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                     <Plus className="h-5 w-5" />
-                    Feature Coming Soon
+                    Add Service
                 </Link>
             </div>
 
@@ -134,12 +122,12 @@ export default function ServicesList() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                        <button className="p-2 text-slate-300 cursor-not-allowed" title="Packages CRUD Coming Soon">
-                                            <Plus className="h-5 w-5" />
-                                        </button>
-                                        <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <Link to={`/settings/services/edit/${service.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit service">
                                             <Edit2 className="h-5 w-5" />
-                                        </button>
+                                        </Link>
+                                        <Link to={`/settings/services/edit/${service.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit service">
+                                            <Edit2 className="h-5 w-5" />
+                                        </Link>
                                         <button onClick={() => handleDelete(service.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                             <Trash2 className="h-5 w-5" />
                                         </button>

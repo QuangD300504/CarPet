@@ -1,21 +1,19 @@
 package com.example.vetbook.presentation.screens.pets
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,10 +31,47 @@ import com.example.vetbook.domain.models.Vaccination
 import com.example.vetbook.domain.models.VaccinationStatus
 import com.example.vetbook.domain.models.VaccinationType
 import com.example.vetbook.presentation.theme.*
+import com.example.vetbook.presentation.components.common.SnackbarType
+import com.example.vetbook.presentation.components.common.VetBookSnackbar
+import com.example.vetbook.presentation.components.common.VetBookSnackbarHost
 import com.example.vetbook.presentation.viewmodels.VaccinationDetailViewModel
 import com.example.vetbook.utils.compressImageForAvatar
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+// ── Colors ────────────────────────────────────────────────────────────────────
+
+private val Teal       = Color(0xFF0D7377)
+private val TealLight  = Color(0xFFE6F4F1)
+private val TealDark   = Color(0xFF0D5E61)
+private val BlueAccent = Color(0xFF1565C0)
+private val BlueBg     = Color(0xFFE3EAF8)
+private val RedAccent  = Color(0xFFC62828)
+private val RedBg      = Color(0xFFFFEBEE)
+private val GreenAccent= Color(0xFF2E7D32)
+private val GreenBg    = Color(0xFFE8F5E9)
+private val GreyAccent = Color(0xFF757575)
+private val GreyBg     = Color(0xFFF5F5F5)
+private val Surface0   = Color(0xFFF7F8FA)
+private val Border     = Color(0xFFECEFF3)
+private val TextHint   = Color(0xFF8A9BB0)
+private val TextBody   = Color(0xFF0F1923)
+
+private data class StatusConfig(
+    val label: String,
+    val accent: Color,
+    val bg: Color
+)
+
+private fun statusConfig(status: VaccinationStatus) = when (status) {
+    VaccinationStatus.PENDING    -> StatusConfig("Cần đặt lịch", Teal,       TealLight)
+    VaccinationStatus.SCHEDULED  -> StatusConfig("Đã hẹn",       BlueAccent, BlueBg)
+    VaccinationStatus.COMPLETED  -> StatusConfig("Đã tiêm",      GreenAccent,GreenBg)
+    VaccinationStatus.OVERDUE    -> StatusConfig("Quá hạn",      RedAccent,  RedBg)
+    VaccinationStatus.SKIPPED    -> StatusConfig("Bỏ qua",       GreyAccent, GreyBg)
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +80,7 @@ fun VaccinationDetailScreen(
     viewModel: VaccinationDetailViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onVetClick: (String) -> Unit = {},
-    onBookAppointment: (String) -> Unit = {}
+    onBookAppointment: (vaccinationId: String, doctorId: String) -> Unit = { _, _ -> }
 ) {
     val vaccination by viewModel.vaccination.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -53,71 +88,100 @@ fun VaccinationDetailScreen(
     val message by viewModel.message.collectAsState()
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showMarkDoneDialog by remember { mutableStateOf(false) }
     var showCertFullscreen by remember { mutableStateOf(false) }
 
     val imagePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
             val bytes = compressImageForAvatar(context, it)
-            if (bytes != null) {
-                viewModel.uploadCertificate(bytes)
-            }
+            if (bytes != null) viewModel.uploadCertificate(bytes)
         }
     }
 
-    // Snackbar for messages
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(message, error) {
         message?.let {
-            snackbarHostState.showSnackbar(it)
+            scope.launch { VetBookSnackbar.show(snackbarHostState, it, SnackbarType.Success) }
             viewModel.clearMessages()
         }
         error?.let {
-            snackbarHostState.showSnackbar(it)
+            scope.launch { VetBookSnackbar.show(snackbarHostState, it, SnackbarType.Error) }
             viewModel.clearMessages()
         }
     }
 
-    // Delete confirmation dialog
+    // Delete dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteVaccination(onDeleted = onBackClick)
-                    }
-                ) {
-                    Text("Xóa", color = Color.Red, fontWeight = FontWeight.Bold)
-                }
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    viewModel.deleteVaccination(onDeleted = onBackClick)
+                }) { Text("Xóa", color = RedAccent, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Hủy", color = TextSecondary)
+                    Text("Hủy", color = TextHint)
                 }
             },
-            title = { Text("Xác nhận xóa", fontWeight = FontWeight.Bold) },
-            text = { Text("Bạn có chắc chắn muốn xóa lịch tiêm chủng này không? Thao tác không thể hoàn tác.") },
+            title = { Text("Xóa lịch tiêm?", fontWeight = FontWeight.SemiBold) },
+            text = { Text("Thao tác này không thể hoàn tác.", color = TextHint, fontSize = 14.sp) },
             containerColor = Color.White,
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(20.dp)
         )
     }
 
-    // Fullscreen certificate dialog
+    // Mark done dialog
+    if (showMarkDoneDialog) {
+        AlertDialog(
+            onDismissRequest = { showMarkDoneDialog = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showMarkDoneDialog = false
+                        viewModel.markCompleted()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
+                    shape = RoundedCornerShape(10.dp)
+                ) { Text("Xác nhận đã tiêm", fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMarkDoneDialog = false }) {
+                    Text("Chưa", color = TextHint)
+                }
+            },
+            title = { Text("Xác nhận tiêm?", fontWeight = FontWeight.SemiBold) },
+            text = {
+                Text(
+                    "Xác nhận ${vaccination?.title ?: "vaccine"} đã được tiêm. " +
+                    "Nếu có lịch nhắc lại, mũi tiếp theo sẽ tự tạo.",
+                    fontSize = 14.sp,
+                    color = TextHint,
+                    lineHeight = 20.sp
+                )
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // Cert fullscreen
     if (showCertFullscreen && vaccination?.certificateUrl != null) {
         AlertDialog(
             onDismissRequest = { showCertFullscreen = false },
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showCertFullscreen = false }) {
-                    Text("Đóng", color = HealthPrimary)
+                    Text("Đóng", color = Teal)
                 }
             },
-            title = { Text("Chứng nhận tiêm chủng", fontWeight = FontWeight.Bold) },
+            title = { Text("Chứng nhận", fontWeight = FontWeight.SemiBold) },
             text = {
                 AsyncImage(
                     model = vaccination?.certificateUrl,
@@ -129,60 +193,64 @@ fun VaccinationDetailScreen(
                 )
             },
             containerColor = Color.White,
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(20.dp)
         )
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { VetBookSnackbarHost(snackbarHostState) },
+        containerColor = Surface0,
         topBar = {
             TopAppBar(
-                title = { Text("Chi tiết tiêm chủng", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Chi tiết tiêm chủng",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 17.sp
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Quay lại"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = RedAccent.copy(alpha = 0.7f))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        },
-        containerColor = Background
+        }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Box(Modifier.fillMaxSize().padding(paddingValues)) {
             when {
                 isLoading && vaccination == null -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = HealthPrimary
+                        color = Teal,
+                        strokeWidth = 2.dp
                     )
                 }
                 error != null && vaccination == null -> {
                     Column(
-                        modifier = Modifier.align(Alignment.Center),
+                        Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Không thể tải dữ liệu", color = Color.Red)
+                        Text("Không thể tải dữ liệu", color = RedAccent, fontSize = 14.sp)
                         Spacer(Modifier.height(8.dp))
                         TextButton(onClick = { viewModel.loadVaccination() }) {
-                            Text("Thử lại", color = HealthPrimary)
+                            Text("Thử lại", color = Teal)
                         }
                     }
                 }
                 vaccination != null -> {
-                    VaccinationDetailContent(
+                    DetailContent(
                         vaccination = vaccination!!,
                         onVetClick = onVetClick,
                         onBookAppointment = onBookAppointment,
-                        onMarkCompleted = { viewModel.markCompleted() },
+                        onMarkDone = { showMarkDoneDialog = true },
                         onMarkSkipped = { viewModel.markSkipped() },
-                        onDeleteClick = { showDeleteDialog = true },
                         onUploadCert = { imagePicker.launch("image/*") },
                         onCertClick = { showCertFullscreen = true }
                     )
@@ -192,375 +260,314 @@ fun VaccinationDetailScreen(
     }
 }
 
+// ── Content ───────────────────────────────────────────────────────────────────
+
 @Composable
-private fun VaccinationDetailContent(
+private fun DetailContent(
     vaccination: Vaccination,
     onVetClick: (String) -> Unit,
-    onBookAppointment: (String) -> Unit,
-    onMarkCompleted: () -> Unit,
+    onBookAppointment: (vaccinationId: String, doctorId: String) -> Unit,
+    onMarkDone: () -> Unit,
     onMarkSkipped: () -> Unit,
-    onDeleteClick: () -> Unit,
     onUploadCert: () -> Unit,
     onCertClick: () -> Unit
 ) {
-    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-
-    val statusColor = when (vaccination.status) {
-        VaccinationStatus.COMPLETED -> Color(0xFF2E7D32)
-        VaccinationStatus.OVERDUE -> Color(0xFFC62828)
-        VaccinationStatus.SCHEDULED -> Color(0xFFEF6C00)
-        VaccinationStatus.SKIPPED -> Color(0xFF757575)
-    }
-    val statusBgColor = when (vaccination.status) {
-        VaccinationStatus.COMPLETED -> Color(0xFFE8F5E9)
-        VaccinationStatus.OVERDUE -> Color(0xFFFFEBEE)
-        VaccinationStatus.SCHEDULED -> Color(0xFFFFF3E0)
-        VaccinationStatus.SKIPPED -> Color(0xFFF5F5F5)
-    }
-    val statusIcon = when (vaccination.status) {
-        VaccinationStatus.COMPLETED -> "✓"
-        VaccinationStatus.OVERDUE -> "!"
-        VaccinationStatus.SCHEDULED -> "○"
-        VaccinationStatus.SKIPPED -> "⊘"
-    }
-    val statusText = when (vaccination.status) {
-        VaccinationStatus.COMPLETED -> "Đã tiêm hoàn thành"
-        VaccinationStatus.OVERDUE -> "Đã quá hạn"
-        VaccinationStatus.SCHEDULED -> "Sắp tới"
-        VaccinationStatus.SKIPPED -> "Đã bỏ qua"
-    }
-
-    val typeLabel = when (vaccination.type) {
-        VaccinationType.CORE -> "Cốt lõi (Core)"
-        VaccinationType.NON_CORE -> "Khuyến nghị (Non-Core)"
-        VaccinationType.OPTIONAL -> "Tùy chọn (Optional)"
-    }
+    val sc = statusConfig(vaccination.status)
+    val fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // ===== STATUS HEADER =====
+
+        // ── Header card ──────────────────────────────────────────────────────
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = statusBgColor
+            shape = RoundedCornerShape(14.dp),
+            color = Color.White,
+            shadowElevation = 1.dp
         ) {
-            Row(
-                modifier = Modifier.padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    color = statusColor.copy(alpha = 0.15f),
-                    shape = CircleShape,
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            statusIcon,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = statusColor
-                        )
+            Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(sc.accent)
+                )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Status pill
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(sc.bg)
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(sc.label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = sc.accent)
                     }
-                }
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(
-                        statusText,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = statusColor
-                    )
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         vaccination.title,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = TextPrimary
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextBody
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Surface(
-                        color = HealthSurface,
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            typeLabel,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = HealthPrimary
-                        )
+                    vaccination.alsoKnownAs?.let {
+                        Text(it, fontSize = 13.sp, color = TextHint)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TypeChip(vaccination.type)
+                        if (vaccination.isRecurring) {
+                            Chip("Nhắc lại", Teal.copy(alpha = 0.08f), Teal)
+                        }
                     }
                 }
             }
         }
 
-        // ===== DATES SECTION =====
-        DetailSection(title = "📅 Ngày tháng") {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                vaccination.scheduledDate?.let { date ->
-                    DateRow(
-                        label = "Ngày hẹn",
-                        value = date.atZone(ZoneId.systemDefault()).format(dateFormatter)
-                    )
-                }
-                vaccination.completedDate?.let { date ->
-                    DateRow(
-                        label = "Ngày tiêm",
-                        value = date.atZone(ZoneId.systemDefault()).format(dateFormatter),
-                        highlight = true
-                    )
-                }
-                vaccination.nextDueDate?.let { date ->
-                    DateRow(
-                        label = "Mũi tiếp theo",
-                        value = date.atZone(ZoneId.systemDefault()).format(dateFormatter)
-                    )
+        // ── Description ──────────────────────────────────────────────────────
+        vaccination.description?.let { desc ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White,
+                shadowElevation = 1.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SectionLabel("Về vaccine này")
+                    Spacer(Modifier.height(6.dp))
+                    Text(desc, fontSize = 13.sp, color = TextHint, lineHeight = 20.sp)
                 }
             }
         }
 
-        // ===== VET SECTION =====
+        // ── Dates ────────────────────────────────────────────────────────────
+        val hasDates = vaccination.scheduledDate != null ||
+                vaccination.completedDate != null ||
+                vaccination.nextDueDate != null
+
+        if (hasDates) {
+            InfoCard {
+                SectionLabel("Ngày tháng")
+                Spacer(Modifier.height(10.dp))
+                vaccination.scheduledDate?.let {
+                    InfoRow("Ngày hẹn", it.atZone(ZoneId.systemDefault()).format(fmt))
+                }
+                vaccination.completedDate?.let {
+                    InfoRow("Ngày tiêm", it.atZone(ZoneId.systemDefault()).format(fmt), highlight = true)
+                }
+                vaccination.nextDueDate?.let {
+                    InfoRow("Mũi tiếp theo", it.atZone(ZoneId.systemDefault()).format(fmt))
+                }
+            }
+        }
+
+        // ── Vet / clinic ─────────────────────────────────────────────────────
         if (vaccination.veterinarianName != null || vaccination.clinicName != null) {
-            DetailSection(title = "🏥 Thông tin bác sĩ") {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    vaccination.veterinarianId?.let { vetId ->
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onVetClick(vetId) },
-                            shape = RoundedCornerShape(16.dp),
-                            color = HealthSurface.copy(alpha = 0.5f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    color = HealthPrimary,
-                                    shape = CircleShape,
-                                    modifier = Modifier.size(44.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            "👨‍⚕️",
-                                            fontSize = 20.sp
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        vaccination.veterinarianName ?: "",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = TextPrimary
-                                    )
-                                    vaccination.clinicName?.let {
-                                        Text(
-                                            it,
-                                            fontSize = 13.sp,
-                                            color = HealthMuted
-                                        )
-                                    }
-                                }
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Xem",
-                                    tint = HealthMuted
-                                )
-                            }
-                        }
-
-                        // Book appointment CTA
-                        if (vaccination.status != VaccinationStatus.COMPLETED &&
-                            vaccination.status != VaccinationStatus.SKIPPED) {
-                            Button(
-                                onClick = { onBookAppointment(vaccination.veterinarianId!!) },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = HealthPrimary
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("📅 Đặt lịch khám với bác sĩ này", fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    } ?: run {
-                        vaccination.clinicName?.let { clinic ->
-                            DateRow(label = "Phòng khám", value = clinic)
-                        }
-                    }
+            InfoCard {
+                SectionLabel("Bác sĩ & phòng khám")
+                Spacer(Modifier.height(10.dp))
+                vaccination.veterinarianName?.let {
+                    InfoRow("Bác sĩ", it)
                 }
-            }
-        }
-
-        // ===== VACCINE DETAILS SECTION =====
-        if (vaccination.manufacturer != null || vaccination.batchNumber != null) {
-            DetailSection(title = "💊 Thông tin vaccine") {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    vaccination.manufacturer?.let {
-                        DateRow(label = "Hãng sản xuất", value = it)
-                    }
-                    vaccination.batchNumber?.let {
-                        DateRow(label = "Số lô", value = it)
-                    }
+                vaccination.clinicName?.let {
+                    InfoRow("Phòng khám", it)
                 }
-            }
-        }
-
-        // ===== CERTIFICATE SECTION =====
-        DetailSection(title = "📄 Chứng nhận") {
-            if (vaccination.certificateUrl != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AsyncImage(
-                        model = vaccination.certificateUrl,
-                        contentDescription = "Certificate",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable(onClick = onCertClick),
-                        contentScale = ContentScale.Crop
-                    )
-                    TextButton(
-                        onClick = onUploadCert,
-                        modifier = Modifier.fillMaxWidth()
+                vaccination.veterinarianId?.let { vetId ->
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { onVetClick(vetId) },
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Teal),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Teal.copy(alpha = 0.4f)),
+                        modifier = Modifier.height(34.dp)
                     ) {
-                        Icon(Icons.Default.Upload, contentDescription = null, tint = HealthPrimary)
+                        Text("Xem hồ sơ bác sĩ", fontSize = 12.sp)
                         Spacer(Modifier.width(4.dp))
-                        Text("Thay đổi chứng nhận", color = HealthPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.size(13.dp))
                     }
                 }
-            } else {
-                Surface(
+            }
+        }
+
+        // ── Vaccine info ─────────────────────────────────────────────────────
+        if (vaccination.manufacturer != null || vaccination.batchNumber != null) {
+            InfoCard {
+                SectionLabel("Thông tin vaccine")
+                Spacer(Modifier.height(10.dp))
+                vaccination.manufacturer?.let { InfoRow("Hãng sản xuất", it) }
+                vaccination.batchNumber?.let { InfoRow("Số lô", it) }
+            }
+        }
+
+        // ── Notes ────────────────────────────────────────────────────────────
+        vaccination.notes?.let { notes ->
+            InfoCard {
+                SectionLabel("Ghi chú")
+                Spacer(Modifier.height(8.dp))
+                Text(notes, fontSize = 13.sp, color = TextBody, lineHeight = 20.sp)
+            }
+        }
+
+        // ── Certificate ──────────────────────────────────────────────────────
+        InfoCard {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionLabel("Chứng nhận")
+                TextButton(
+                    onClick = onUploadCert,
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(Icons.Default.Upload, null, Modifier.size(14.dp), tint = Teal)
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        if (vaccination.certificateUrl != null) "Thay đổi" else "Tải lên",
+                        fontSize = 12.sp,
+                        color = Teal
+                    )
+                }
+            }
+            if (vaccination.certificateUrl != null) {
+                Spacer(Modifier.height(8.dp))
+                AsyncImage(
+                    model = vaccination.certificateUrl,
+                    contentDescription = "Certificate",
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onCertClick),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Surface0)
                         .clickable(onClick = onUploadCert),
-                    shape = RoundedCornerShape(16.dp),
-                    color = HealthSurface.copy(alpha = 0.5f)
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Text("Chưa có chứng nhận — nhấn để tải lên", fontSize = 12.sp, color = TextHint)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // ── Primary actions ──────────────────────────────────────────────────
+        when (vaccination.status) {
+            VaccinationStatus.PENDING -> {
+                Button(
+                    onClick = { onBookAppointment(vaccination.id, vaccination.veterinarianId ?: "") },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Teal),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.CalendarMonth, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Đặt lịch tiêm", fontWeight = FontWeight.SemiBold)
+                }
+            }
+            VaccinationStatus.SCHEDULED, VaccinationStatus.OVERDUE -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Button(
+                        onClick = onMarkDone,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Chưa có chứng nhận", color = HealthMuted)
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = onUploadCert,
-                            colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Upload, contentDescription = null)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Tải lên chứng nhận")
-                        }
+                        Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Đã tiêm", fontWeight = FontWeight.SemiBold)
+                    }
+                    OutlinedButton(
+                        onClick = onMarkSkipped,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextHint),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Border)
+                    ) {
+                        Text("Bỏ qua", fontWeight = FontWeight.Medium)
                     }
                 }
             }
-        }
-
-        // ===== NOTES SECTION =====
-        vaccination.notes?.let { notes ->
-            DetailSection(title = "📝 Ghi chú") {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = HealthSurface.copy(alpha = 0.5f)
-                ) {
-                    Text(
-                        notes,
-                        modifier = Modifier.padding(16.dp),
-                        fontSize = 14.sp,
-                        color = TextPrimary,
-                        lineHeight = 22.sp
-                    )
-                }
-            }
-        }
-
-        // ===== ACTION BUTTONS =====
-        if (vaccination.status == VaccinationStatus.SCHEDULED ||
-            vaccination.status == VaccinationStatus.OVERDUE) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = onMarkCompleted,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32)
-                    ),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = null)
-                    Spacer(Modifier.width(4.dp))
-                    Text("Đã tiêm", fontWeight = FontWeight.Bold)
-                }
-                OutlinedButton(
-                    onClick = onMarkSkipped,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Icon(Icons.Default.Close, contentDescription = null, tint = HealthMuted)
-                    Spacer(Modifier.width(4.dp))
-                    Text("Bỏ qua", color = TextSecondary, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        // Delete button
-        TextButton(
-            onClick = onDeleteClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
-            Spacer(Modifier.width(4.dp))
-            Text("Xóa lịch tiêm chủng", color = Color.Red, fontWeight = FontWeight.Bold)
+            else -> {}
         }
 
         Spacer(Modifier.height(32.dp))
     }
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 @Composable
-private fun DetailSection(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column {
-        Text(
-            title,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = TextPrimary
-        )
-        Spacer(Modifier.height(12.dp))
-        content()
+private fun InfoCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White,
+        shadowElevation = 1.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp), content = content)
     }
 }
 
 @Composable
-private fun DateRow(
-    label: String,
-    value: String,
-    highlight: Boolean = false
-) {
+private fun SectionLabel(text: String) {
+    Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextHint, letterSpacing = 0.4.sp)
+}
+
+@Composable
+private fun InfoRow(label: String, value: String, highlight: Boolean = false) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, fontSize = 14.sp, color = HealthMuted)
+        Text(label, fontSize = 13.sp, color = TextHint)
         Text(
             value,
-            fontSize = 14.sp,
-            fontWeight = if (highlight) FontWeight.Bold else FontWeight.Medium,
-            color = if (highlight) Color(0xFF2E7D32) else TextPrimary
+            fontSize = 13.sp,
+            fontWeight = if (highlight) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (highlight) GreenAccent else TextBody
         )
+    }
+}
+
+@Composable
+private fun TypeChip(type: VaccinationType) {
+    val (label, color) = when (type) {
+        VaccinationType.CORE            -> "Core" to Teal
+        VaccinationType.REGIONAL        -> "Regional" to Color(0xFFB07A00)
+        VaccinationType.LIFESTYLE       -> "Lifestyle" to BlueAccent
+        VaccinationType.NOT_RECOMMENDED -> "Not rec." to RedAccent
+        VaccinationType.CUSTOM          -> "Custom" to GreyAccent
+    }
+    Chip(label, color.copy(alpha = 0.08f), color)
+}
+
+@Composable
+private fun Chip(label: String, bg: Color, textColor: Color) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(bg)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = textColor)
     }
 }

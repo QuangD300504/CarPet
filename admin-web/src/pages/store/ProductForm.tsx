@@ -5,6 +5,7 @@ import { db } from '../../firebase/config';
 import { uploadToCloudinary } from '../../utils/cloudinary';
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from 'lucide-react';
 import type { Product } from './ProductsList';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function ProductForm() {
     const { id } = useParams<{ id: string }>();
@@ -12,6 +13,7 @@ export default function ProductForm() {
     const isEditing = id !== 'new' && id !== undefined;
 
     const [loading, setLoading] = useState(isEditing);
+    const { toast } = useToast();
     const [saving, setSaving] = useState(false);
     const [product, setProduct] = useState<Partial<Product>>({
         name: '',
@@ -54,7 +56,7 @@ export default function ProductForm() {
                     setProduct(data);
                     setPreviewUrl(data.imageUrl);
                 } else {
-                    alert("Product not found");
+                    toast("Product not found", "error");
                     navigate('/store');
                 }
                 setLoading(false);
@@ -83,7 +85,7 @@ export default function ProductForm() {
 
             const finalCategory = isNewCategory ? newCategoryName : product.category;
             if (!finalCategory && !isEditing) {
-                alert("Please select or enter a category");
+                toast("Please select or enter a category", "error");
                 setSaving(false);
                 return;
             }
@@ -105,7 +107,7 @@ export default function ProductForm() {
             navigate('/store');
         } catch (error) {
             console.error("Error saving product: ", error);
-            alert("Error saving product. Check console.");
+            toast("Failed to save product.", "error");
         } finally {
             setSaving(false);
         }

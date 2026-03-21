@@ -5,6 +5,7 @@ import { db } from '../../firebase/config';
 import { uploadToCloudinary } from '../../utils/cloudinary';
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from 'lucide-react';
 import type { Category } from './CategoriesList';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function CategoryForm() {
     const { id } = useParams<{ id: string }>();
@@ -12,6 +13,7 @@ export default function CategoryForm() {
     const isEditing = id !== 'new' && id !== undefined;
 
     const [loading, setLoading] = useState(isEditing);
+    const { toast } = useToast();
     const [saving, setSaving] = useState(false);
     const [category, setCategory] = useState<Partial<Category>>({
         name: '',
@@ -35,7 +37,7 @@ export default function CategoryForm() {
                     });
                     setPreviewUrl(docData.imageUrl || null);
                 } else {
-                    alert("Category not found");
+                    toast("Category not found", "error");
                     navigate('/store/categories');
                 }
                 setLoading(false);
@@ -79,7 +81,7 @@ export default function CategoryForm() {
             navigate('/store/categories');
         } catch (error) {
             console.error("Error saving category: ", error);
-            alert("Error saving category.");
+            toast("Error saving category.", "error");
         } finally {
             setSaving(false);
         }

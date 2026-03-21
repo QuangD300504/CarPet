@@ -56,16 +56,16 @@ class VaccinationDetailViewModel @Inject constructor(
 
     fun markCompleted() {
         val current = _vaccination.value ?: return
-        val updated = current.copy(
-            status = VaccinationStatus.COMPLETED,
-            completedDate = Instant.now()
-        )
         viewModelScope.launch {
             _isLoading.value = true
-            val result = vaccinationRepository.updateVaccination(updated)
-            result.onSuccess {
+            val result = vaccinationRepository.markDone(current)
+            result.onSuccess { (updated, nextRecord) ->
                 _vaccination.value = updated
-                _message.value = "Đã đánh dấu hoàn thành"
+                if (nextRecord != null) {
+                    _message.value = "Đã đánh dấu hoàn thành! Mũi tiếp theo (${nextRecord.title}) đã được tạo."
+                } else {
+                    _message.value = "Đã đánh dấu hoàn thành"
+                }
             }.onFailure {
                 _error.value = "Không thể cập nhật: ${it.message}"
             }

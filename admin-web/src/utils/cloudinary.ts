@@ -1,7 +1,7 @@
 export const CLOUDINARY_CONFIG = {
-  cloudName: 'dcxlhzxvv',
-  uploadPreset: 'vetbook',
-  apiKey: '327185413894858',
+  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+  uploadPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY,
 };
 
 export const uploadToCloudinary = async (file: File): Promise<string> => {

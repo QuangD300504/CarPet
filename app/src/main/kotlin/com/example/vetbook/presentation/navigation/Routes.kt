@@ -62,8 +62,9 @@ sealed class Routes(val route: String) {
     object ContinueLoginPassword : Routes("continue_login_password")
 
     // Vaccination screens
-    object VaccinationList : Routes("vaccination_list/{petId}/{petName}") {
-        fun createRoute(petId: String, petName: String) = "vaccination_list/$petId/$petName"
+    object VaccinationList : Routes("vaccination_list/{petId}/{petName}?petType={petType}&birthDate={birthDate}") {
+        fun createRoute(petId: String, petName: String, petType: String, birthDate: Long?) =
+            "vaccination_list/$petId/$petName?petType=$petType&birthDate=${birthDate ?: ""}"
     }
     object AddVaccination : Routes("add_vaccination/{petId}/{petName}") {
         fun createRoute(petId: String, petName: String) = "add_vaccination/$petId/$petName"

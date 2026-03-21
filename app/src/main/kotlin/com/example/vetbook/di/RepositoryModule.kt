@@ -1,6 +1,7 @@
 package com.example.vetbook.di
 
 import android.app.Application
+import com.example.vetbook.data.datasource.NotificationDataSource
 import com.example.vetbook.data.datasource.RemoteCommunityDataSource
 import com.example.vetbook.data.datasource.RemotePetDataSource
 import com.example.vetbook.data.datasource.RemoteServiceDataSource
@@ -10,6 +11,7 @@ import com.example.vetbook.data.datasource.RemoteVaccinationDataSource
 import com.example.vetbook.data.datasource.RemoteVeterinarianDataSource
 import com.example.vetbook.data.network.CloudinaryService
 import com.example.vetbook.data.network.PayosApiService
+import com.example.vetbook.data.network.WorkerApiService
 import com.example.vetbook.data.repository.*
 import com.example.vetbook.domain.repository.*
 import com.google.firebase.auth.FirebaseAuth
@@ -108,9 +110,15 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideNotificationRepository(
-        notificationDataSource: com.example.vetbook.data.datasource.NotificationDataSource
+        notificationDataSource: NotificationDataSource,
+        workerApiService: WorkerApiService,
+        auth: FirebaseAuth
     ): com.example.vetbook.domain.repository.NotificationRepository {
-        return com.example.vetbook.data.repository.NotificationRepositoryImpl(notificationDataSource)
+        return com.example.vetbook.data.repository.NotificationRepositoryImpl(
+            notificationDataSource,
+            workerApiService,
+            auth
+        )
     }
 
     @Provides

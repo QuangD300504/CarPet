@@ -70,6 +70,7 @@ dependencies {
     // Firebase
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
     implementation(libs.kotlinx.coroutines.play.services)
 
     // Credentials & Google ID

@@ -6,6 +6,7 @@ import { uploadToCloudinary } from '../../utils/cloudinary';
 import { ArrowLeft, Save, Loader2, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import type { Vet } from './VetsList';
 import type { Clinic } from './ClinicsList';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function VetForm() {
     const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function VetForm() {
     const isEditing = id !== 'new' && id !== undefined;
 
     const [loading, setLoading] = useState(isEditing);
+    const { toast } = useToast();
     const [saving, setSaving] = useState(false);
     const [vet, setVet] = useState<Partial<Vet>>({
         name: '',
@@ -64,7 +66,7 @@ export default function VetForm() {
                     setVet(docSnap.data() as Vet);
                     setPreviewUrl(docSnap.data().imageUrl);
                 } else {
-                    alert("Veterinarian not found");
+                    toast("Veterinarian not found", "error");
                     navigate('/vets/list');
                 }
                 setLoading(false);
@@ -115,7 +117,7 @@ export default function VetForm() {
             navigate('/vets/list');
         } catch (error) {
             console.error("Error saving vet: ", error);
-            alert("Error saving veterinarian. Check console.");
+            toast("Failed to save veterinarian.", "error");
         } finally {
             setSaving(false);
         }

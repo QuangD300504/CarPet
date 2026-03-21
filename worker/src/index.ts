@@ -691,6 +691,141 @@ app.get("/vnpay-ipn", async (c) => {
   return c.json({RspCode: "00", Message: "Confirm Success"});
 });
 
+// ─── Instant Push Trigger ──────────────────────────────────────────────────────
+
+/**
+ * Triggers an immediate FCM push notification from the app.
+ * Called by the Android client right after booking / saving a vaccination.
+ *
+ * Body: { type: "vaccine" | "appointment", refId: string }
+ */
+app.post("/push/send-instant", async (c) => {
+  const token = getBearerToken(c.req.header("authorization") ?? null);
+  if (!token) return jsonError("Missing Authorization Bearer token", 401);
+
+  let uid: string;
+  try {
+    uid = (await verifyFirebaseIdToken(token, c.env.FIREBASE_PROJECT_ID)).uid;
+  } catch (e: any) {
+    return jsonError(e.message ?? "Invalid Firebase token", 401);
+  }
+
+  const { type, refId } = await c.req.json() as { type: string; refId: string };
+  if (!type || !refId) return jsonError("Missing type or refId", 400);
+
+  // Build the notification message based on type
+  let title = "VetBook";
+  let body = "";
+
+  try {
+    const accessToken = await getGoogleAccessToken(c.env);
+
+    if (type === "vaccine") {
+      const doc = await firestoreGet(c.env, accessToken, `vaccinations/${refId}`);
+      if (doc?.fields) {
+        const v = doc.fields;
+        const petName = v.petName ?? "Your pet";
+        const vaccineName = v.title ?? "vaccine";
+        title = "Vaccine Saved";
+        body = `${petName}'s ${vaccineName} schedule has been created`;
+      }
+    } else if (type === "appointment") {
+      const doc = await firestoreGet(c.env, accessToken, `appointments/${refId}`);
+      if (doc?.fields) {
+        const a = doc.fields;
+        const doctorName = a.veterinarianName ?? a.doctorName ?? "your doctor";
+        title = "Appointment Booked";
+        body = `Appointment with ${doctorName} confirmed`;
+      }
+    }
+
+    await sendFcmPush(c.env, accessToken, uid, body, type, refId);
+    return c.json({ok: true});
+  } catch (e: any) {
+    return jsonError(e.message ?? "Failed to send push", 500);
+  }
+});
+
+/**
+ * TEST endpoint — sends a test push to a specific user by their Firestore UID.
+ * NO auth required. In production, restrict or remove this.
+ *
+ * GET /push/test?uid=<userId>&title=<title>&body=<body>
+ */
+app.get("/push/test", async (c) => {
+  const uid = c.req.query("uid");
+  const title = c.req.query("title") ?? "Test from VetBook";
+  const body = c.req.query("body") ?? "This is a test push notification!";
+
+  if (!uid) return jsonError("Missing uid query param", 400);
+
+  try {
+    const accessToken = await getGoogleAccessToken(c.env);
+    await sendFcmPush(c.env, accessToken, uid, body, "test", "test");
+    return c.json({ok: true, message: `Push sent to user ${uid}`});
+  } catch (e: any) {
+    return jsonError(e.message ?? "Failed to send push", 500);
+  }
+});
+
+// ─── Push Notifications (FCM) ─────────────────────────────────────────────────────
+
+/**
+ * Saves an FCM registration token for a given user.
+ * Called by the client after requesting notification permission.
+ *
+ * Body: { fcmToken: string }
+ */
+app.post("/push/subscribe", async (c) => {
+  const token = getBearerToken(c.req.header("authorization") ?? null);
+  if (!token) return jsonError("Missing Authorization Bearer token", 401);
+
+  let uid: string;
+  try {
+    uid = (await verifyFirebaseIdToken(token, c.env.FIREBASE_PROJECT_ID)).uid;
+  } catch (e: any) {
+    return jsonError(e.message ?? "Invalid Firebase token", 401);
+  }
+
+  const { fcmToken } = await c.req.json() as { fcmToken: string };
+  if (!fcmToken) return jsonError("Missing fcmToken", 400);
+
+  const accessToken = await getGoogleAccessToken(c.env);
+  await firestorePatch(c.env, accessToken, `pushSubscriptions/${uid}`, {
+    fcmToken,
+    updatedAt: new Date(),
+  });
+
+  console.log(`[Push] Token saved for user ${uid}`);
+  return c.json({ok: true});
+});
+
+/**
+ * Removes the FCM token for a user (e.g. on logout).
+ */
+app.post("/push/unsubscribe", async (c) => {
+  const token = getBearerToken(c.req.header("authorization") ?? null);
+  if (!token) return jsonError("Missing Authorization Bearer token", 401);
+
+  let uid: string;
+  try {
+    uid = (await verifyFirebaseIdToken(token, c.env.FIREBASE_PROJECT_ID)).uid;
+  } catch (e: any) {
+    return jsonError(e.message ?? "Invalid Firebase token", 401);
+  }
+
+  const accessToken = await getGoogleAccessToken(c.env);
+  await firestorePatch(c.env, accessToken, `pushSubscriptions/${uid}`, {
+    fcmToken: null,
+    updatedAt: new Date(),
+  });
+
+  console.log(`[Push] Token removed for user ${uid}`);
+  return c.json({ok: true});
+});
+
+// ─── PayOS webhook ───────────────────────────────────────────────────────────
+
 app.post("/payos-webhook", async (c) => {
   const body = (await c.req.json()) as PayosWebhookBody;
   if (!body?.data || !body.signature) return jsonError("Invalid webhook payload", 400);
@@ -739,5 +874,197 @@ app.post("/payos-webhook", async (c) => {
 
   return c.json({ok: true});
 });
+
+// ─── Cron: daily notification scheduler (FCM) ───────────────────────────────────
+
+/**
+ * Cloudflare Cron trigger — configured in wrangler.toml.
+ * Runs daily at 01:00 UTC = 08:00 Indochina Time.
+ *
+ * Reads all SCHEDULED vaccinations + upcoming CONFIRMED appointments from Firestore,
+ * then sends FCM push notifications to every subscribed user's device.
+ */
+export const scheduled: ExportedHandler<Env>["scheduled"] = async (_event, env, ctx) => {
+  ctx.waitUntil(runScheduler(env));
+};
+
+async function runScheduler(env: Env): Promise<void> {
+  console.log("[Scheduler] Starting daily notification run");
+
+  try {
+    const accessToken = await getGoogleAccessToken(env);
+
+    await Promise.all([
+      sendVaccineReminders(env, accessToken),
+      sendAppointmentReminders(env, accessToken),
+    ]);
+
+    console.log("[Scheduler] Completed");
+  } catch (err) {
+    console.error("[Scheduler] Error:", err);
+  }
+}
+
+async function sendVaccineReminders(env: Env, accessToken: string): Promise<void> {
+  const today = startOfDay(new Date());
+
+  const docs = await firestoreRunQuery(env, accessToken, {
+    from: [{ collectionId: "vaccinations" }],
+    where: {
+      fieldFilter: {
+        field: { fieldPath: "status" },
+        op: "EQUAL",
+        value: { stringValue: "SCHEDULED" },
+      },
+    },
+  });
+
+  for (const doc of docs) {
+    const record = doc.fields;
+    const scheduledDate = record.scheduledDate;
+    if (!scheduledDate) continue;
+
+    const dateStr = typeof scheduledDate === "object" && scheduledDate.timestampValue
+      ? scheduledDate.timestampValue
+      : String(scheduledDate);
+    const due = startOfDay(new Date(dateStr));
+    const daysUntil = Math.round((due.getTime() - today.getTime()) / 86_400_000);
+
+    const petName = record.petName ?? record.name ?? "Your pet";
+    const vaccineName = record.title ?? "vaccine";
+    const message = vaccineMessage(petName, vaccineName, daysUntil);
+    if (message) {
+      await sendFcmPush(env, accessToken, record.ownerId, message, "vaccine", record.id);
+    }
+  }
+}
+
+async function sendAppointmentReminders(env: Env, accessToken: string): Promise<void> {
+  const today = startOfDay(new Date());
+
+  const docs = await firestoreRunQuery(env, accessToken, {
+    from: [{ collectionId: "appointments" }],
+    where: {
+      fieldFilter: {
+        field: { fieldPath: "status" },
+        op: "EQUAL",
+        value: { stringValue: "CONFIRMED" },
+      },
+    },
+  });
+
+  for (const doc of docs) {
+    const appt = doc.fields;
+    if (!appt.appointmentAt) continue;
+
+    const dateStr = typeof appt.appointmentAt === "object" && appt.appointmentAt.timestampValue
+      ? appt.appointmentAt.timestampValue
+      : String(appt.appointmentAt);
+    const due = startOfDay(new Date(dateStr));
+    const daysUntil = Math.round((due.getTime() - today.getTime()) / 86_400_000);
+
+    const doctorName = appt.veterinarianName ?? appt.doctorName ?? "your doctor";
+    const clinicName = appt.clinicName ?? "the clinic";
+    const message = appointmentMessage(doctorName, clinicName, daysUntil);
+    if (message) {
+      await sendFcmPush(env, accessToken, appt.ownerId ?? appt.userId, message, "appointment", appt.id);
+    }
+  }
+}
+
+/**
+ * Looks up the user's FCM token from Firestore and sends an FCM push notification
+ * using the FCM HTTP v1 API (no npm packages required — raw fetch only).
+ */
+async function sendFcmPush(
+  env: Env,
+  accessToken: string,
+  userId: string,
+  body: string,
+  type: string,
+  refId: string,
+  title = "PetCare Reminder",
+): Promise<void> {
+  const subDoc = await firestoreGet(env, accessToken, `pushSubscriptions/${userId}`);
+  if (!subDoc) return;
+
+  const fcmToken: string | undefined = subDoc.fields.fcmToken;
+  if (!fcmToken) return;
+
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+  const payload = {
+    message: {
+      token: fcmToken,
+      notification: {
+        title,
+        body,
+      },
+      data: { type, refId },
+      android: {
+        priority: "high",
+        notification: {
+          channel_id: "vetbook_reminders",
+          default_vibrate_timings: true,
+          default_sound: true,
+        },
+      },
+    },
+  };
+
+  let res: Response;
+  try {
+    res = await fetch(fcmUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.error(`[Scheduler] FCM fetch error for user ${userId}:`, err);
+    return;
+  }
+
+  if (res.status === 410 || res.status === 404) {
+    // Token no longer valid — clear it
+    await firestorePatch(env, accessToken, `pushSubscriptions/${userId}`, { fcmToken: null });
+    console.log(`[Scheduler] Removed invalid FCM token for user ${userId}`);
+    return;
+  }
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    console.error(`[Scheduler] FCM error for user ${userId} (${res.status}): ${errBody}`);
+    return;
+  }
+
+  console.log(`[Scheduler] Sent ${type} FCM push to user ${userId}`);
+}
+
+function vaccineMessage(petName: string, vaccineName: string, daysUntil: number): string | null {
+  if (daysUntil > 7) return null;
+  if (daysUntil === 7) return `${petName}'s ${vaccineName} vaccine is due in 7 days`;
+  if (daysUntil === 1) return `${petName}'s ${vaccineName} vaccine is due tomorrow`;
+  if (daysUntil === 0) return `${petName}'s ${vaccineName} vaccine is due today`;
+  if (daysUntil < 0)  return `${petName} has an overdue vaccine: ${vaccineName}`;
+  return null;
+}
+
+function appointmentMessage(doctorName: string, clinicName: string, daysUntil: number): string | null {
+  if (daysUntil > 7) return null;
+  if (daysUntil === 7) return `Appointment with ${doctorName} at ${clinicName} in 7 days`;
+  if (daysUntil === 1) return `Appointment with ${doctorName} at ${clinicName} is tomorrow`;
+  if (daysUntil === 0) return `You have an appointment today at ${clinicName}`;
+  return null;
+}
+
+function startOfDay(d: Date): Date {
+  const copy = new Date(d);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
 
 export default app;
