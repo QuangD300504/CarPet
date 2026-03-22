@@ -8,25 +8,20 @@ import com.example.vetbook.domain.models.ServiceCategory
 import com.example.vetbook.domain.repository.ServiceRepository
 import kotlinx.coroutines.runBlocking
 
-/**
- * Firebase-backed implementation of ServiceRepository.
- * Fetches service data from Firestore and maps DTOs to domain models.
- * 
- * Note: This implementation uses runBlocking for synchronous methods.
- * Consider updating the domain layer to use suspend functions for better async handling.
- */
 class FirebaseServiceRepository(
     private val remoteServiceDataSource: RemoteServiceDataSource
 ) : ServiceRepository {
 
+    // Only cat_vet is active. cat_shop routes directly to the Store tab
+    // via handleServiceNavigation() and never goes through this repository.
+    private val allowedServiceIds = setOf("cat_vet")
+
     override fun getCategories(): List<ServiceCategory> {
         return runBlocking {
             try {
-                val dtos = remoteServiceDataSource.getServiceCategories()
-                dtos.map { dto ->
-                    // Use a generic fallback icon resource; the mapper will also provide the dynamic iconUrl.
-                    dto.toDomain(R.drawable.checkup)
-                }
+                remoteServiceDataSource.getServiceCategories()
+                    .filter { it.id in allowedServiceIds }
+                    .map { dto -> dto.toDomain(R.drawable.checkup) }
             } catch (e: Exception) {
                 emptyList()
             }
@@ -36,8 +31,7 @@ class FirebaseServiceRepository(
     override fun getServiceDetail(categoryId: String): PetServiceDetail? {
         return runBlocking {
             try {
-                val detailDto = remoteServiceDataSource.getServiceDetail(categoryId)
-                detailDto?.toDomain()
+                remoteServiceDataSource.getServiceDetail(categoryId)?.toDomain()
             } catch (e: Exception) {
                 null
             }

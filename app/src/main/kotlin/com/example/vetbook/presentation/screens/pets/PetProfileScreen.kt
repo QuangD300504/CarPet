@@ -26,14 +26,42 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil3.compose.AsyncImage
 import com.example.vetbook.domain.models.Pet
+import com.example.vetbook.domain.models.VaccinationStatus
 import com.example.vetbook.presentation.viewmodels.PetProfileViewModel
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.theme.HealthSurface
 import com.example.vetbook.presentation.theme.TextPrimary
 import com.example.vetbook.presentation.theme.TextSecondary
 import com.example.vetbook.presentation.theme.HealthMuted
 import com.example.vetbook.presentation.theme.Background
+
+// ── Age helper ────────────────────────────────────────────────────────────────
+
+/**
+ * Computes a Vietnamese age string from a birthDate Instant.
+ * FIX: pet.age is always "" because AddPetViewModel sets age="" and never
+ * writes it. We now derive age from pet.birthDate instead.
+ */
+private fun computePetAge(birthDate: Instant?): String {
+    if (birthDate == null) return "-"
+    val birth = birthDate.atZone(ZoneId.systemDefault()).toLocalDate()
+    val today = LocalDate.now()
+    if (birth.isAfter(today)) return "-"
+    val years  = ChronoUnit.YEARS.between(birth, today).toInt()
+    val months = ChronoUnit.MONTHS.between(birth.plusYears(years.toLong()), today).toInt()
+    return when {
+        years > 0 && months > 0 -> "$years năm $months tháng"
+        years > 0               -> "$years năm"
+        months > 0              -> "$months tháng"
+        else                    -> "< 1 tháng"
+    }
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 @Composable
 fun PetProfileScreen(
@@ -48,17 +76,12 @@ fun PetProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Reload pet + vaccinations whenever the screen resumes
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refresh()
-            }
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -67,14 +90,14 @@ fun PetProfileScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Xác nhận xóa", fontWeight = FontWeight.Bold) },
-            text = { Text("Bạn có chắc chắn muốn xóa hồ sơ của ${uiState.pet?.name ?: "thú cưng"} không? Thao tác này không thể hoàn tác.") },
+            text = {
+                Text(
+                    "Bạn có chắc chắn muốn xóa hồ sơ của ${uiState.pet?.name ?: "thú cưng"} không? " +
+                    "Thao tác này không thể hoàn tác."
+                )
+            },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deletePet(onDeleted)
-                    }
-                ) {
+                TextButton(onClick = { showDeleteDialog = false; viewModel.deletePet(onDeleted) }) {
                     Text("Xóa", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
             },
@@ -90,34 +113,28 @@ fun PetProfileScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
         when {
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = HealthPrimary
-                )
-            }
-
-            uiState.error != null -> {
-                Text(
-                    text = uiState.error ?: "Không thể tải hồ sơ thú cưng",
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color.Red
-                )
-            }
-
-            uiState.pet != null -> {
-                PetProfileContent(
-                    pet = uiState.pet!!,
-                    onBackClick = onBackClick,
-                    onEditClick = { onEditClick(petId) },
-                    onDeleteClick = { showDeleteDialog = true },
-                    onVaccinationsViewAll = onVaccinationsViewAll,
-                    onVaccinationClick = onVaccinationClick
-                )
-            }
+            uiState.isLoading -> CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = HealthPrimary
+            )
+            uiState.error != null -> Text(
+                text = uiState.error ?: "Không thể tải hồ sơ thú cưng",
+                modifier = Modifier.align(Alignment.Center),
+                color = Color.Red
+            )
+            uiState.pet != null -> PetProfileContent(
+                pet = uiState.pet!!,
+                onBackClick = onBackClick,
+                onEditClick = { onEditClick(petId) },
+                onDeleteClick = { showDeleteDialog = true },
+                onVaccinationsViewAll = onVaccinationsViewAll,
+                onVaccinationClick = onVaccinationClick
+            )
         }
     }
 }
+
+// ── Content ───────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PetProfileContent(
@@ -128,57 +145,43 @@ private fun PetProfileContent(
     onVaccinationsViewAll: (String, String, String, Instant?) -> Unit,
     onVaccinationClick: (String) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        // Top image section with immersive look
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(360.dp)
-        ) {
+    // Compute age once; recomputes only when birthDate changes.
+    val ageDisplay = remember(pet.birthDate) { computePetAge(pet.birthDate) }
+
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+
+        // ── Hero image ────────────────────────────────────────────────────────
+        Box(modifier = Modifier.fillMaxWidth().height(360.dp)) {
             AsyncImage(
-                model = pet.realImgUrl?.ifBlank { "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop" } ?: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop",
+                model = pet.realImgUrl?.ifBlank {
+                    "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop"
+                } ?: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1974&auto=format&fit=crop",
                 contentDescription = pet.name,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-
-            // Soft gradient overlay at the top for back button visibility
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
+                    .fillMaxWidth().height(100.dp)
                     .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.4f), Color.Transparent)))
             )
-
             IconButton(
                 onClick = onBackClick,
-                modifier = Modifier
-                    .padding(20.dp)
-                    .background(Color.White.copy(alpha = 0.25f), CircleShape)
+                modifier = Modifier.padding(20.dp).background(Color.White.copy(alpha = 0.25f), CircleShape)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Quay lại",
-                    tint = Color.White
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", tint = Color.White)
             }
         }
 
+        // ── Detail card ───────────────────────────────────────────────────────
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-40).dp),
+            modifier = Modifier.fillMaxWidth().offset(y = (-40).dp),
             shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
             color = Background
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 24.dp, vertical = 36.dp)
-            ) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 36.dp)) {
+
+                // Name + gender badge
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -192,7 +195,7 @@ private fun PetProfileContent(
                             color = TextPrimary,
                             letterSpacing = (-0.5).sp
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(Modifier.height(4.dp))
                         Text(
                             text = "${pet.type} • ${pet.breed.ifBlank { "Giống loài khác" }}",
                             fontSize = 17.sp,
@@ -200,16 +203,12 @@ private fun PetProfileContent(
                             color = HealthMuted
                         )
                     }
-
-                    Surface(
-                        color = HealthSurface,
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
+                    Surface(color = HealthSurface, shape = RoundedCornerShape(14.dp)) {
                         Text(
-                            text = when(pet.gender) {
-                                "Male", "Đực" -> "Đực"
+                            text = when (pet.gender) {
+                                "Male", "Đực"   -> "Đực"
                                 "Female", "Cái" -> "Cái"
-                                else -> "N/A"
+                                else             -> "N/A"
                             },
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             fontSize = 14.sp,
@@ -221,48 +220,44 @@ private fun PetProfileContent(
 
                 Spacer(Modifier.height(36.dp))
 
+                // Stats — age uses computePetAge(birthDate), NOT pet.age
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    StatBox(label = "Cân nặng", value = pet.weight.let { if (it.isBlank()) "-" else "$it kg" })
-                    StatBox(label = "Tuổi", value = pet.age.let { if (it.isBlank()) "-" else "$it tuổi" })
-                    StatBox(label = "Loại", value = when(pet.type) {
-                        "Dog", "Chó" -> "Chó"
-                        "Cat", "Mèo" -> "Mèo"
-                        "Bird", "Chim" -> "Chim"
-                        else -> pet.type
-                    })
+                    StatBox(
+                        label = "Cân nặng",
+                        value = pet.weight.let { if (it.isBlank()) "-" else "$it kg" }
+                    )
+                    StatBox(label = "Tuổi", value = ageDisplay)
+                    StatBox(
+                        label = "Loại",
+                        value = when (pet.type) {
+                            "Dog", "Chó"   -> "Chó"
+                            "Cat", "Mèo"   -> "Mèo"
+                            "Bird", "Chim" -> "Chim"
+                            else            -> pet.type
+                        }
+                    )
                 }
 
                 Spacer(Modifier.height(36.dp))
 
+                // Note
                 if (pet.note.isNotBlank()) {
                     Section(title = "Ghi chú y tế") {
-                        Text(
-                            text = pet.note,
-                            fontSize = 15.sp,
-                            color = TextSecondary,
-                            lineHeight = 26.sp
-                        )
+                        Text(text = pet.note, fontSize = 15.sp, color = TextSecondary, lineHeight = 26.sp)
                     }
                     Spacer(Modifier.height(36.dp))
                 }
 
-                // Always show vaccination section so user can navigate to vaccination list
+                // Vaccination summary
                 Section(title = "Lịch tiêm chủng") {
                     if (pet.vaccinations.isEmpty()) {
-                        Text(
-                            text = "Chưa có lịch tiêm chủng",
-                            color = TextSecondary,
-                            fontSize = 14.sp
-                        )
+                        Text(text = "Chưa có lịch tiêm chủng", color = TextSecondary, fontSize = 14.sp)
                     } else {
-                        pet.vaccinations.take(3).forEach { vaccination ->
-                            VaccinationCard(
-                                vaccination = vaccination,
-                                onClick = { onVaccinationClick(vaccination.id) }
-                            )
+                        pet.vaccinations.take(3).forEach { v ->
+                            VaccinationCard(vaccination = v, onClick = { onVaccinationClick(v.id) })
                             Spacer(Modifier.height(12.dp))
                         }
                     }
@@ -272,15 +267,16 @@ private fun PetProfileContent(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = if (pet.vaccinations.isEmpty()) "Thêm lịch tiêm chủng"
-                                   else if (pet.vaccinations.size > 3) "Xem tất cả (${pet.vaccinations.size}) →"
-                                   else "Xem chi tiết →",
+                            text = when {
+                                pet.vaccinations.isEmpty()  -> "Thêm lịch tiêm chủng"
+                                pet.vaccinations.size > 3   -> "Xem tất cả (${pet.vaccinations.size}) →"
+                                else                         -> "Xem chi tiết →"
+                            },
                             color = HealthPrimary,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                Spacer(Modifier.height(36.dp))
 
                 Spacer(Modifier.height(48.dp))
 
@@ -296,10 +292,7 @@ private fun PetProfileContent(
 
                 Spacer(Modifier.height(12.dp))
 
-                TextButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                TextButton(onClick = onDeleteClick, modifier = Modifier.fillMaxWidth()) {
                     Text("Xóa hồ sơ thú cưng", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
 
@@ -308,6 +301,8 @@ private fun PetProfileContent(
         }
     }
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 @Composable
 private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
@@ -342,31 +337,27 @@ private fun RowScope.StatBox(label: String, value: String) {
         }
     }
 }
+
 @Composable
 private fun VaccinationCard(
     vaccination: com.example.vetbook.domain.models.Vaccination,
     onClick: () -> Unit = {}
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9))
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val isCompleted = vaccination.status == com.example.vetbook.domain.models.VaccinationStatus.COMPLETED
-            val isOverdue = vaccination.status == com.example.vetbook.domain.models.VaccinationStatus.OVERDUE
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            val isCompleted = vaccination.status == VaccinationStatus.COMPLETED
+            val isOverdue   = vaccination.status == VaccinationStatus.OVERDUE
 
             Surface(
                 color = when {
                     isCompleted -> Color(0xFFE8F5E9)
-                    isOverdue -> Color(0xFFFFEBEE)
-                    else -> Color(0xFFFFF3E0)
+                    isOverdue   -> Color(0xFFFFEBEE)
+                    else        -> Color(0xFFFFF3E0)
                 },
                 shape = CircleShape,
                 modifier = Modifier.size(48.dp)
@@ -375,13 +366,13 @@ private fun VaccinationCard(
                     Text(
                         text = when {
                             isCompleted -> "✓"
-                            isOverdue -> "!"
-                            else -> "○"
+                            isOverdue   -> "!"
+                            else        -> "○"
                         },
                         color = when {
                             isCompleted -> Color(0xFF2E7D32)
-                            isOverdue -> Color(0xFFC62828)
-                            else -> Color(0xFFEF6C00)
+                            isOverdue   -> Color(0xFFC62828)
+                            else        -> Color(0xFFEF6C00)
                         },
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
@@ -392,45 +383,25 @@ private fun VaccinationCard(
             Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = vaccination.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
+                Text(text = vaccination.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
 
+                val fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
                 val dateText = when {
-                    vaccination.completedDate != null -> {
-                        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                        vaccination.completedDate.atZone(java.time.ZoneId.systemDefault()).format(formatter)
-                    }
-                    vaccination.scheduledDate != null -> {
-                        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                        vaccination.scheduledDate.atZone(java.time.ZoneId.systemDefault()).format(formatter)
-                    }
+                    vaccination.completedDate != null ->
+                        vaccination.completedDate.atZone(ZoneId.systemDefault()).format(fmt)
+                    vaccination.scheduledDate != null ->
+                        vaccination.scheduledDate.atZone(ZoneId.systemDefault()).format(fmt)
                     else -> "Chưa xếp lịch"
                 }
+                Text(text = dateText, fontSize = 13.sp, color = HealthMuted)
 
-                Text(
-                    text = dateText,
-                    fontSize = 13.sp,
-                    color = HealthMuted
-                )
-
-                vaccination.veterinarianName?.let { vetName ->
-                    Text(
-                        text = "👨‍⚕️ $vetName",
-                        fontSize = 12.sp,
-                        color = HealthMuted
-                    )
+                vaccination.veterinarianName?.let {
+                    Text(text = "👨‍⚕️ $it", fontSize = 12.sp, color = HealthMuted)
                 }
             }
 
             if (isCompleted) {
-                Surface(
-                    color = Color(0xFFE8F5E9),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
+                Surface(color = Color(0xFFE8F5E9), shape = RoundedCornerShape(8.dp)) {
                     Text(
                         text = "Đã tiêm",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),

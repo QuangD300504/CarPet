@@ -10,6 +10,8 @@ sealed class Routes(val route: String) {
     object Calendar : Routes("calendar")
     object Community : Routes("community")
     object Profile : Routes("profile")
+    object Security : Routes("security")
+    object HelpSupport : Routes("help_support")
     object Veterinarians : Routes("veterinarians")
     object DoctorProfile : Routes("doctor_profile/{doctorId}") {
         fun createRoute(doctorId: String) = "doctor_profile/$doctorId"

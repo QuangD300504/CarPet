@@ -209,11 +209,8 @@ class CheckoutViewModel @Inject constructor(
         
         // 2. Delivery: Free if subtotal > 1,000,000 VND, else 20,000 VND
         // (Only apply if cart is not empty)
-        val delivery = when {
-            lines.isEmpty() -> 0.0
-            subtotal > 1000000.0 -> 0.0
-            else -> 20000.0
-        }
+        // Temporary: free shipping for all orders
+        val delivery = 0.0
         
         val total = subtotal - discount + delivery
 

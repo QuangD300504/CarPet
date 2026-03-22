@@ -80,7 +80,7 @@ fun PetDto.toDomain(vaccinations: List<Vaccination> = emptyList()): Pet =
         name = name,
         type = type,
         breed = breed,
-        imageRes = null, // resolved in UI layer if needed
+        imageRes = null,
         age = age,
         gender = gender,
         weight = weight,
@@ -104,7 +104,7 @@ fun Pet.toDto(): PetDto = PetDto(
     parasiticStatus = parasiticStatus,
     note = note,
     birthDate = birthDate?.toEpochMilli(),
-    createdAt = null, // set by Firestore on create
+    createdAt = null,
     updatedAt = null
 )
 
@@ -129,7 +129,6 @@ fun VaccinationRecordDto.toDomain(): Vaccination {
             "LIFESTYLE"       -> VaccinationType.LIFESTYLE
             "NOT_RECOMMENDED" -> VaccinationType.NOT_RECOMMENDED
             "CUSTOM"          -> VaccinationType.CUSTOM
-            // Legacy mappings
             "NON_CORE"        -> VaccinationType.REGIONAL
             "OPTIONAL"        -> VaccinationType.LIFESTYLE
             else              -> VaccinationType.CORE
@@ -142,12 +141,16 @@ fun VaccinationRecordDto.toDomain(): Vaccination {
         intervalDays = intervalDays,
         lifestyleTrigger = lifestyleTrigger,
 
+        // FIX: "PENDING" was hitting `else -> SCHEDULED`, so generated vaccines
+        // (status="PENDING", scheduledDate=null) displayed as "Đã hẹn" with no date
+        // and no "Đặt lịch tiêm" button visible to the user.
         status = when (status) {
+            "PENDING"   -> VaccinationStatus.PENDING
             "SCHEDULED" -> VaccinationStatus.SCHEDULED
             "COMPLETED" -> VaccinationStatus.COMPLETED
-            "OVERDUE" -> VaccinationStatus.OVERDUE
-            "SKIPPED" -> VaccinationStatus.SKIPPED
-            else -> VaccinationStatus.SCHEDULED
+            "OVERDUE"   -> VaccinationStatus.OVERDUE
+            "SKIPPED"   -> VaccinationStatus.SKIPPED
+            else        -> VaccinationStatus.PENDING
         },
         scheduledDate = scheduledDate?.let { java.time.Instant.ofEpochMilli(it) },
         completedDate = completedDate?.let { java.time.Instant.ofEpochMilli(it) },
@@ -209,7 +212,7 @@ fun Vaccination.toDto(): VaccinationRecordDto {
 fun PostDto.toDomain(): Post =
     Post(
         id = id,
-        authorId = authorId, // Foreign key relationship
+        authorId = authorId,
         authorName = authorName,
         authorAvatarUrl = authorAvatarUrl,
         timestamp = createdAt.toString(),
@@ -222,7 +225,7 @@ fun PostDto.toDomain(): Post =
 fun PetEventDto.toDomain(): PetEvent =
     PetEvent(
         id = id,
-        organizerId = organizerId, // Foreign key relationship
+        organizerId = organizerId,
         title = title,
         date = date.toString(),
         location = location,

@@ -8,6 +8,7 @@ data class ProfileUiState(
     val pets: List<Pet> = emptyList(),
     val isLoading: Boolean = true,
     val selectedLanguage: String = "English",
-    val isDarkModeEnabled: Boolean = false
+    val isDarkModeEnabled: Boolean = false,
+    val upcomingAppointmentCount: Int = 0
 )
 

@@ -440,6 +440,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 Routes.VaccinationDetail.route,
                 Routes.ProductDetail.route,
                 Routes.OrderHistory.route,
+                Routes.Security.route,
+                Routes.HelpSupport.route,
                 Routes.OrderDetail.route
             )
 
@@ -661,6 +663,34 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             }
 
             composable(
+    route = Routes.Security.route,
+    enterTransition = { getEnterTransition() },
+    exitTransition = { getExitTransition() },
+    popEnterTransition = { getPopEnterTransition() },
+    popExitTransition = { getPopExitTransition() }
+) {
+    Box(modifier = Modifier.padding(top = topBarPadding)) {
+        SecurityScreen(
+            onBackClick = { bottomNavController.popBackStack() },
+            onAccountDeleted = {
+                // Sign out locally then navigate to login
+                mainViewModel.signOut {
+                    rootNavController.navigate(Routes.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        )
+    }
+}
+
+            composable(Routes.HelpSupport.route) {
+    HelpSupportScreen(
+        onBackClick = { bottomNavController.popBackStack() }
+    )
+}
+
+            composable(
                 route = Routes.Language.route,
                 enterTransition = { getEnterTransition() },
                 exitTransition = { getExitTransition() },
@@ -810,6 +840,12 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         },
                         onLanguageClick = {
                             bottomNavController.navigate(Routes.Language.route)
+                        },
+                        onSecurityClick = {
+                            bottomNavController.navigate(Routes.Security.route)
+                        },
+                        onHelpAndSupportClick = {
+                            bottomNavController.navigate(Routes.HelpSupport.route)
                         },
                         onContactUsClick = {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
@@ -1186,7 +1222,6 @@ fun MainScreen(onLogout: () -> Unit = {}) {
 private fun handleServiceNavigation(categoryId: String, navController: NavController) {
     when (categoryId) {
         "cat_vet" -> navController.navigate(Routes.Veterinarians.route)
-        "cat_hotel" -> navController.navigate(Routes.Accommodation.route)
         "cat_shop" -> {
             navController.navigate(Routes.Store.route) {
                 popUpTo(navController.graph.findStartDestination().id) {
