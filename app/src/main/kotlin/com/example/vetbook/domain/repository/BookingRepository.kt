@@ -37,4 +37,7 @@ interface BookingRepository {
     suspend fun markAppointmentAsPaid(appointmentId: String)
 
     suspend fun markAppointmentCompleted(appointmentId: String)
+
+    /** Appends or sets a note on an existing appointment document. */
+    suspend fun updateAppointmentNotes(appointmentId: String, notes: String)
 }

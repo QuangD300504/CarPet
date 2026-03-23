@@ -28,7 +28,7 @@ fun LanguageScreen(
     onBackClick: () -> Unit = {},
     onLanguageSelected: (String) -> Unit = {}
 ) {
-    var selectedLanguage by remember { mutableStateOf("English (US)") }
+    var selectedLanguage by remember { mutableStateOf("Vietnamese") }
     
     val suggestedLanguages = listOf("English (US)", "English (UK)")
     val otherLanguages = listOf(

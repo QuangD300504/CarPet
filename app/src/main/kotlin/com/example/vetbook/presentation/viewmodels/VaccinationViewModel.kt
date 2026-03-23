@@ -30,6 +30,7 @@ data class VaccinationUiState(
 @HiltViewModel
 class VaccinationViewModel @Inject constructor(
     private val vaccinationRepository: VaccinationRepository,
+    private val bookingRepository: com.example.vetbook.domain.repository.BookingRepository,
     savedStateHandle: SavedStateHandle,
     private val application: Application
 ) : ViewModel() {
@@ -263,24 +264,39 @@ selectedRecords.forEach { record ->
     }
 
     fun linkAppointment(
-    vaccinationId: String,
-    appointmentId: String,
-    scheduledDate: java.util.Date?,
-    vetName: String?,
-    clinicName: String?
-) {
-    viewModelScope.launch {
-        val record = _uiState.value.vaccinations.find { it.id == vaccinationId } ?: return@launch
-        val updated = record.copy(
-            linkedBookingId = appointmentId,
-            scheduledDate = scheduledDate?.toInstant(),
-            status = VaccinationStatus.SCHEDULED,
-            veterinarianName = vetName,
-            clinicName = clinicName,
-            updatedAt = java.time.Instant.now()
-        )
-        vaccinationRepository.updateVaccination(updated)
-        loadVaccinations()
+        vaccinationId: String,
+        appointmentId: String,
+        scheduledDate: java.util.Date?,
+        vetName: String?,
+        clinicName: String?
+    ) {
+        viewModelScope.launch {
+            // FIX: The MainScreen-scoped VaccinationViewModel has petId="" from
+            // SavedStateHandle, so _uiState.value.vaccinations is always empty.
+            // Fetch the record directly from Firestore instead of looking up state.
+            val record = vaccinationRepository.getVaccinationById(vaccinationId)
+                .getOrNull() ?: return@launch
+
+            val updated = record.copy(
+                linkedBookingId = appointmentId,
+                scheduledDate = scheduledDate?.toInstant(),
+                status = VaccinationStatus.SCHEDULED,
+                veterinarianName = vetName,
+                clinicName = clinicName,
+                updatedAt = java.time.Instant.now()
+            )
+            vaccinationRepository.updateVaccination(updated)
+
+            // Write vaccine name into appointment notes so the calendar
+            // detail sheet shows it without a schema change.
+            if (appointmentId.isNotBlank()) {
+                try {
+                    bookingRepository.updateAppointmentNotes(
+                        appointmentId,
+                        "Tiêm chủng: ${record.title}"
+                    )
+                } catch (_: Exception) { /* non-critical */ }
+            }
+        }
     }
-}
 }

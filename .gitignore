@@ -182,3 +182,5 @@ admin-web/.vite/
 
 # Web App build/dependencies
 admin-web/node_modules/
+*.zip
+*.zip

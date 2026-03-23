@@ -287,6 +287,12 @@ class BookingRepositoryImpl @Inject constructor(
         ).await()
     }
 
+    override suspend fun updateAppointmentNotes(appointmentId: String, notes: String) {
+        firestore.collection("appointments").document(appointmentId)
+            .update("notes", notes, "updatedAt", Timestamp.now())
+            .await()
+    }
+
     override fun getAllAppointments(): Flow<List<Appointment>> = callbackFlow {
         val subscription = firestore.collection("appointments")
             .addSnapshotListener { snapshot, error ->

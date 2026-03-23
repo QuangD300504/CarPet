@@ -31,6 +31,11 @@ data class VaccinationRecordDto(
     val completedDate: Long? = null,
     val nextDueDate: Long? = null,
 
+    // FIX: persists the appointment booking linked to this vaccination record.
+    // Was missing from DTO, causing linkAppointment() to silently drop the value
+    // on every Firestore write via toDto().
+    val linkedBookingId: String? = null,
+
     // Documentation
     val certificateUrl: String? = null,
     val notes: String? = null,

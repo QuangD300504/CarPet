@@ -31,16 +31,34 @@ class FirebaseAuthUserRepository @Inject constructor(
     override suspend fun getCurrentUser(): User? {
         val firebaseUser = auth.currentUser ?: return null
 
-        return try {
+        val domainUser = try {
             val uid = firebaseUser.uid
-
             val profile = remoteUserDataSource.getUserProfile(uid)
                 ?: createInitialProfile(uid)
-
-            // Points & profile image can later be loaded from separate sources.
             profile.toDomain(points = 0, profileImage = null)
         } catch (e: Exception) {
-            null
+            // FIX: Firestore failure used to silently return null, leaving the entire
+            // user object null. Instead, fall back to a minimal User built from
+            // the Firebase Auth token, which is always available while logged in.
+            // This guarantees EditProfileScreen always has at least the auth email.
+            Log.w("UserRepository", "Firestore profile load failed, falling back to auth data", e)
+            User(
+                id = firebaseUser.uid,
+                name = firebaseUser.displayName ?: "",
+                email = firebaseUser.email ?: "",
+                phoneNumber = firebaseUser.phoneNumber ?: "",
+                points = 0,
+                profileImageUrl = firebaseUser.photoUrl?.toString()
+            )
+        }
+
+        // FIX: even when Firestore succeeds, the stored email may be blank
+        // (accounts created before the email field was written, or legacy docs).
+        // Always guarantee email is populated from the Auth token.
+        return if (domainUser.email.isBlank()) {
+            domainUser.copy(email = firebaseUser.email ?: "")
+        } else {
+            domainUser
         }
     }
 
@@ -50,7 +68,6 @@ class FirebaseAuthUserRepository @Inject constructor(
                 .getUserPets(userId)
                 .map { it.toDomain() }
         } catch (e: Exception) {
-            // Return empty list on error instead of crashing
             emptyList()
         }
     }
@@ -95,11 +112,7 @@ class FirebaseAuthUserRepository @Inject constructor(
                     "UserRepository",
                     "Cloudinary upload failed: code=${response.code()} body=$errorBody"
                 )
-                Result.failure(
-                    IllegalStateException(
-                        "Cloudinary error: $errorBody"
-                    )
-                )
+                Result.failure(IllegalStateException("Cloudinary error: $errorBody"))
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "updateUserAvatar threw exception", e)
@@ -119,12 +132,10 @@ class FirebaseAuthUserRepository @Inject constructor(
             isEmailVerified = firebaseUser.isEmailVerified
         )
 
-        // Try to save profile, but don't fail if it doesn't work
         try {
             remoteUserDataSource.setUserProfile(profile)
         } catch (e: Exception) {
-            // Log error but continue - profile will be created in memory
-            // This allows the app to work even if Firestore is temporarily unavailable
+            Log.w("UserRepository", "createInitialProfile Firestore write failed", e)
         }
         return profile
     }

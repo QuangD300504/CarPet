@@ -654,6 +654,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) {
                 Box(modifier = Modifier.padding(top = topBarPadding)) {
                     EditProfileScreen(
+                        viewModel = profileViewModel,  
                         onBackClick = { bottomNavController.popBackStack() },
                         onSubmitClick = {
                             bottomNavController.popBackStack()
@@ -672,14 +673,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     Box(modifier = Modifier.padding(top = topBarPadding)) {
         SecurityScreen(
             onBackClick = { bottomNavController.popBackStack() },
-            onAccountDeleted = {
-                // Sign out locally then navigate to login
-                mainViewModel.signOut {
-                    rootNavController.navigate(Routes.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            }
+            // onAccountDeleted = {
+            //     mainViewModel.signOut {
+            //         rootNavController.navigate(Routes.Login.route) {
+            //             popUpTo(0) { inclusive = true }
+            //         }
+            //     }
+            // }
+            onAccountDeleted = { onLogout() }
         )
     }
 }

@@ -329,7 +329,7 @@ private fun DetailContent(
         }
 
         // ── Description ──────────────────────────────────────────────────────
-        vaccination.description?.let { desc ->
+        if (vaccination.description != null || vaccination.lifestyleTrigger != null) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
@@ -339,7 +339,42 @@ private fun DetailContent(
                 Column(modifier = Modifier.padding(16.dp)) {
                     SectionLabel("Về vaccine này")
                     Spacer(Modifier.height(6.dp))
-                    Text(desc, fontSize = 13.sp, color = TextHint, lineHeight = 20.sp)
+                    vaccination.description?.let { desc ->
+                        Text(desc, fontSize = 13.sp, color = TextHint, lineHeight = 20.sp)
+                    }
+                    vaccination.lifestyleTrigger?.let { trigger ->
+                        Spacer(Modifier.height(10.dp))
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(BlueAccent.copy(alpha = 0.07f))
+                                .padding(10.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = BlueAccent,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Column {
+                                Text(
+                                    "Khuyến nghị khi:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = BlueAccent
+                                )
+                                Text(
+                                    trigger,
+                                    fontSize = 12.sp,
+                                    color = BlueAccent.copy(alpha = 0.8f),
+                                    lineHeight = 17.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

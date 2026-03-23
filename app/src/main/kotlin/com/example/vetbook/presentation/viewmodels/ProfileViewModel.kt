@@ -12,7 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,7 +24,7 @@ class ProfileViewModel @Inject constructor(
     private val remoteUserDataSource: RemoteUserDataSource,
     private val authRepository: AuthRepository,
     private val auth: FirebaseAuth,
-    private val bookingRepository: BookingRepository 
+    private val bookingRepository: BookingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -41,18 +41,20 @@ class ProfileViewModel @Inject constructor(
                 val result = getUserProfileUseCase()
                 val uid = auth.currentUser?.uid ?: ""
                 val upcomingCount = try {
-                    var count = 0
-                    bookingRepository.getUserAppointments(uid).collect { appointments ->
-                        count = appointments.count {
-                            it.status == "UPCOMING" || it.status == "PENDING_PAYMENT"
-                        }
-                    }
-                    count
+                    // FIX: getUserAppointments() is a callbackFlow (addSnapshotListener) —
+                    // an infinite, never-completing Flow. The previous .collect {} suspended
+                    // forever so _uiState.update was never reached.
+                    // .first() takes the initial emission then cancels the subscription.
+                    bookingRepository.getUserAppointments(uid)
+                        .first()
+                        .count { it.status == "UPCOMING" || it.status == "PENDING_PAYMENT" }
                 } catch (_: Exception) { 0 }
 
                 _uiState.update {
                     it.copy(
-                        user = result?.first,
+                        user = result?.first?.let { u ->
+                            if (u.email.isBlank()) u.copy(email = auth.currentUser?.email ?: "") else u
+                        },
                         pets = result?.second ?: emptyList(),
                         upcomingAppointmentCount = upcomingCount,
                         isLoading = false
@@ -64,9 +66,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Persists fullName + phone to Firestore and updates local state immediately.
-     */
     fun saveProfile(fullName: String, phone: String, onResult: (success: Boolean, message: String) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onResult(false, "Chưa đăng nhập")
         val trimmedName = fullName.trim()
@@ -97,9 +96,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Sends a Firebase password-reset email to the signed-in user's address.
-     */
     fun sendPasswordResetEmail(onResult: (success: Boolean, message: String) -> Unit) {
         val email = auth.currentUser?.email
         if (email.isNullOrBlank()) return onResult(false, "Không tìm thấy email")
@@ -113,11 +109,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Permanently deletes the Firebase Auth account.
-     * Firebase requires recent authentication — if this fails with
-     * "requires-recent-login", prompt the user to sign out and sign back in first.
-     */
     fun deleteAccount(onResult: (success: Boolean, message: String) -> Unit) {
         viewModelScope.launch {
             val result = authRepository.deleteAccount()

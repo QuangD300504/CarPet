@@ -156,6 +156,10 @@ fun VaccinationRecordDto.toDomain(): Vaccination {
         completedDate = completedDate?.let { java.time.Instant.ofEpochMilli(it) },
         nextDueDate = nextDueDate?.let { java.time.Instant.ofEpochMilli(it) },
 
+        // FIX: was not mapped — linkedBookingId was silently dropped on every
+        // Firestore round-trip, making linkAppointment() a no-op in persistence.
+        linkedBookingId = linkedBookingId,
+
         certificateUrl = certificateUrl,
         notes = notes,
         sideEffects = sideEffects,
@@ -192,6 +196,9 @@ fun Vaccination.toDto(): VaccinationRecordDto {
         scheduledDate = scheduledDate?.toEpochMilli(),
         completedDate = completedDate?.toEpochMilli(),
         nextDueDate = nextDueDate?.toEpochMilli(),
+
+        // FIX: persisted linkedBookingId so appointment-vaccine link survives Firestore writes.
+        linkedBookingId = linkedBookingId,
 
         certificateUrl = certificateUrl,
         notes = notes,

@@ -136,6 +136,9 @@ fun BookAppointmentScreen(
             
             val apptId = bookingViewModel.pendingAppointmentId
             val lockId = bookingViewModel.pendingLockId
+            // Capture vet name and appointment date BEFORE onPaymentSuccess clears them
+            val capturedVetName = bookingViewModel.pendingVetName
+            val capturedApptAt  = bookingViewModel.pendingAppointmentAt
             if (apptId != null && lockId != null) {
                 isResultHandled = true
                 if (isSuccess) {
@@ -145,11 +148,11 @@ fun BookAppointmentScreen(
                 }
                 DeepLinkHandler.clear()
                 onPaymentFinished(
-    isSuccess,
-    bookingViewModel.pendingAppointmentId ?: "",
-    bookingViewModel.pendingVetName,
-    bookingViewModel.pendingAppointmentAt
-)
+                    isSuccess,
+                    apptId,           // use captured local, not the now-null viewmodel field
+                    capturedVetName,
+                    capturedApptAt
+                )
                 
                 selectedDateMillis?.let { millis ->
                     val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
