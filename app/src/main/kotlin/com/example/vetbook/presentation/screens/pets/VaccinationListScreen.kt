@@ -12,6 +12,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Vaccines
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -78,7 +80,7 @@ fun VaccinationListScreen(
     onBackClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onVaccinationClick: (String) -> Unit = {},
-    onBookAppointment: (vaccinationId: String, doctorId: String) -> Unit = { _, _ -> }
+    onBookAppointment: (vaccinationId: String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -268,29 +270,72 @@ fun VaccinationListScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Series grouping hint for PENDING
-                            if (selectedTab == 0 && sorted.any { it.status == VaccinationStatus.PENDING }) {
-                                item {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(Color(0xFFE6F4F1))
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.CalendarMonth,
-                                            contentDescription = null,
-                                            tint = Color(0xFF0D7377),
-                                            modifier = Modifier.size(15.dp)
-                                        )
-                                        Text(
-                                            "Đặt lịch khám để xếp ngày tiêm cho từng mũi",
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF0D5E61)
-                                        )
+                            // Enhanced recommendation banner for upcoming tab
+                            if (selectedTab == 0) {
+                                val overdueList = sorted.filter { it.status == VaccinationStatus.OVERDUE }
+                                val pendingList = sorted.filter { it.status == VaccinationStatus.PENDING }
+                                val nextVaccine = overdueList.firstOrNull() ?: pendingList.firstOrNull()
+
+                                if (nextVaccine != null) {
+                                    item {
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (overdueList.isNotEmpty()) Color(0xFFFFEBEE) else Color(0xFFE6F4F1),
+                                            border = androidx.compose.foundation.BorderStroke(
+                                                1.dp,
+                                                if (overdueList.isNotEmpty()) Color(0xFFC62828).copy(alpha = 0.3f)
+                                                else Color(0xFF0D7377).copy(alpha = 0.3f)
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Icon(
+                                                    if (overdueList.isNotEmpty()) Icons.Default.Warning else Icons.Default.Vaccines,
+                                                    contentDescription = null,
+                                                    tint = if (overdueList.isNotEmpty()) Color(0xFFC62828) else Color(0xFF0D7377),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Column {
+                                                    Text(
+                                                        text = if (overdueList.isNotEmpty())
+                                                            "⚠ ${overdueList.size} mũi tiêm đã quá hạn"
+                                                        else
+                                                            "Mũi tiêm cần làm tiếp theo",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = if (overdueList.isNotEmpty()) Color(0xFFC62828) else Color(0xFF0D5E61)
+                                                    )
+                                                    Text(
+                                                        text = buildString {
+                                                            append(nextVaccine.title)
+                                                            nextVaccine.alsoKnownAs?.let { append(" · $it") }
+                                                            nextVaccine.scheduledDate?.let {
+                                                                val fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                                                                append(" — Hẹn ${it.atZone(java.time.ZoneId.systemDefault()).format(fmt)}")
+                                                            }
+                                                            if (nextVaccine.scheduledDate == null && nextVaccine.status == VaccinationStatus.PENDING) {
+                                                                append(" — Chưa xếp lịch")
+                                                            }
+                                                        },
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (overdueList.isNotEmpty()) Color(0xFF7F1D1D) else Color(0xFF0D7377)
+                                                    )
+                                                    if (pendingList.size > 1 || overdueList.size > 1) {
+                                                        val remaining = (overdueList.size + pendingList.size) - 1
+                                                        Text(
+                                                            text = "và $remaining mũi khác cần đặt lịch",
+                                                            fontSize = 11.sp,
+                                                            color = if (overdueList.isNotEmpty()) Color(0xFFC62828).copy(alpha = 0.7f) else Color(0xFF0D5E61)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -299,7 +344,7 @@ fun VaccinationListScreen(
                                 VaccinationListItem(
                                     vaccination = vaccination,
                                     onClick = { onVaccinationClick(vaccination.id) },
-                                    onBookAppointment = { onBookAppointment(vaccination.id, vaccination.veterinarianId ?: "") }
+                                    onBookAppointment = { onBookAppointment(vaccination.id) }
                                 )
                             }
 
@@ -318,7 +363,7 @@ fun VaccinationListScreen(
 private fun VaccinationListItem(
     vaccination: Vaccination,
     onClick: () -> Unit,
-    onBookAppointment: () -> Unit
+    onBookAppointment: (vaccinationId: String) -> Unit
 ) {
     val style = statusStyle(vaccination.status)
 
@@ -421,7 +466,7 @@ private fun VaccinationListItem(
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
-                            onClick = { onBookAppointment() },
+                            onClick = { onBookAppointment(vaccination.id) },
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             colors = ButtonDefaults.outlinedButtonColors(

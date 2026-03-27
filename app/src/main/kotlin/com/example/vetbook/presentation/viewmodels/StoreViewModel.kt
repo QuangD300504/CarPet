@@ -97,16 +97,16 @@ class StoreViewModel @Inject constructor(
     fun addToCart(productId: String) {
         val uid = auth.currentUser?.uid
         if (uid == null) {
-            _uiState.value = _uiState.value.copy(message = "Please login to add to cart")
+            _uiState.value = _uiState.value.copy(message = "Vui lòng đăng nhập để thêm vào giỏ")
             return
         }
         viewModelScope.launch {
             val current = lastCartQuantities.value[productId] ?: 0
             val result = setCartQuantityUseCase(uid, productId, current + 1)
             if (result.isSuccess) {
-                _uiState.value = _uiState.value.copy(message = "Added to cart")
+                _uiState.value = _uiState.value.copy(message = "Đã thêm vào giỏ hàng ✓")
             } else {
-                _uiState.value = _uiState.value.copy(message = "Failed to add to cart")
+                _uiState.value = _uiState.value.copy(message = "Thêm vào giỏ hàng thất bại")
             }
         }
     }
@@ -199,4 +199,3 @@ class StoreViewModel @Inject constructor(
         }
     }
 }
-

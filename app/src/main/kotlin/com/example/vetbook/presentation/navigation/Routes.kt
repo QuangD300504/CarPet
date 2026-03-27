@@ -74,4 +74,5 @@ sealed class Routes(val route: String) {
     object VaccinationDetail : Routes("vaccination_detail/{vaccinationId}") {
         fun createRoute(vaccinationId: String) = "vaccination_detail/$vaccinationId"
     }
+    object Onboarding : Routes("onboarding")
 }

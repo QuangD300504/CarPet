@@ -25,4 +25,12 @@ class MainViewModel @Inject constructor(
         return authRepository.isUserLoggedIn()
     }
 
+    /** Returns true if the current user signed in via Google (no password needed). */
+    fun isGoogleUser(): Boolean {
+        return authRepository.getCurrentUser()
+            ?.providerData
+            ?.any { it.providerId == "google.com" }
+            ?: false
+    }
+
 }

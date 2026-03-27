@@ -58,6 +58,7 @@ fun ProductsScreen(
 
     LaunchedEffect(uiState.message) {
         uiState.message?.let {
+            snackbarHostState.currentSnackbarData?.dismiss()
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessage()
         }

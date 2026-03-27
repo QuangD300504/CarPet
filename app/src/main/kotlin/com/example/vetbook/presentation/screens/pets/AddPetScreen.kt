@@ -214,10 +214,19 @@ if (showDatePicker) {
                 CustomTextField(
                     value = uiState.name,
                     onValueChange = viewModel::setName,
-                    placeholder = "Tên thú cưng",
+                    placeholder = "Tên thú cưng *",
                     imeAction = ImeAction.Next,
-                    onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
+                    onImeAction = { focusManager.moveFocus(FocusDirection.Down) },
+                    isError = uiState.errorMessage != null && uiState.name.isBlank()
                 )
+                if (uiState.errorMessage != null && uiState.name.isBlank()) {
+                    Text(
+                        text = "Vui lòng nhập tên thú cưng",
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                    )
+                }
 
                 // Type dropdown
                 Box(modifier = Modifier.fillMaxWidth()) {

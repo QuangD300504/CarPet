@@ -199,15 +199,17 @@ class FirebaseStoreDataSource(
         val reg: ListenerRegistration = firestore
             .collection(STORE_ORDERS_COLLECTION)
             .whereEqualTo("uid", uid)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
+            // Removed .orderBy("createdAt") — requires a composite Firestore index that
+            // silently returns emptyList() when missing. Sort in-memory instead.
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
+                    android.util.Log.e("FirebaseStoreDataSource", "observeOrders error: ${error.message}")
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
                 val items = snapshot?.documents.orEmpty().mapNotNull { doc ->
                     try { doc.toStoreOrderDto() } catch (_: Exception) { null }
-                }
+                }.sortedByDescending { it.createdAt } // sort in-memory
                 trySend(items)
             }
         awaitClose { reg.remove() }
@@ -261,11 +263,7 @@ class FirebaseStoreDataSource(
             deliveryCharges = getDouble("deliveryCharges") ?: 0.0,
             total = getDouble("total") ?: 0.0,
             status = getString("status") ?: "PENDING",
-            createdAt = getLong("createdAt") ?: 0L,
-            checkoutUrl = getString("checkoutUrl"),
-            receiverName = getString("receiverName"),
-            receiverPhone = getString("receiverPhone"),
-            deliveryAddress = getString("deliveryAddress")
+            createdAt = getLong("createdAt") ?: 0L
         )
     }
 }

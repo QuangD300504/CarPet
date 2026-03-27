@@ -78,6 +78,9 @@ object VetBookSnackbar {
         type: SnackbarType = SnackbarType.Info,
         duration: SnackbarDuration = SnackbarDuration.Short,
     ) {
+        // Dismiss any currently visible snackbar immediately so the new one
+        // replaces it without waiting for the previous duration to expire.
+        snackbarHostState.currentSnackbarData?.dismiss()
         snackbarHostState.showSnackbar(
             message = "$type│$message",
             duration = duration,

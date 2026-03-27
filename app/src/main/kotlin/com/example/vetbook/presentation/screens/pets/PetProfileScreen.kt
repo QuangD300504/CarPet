@@ -256,7 +256,37 @@ private fun PetProfileContent(
                     if (pet.vaccinations.isEmpty()) {
                         Text(text = "Chưa có lịch tiêm chủng", color = TextSecondary, fontSize = 14.sp)
                     } else {
-                        pet.vaccinations.take(3).forEach { v ->
+                        // PET-02: Split count by status so user sees pending/completed separately
+                        val pendingCount = pet.vaccinations.count {
+                            it.status == VaccinationStatus.PENDING ||
+                            it.status == VaccinationStatus.OVERDUE
+                        }
+                        val scheduledCount = pet.vaccinations.count {
+                            it.status == VaccinationStatus.SCHEDULED
+                        }
+                        val completedCount = pet.vaccinations.count {
+                            it.status == VaccinationStatus.COMPLETED
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (pendingCount > 0) VaccinationCountChip("$pendingCount cần tiêm", Color(0xFFFFEBEE), Color(0xFFC62828))
+                            if (scheduledCount > 0) VaccinationCountChip("$scheduledCount đã hẹn", Color(0xFFE3EAF8), Color(0xFF1565C0))
+                            if (completedCount > 0) VaccinationCountChip("$completedCount đã tiêm", Color(0xFFE8F5E9), Color(0xFF2E7D32))
+                        }
+                        // Show top 3 by priority: OVERDUE first, then PENDING, then SCHEDULED
+                        val prioritized = pet.vaccinations
+                            .sortedWith(compareBy {
+                                when (it.status) {
+                                    VaccinationStatus.OVERDUE   -> 0
+                                    VaccinationStatus.PENDING   -> 1
+                                    VaccinationStatus.SCHEDULED -> 2
+                                    else -> 3
+                                }
+                            })
+                            .take(3)
+                        prioritized.forEach { v ->
                             VaccinationCard(vaccination = v, onClick = { onVaccinationClick(v.id) })
                             Spacer(Modifier.height(12.dp))
                         }
@@ -335,6 +365,22 @@ private fun RowScope.StatBox(label: String, value: String) {
             Spacer(Modifier.height(6.dp))
             Text(value, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
         }
+    }
+}
+
+@Composable
+private fun VaccinationCountChip(label: String, bgColor: Color, textColor: Color) {
+    Surface(
+        color = bgColor,
+        shape = RoundedCornerShape(6.dp)
+    ) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }
 

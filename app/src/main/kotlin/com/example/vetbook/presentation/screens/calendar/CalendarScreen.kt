@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,15 +38,12 @@ import com.example.vetbook.presentation.theme.HealthPrimary
 import com.example.vetbook.presentation.viewmodels.CalendarUiState
 import com.example.vetbook.presentation.viewmodels.CalendarViewModel
 import com.example.vetbook.presentation.components.calendar.RateDoctorDialog
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.runtime.DisposableEffect
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @Composable
 fun CalendarScreen(
@@ -57,17 +55,6 @@ fun CalendarScreen(
     val uiState by viewModel.uiState.collectAsState()
     val reviewMessage by veterinariansViewModel.reviewMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // VAC-06: Refresh appointments when returning to Calendar tab so newly
-    // booked vaccine-linked appointments appear without a full app restart.
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
 
     LaunchedEffect(uiState.paymentUrl) {
         uiState.paymentUrl?.let { url ->
@@ -112,6 +99,8 @@ private fun CalendarContent(
     var showRateDialog by remember { mutableStateOf(false) }
     var rateTargetAppointment by remember { mutableStateOf<Appointment?>(null) }
     val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
+    // CAL-01: scope for snackbar
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { scaffoldPadding ->
         Box(modifier = Modifier.padding(scaffoldPadding)) {
@@ -150,7 +139,13 @@ private fun CalendarContent(
                             modifier = Modifier.size(48.dp),
                             shape = CircleShape,
                             color = Brand.copy(alpha = 0.1f),
-                            onClick = { showReminder = true }
+                            // CAL-01: Reminder feature not yet implemented — show info snackbar
+                            onClick = {
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    snackbarHostState.showSnackbar("Tính năng nhắc hẹn đang được phát triển")
+                                }
+                            }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -211,7 +206,31 @@ private fun CalendarContent(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // CAL-02: Hint so users know tapping a day shows appointments below
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.TouchApp,
+                            contentDescription = null,
+                            tint = Color.Gray.copy(alpha = 0.5f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "Chọn ngày để xem lịch hẹn",
+                            fontSize = 11.sp,
+                            color = Color.Gray.copy(alpha = 0.5f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Column(
                         modifier = Modifier
@@ -287,17 +306,6 @@ private fun CalendarContent(
                             }
                         }
                     }
-                }
-            }
-
-            if (showReminder) {
-                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                ModalBottomSheet(
-                    onDismissRequest = { showReminder = false },
-                    sheetState = sheetState,
-                    containerColor = Color.White
-                ) {
-                    ReminderSheetContent(onClose = { showReminder = false })
                 }
             }
 
