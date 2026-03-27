@@ -78,7 +78,7 @@ fun VaccinationListScreen(
     onBackClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
     onVaccinationClick: (String) -> Unit = {},
-    onBookAppointment: (vaccinationId: String) -> Unit = {}
+    onBookAppointment: (vaccinationId: String, doctorId: String) -> Unit = { _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -299,7 +299,7 @@ fun VaccinationListScreen(
                                 VaccinationListItem(
                                     vaccination = vaccination,
                                     onClick = { onVaccinationClick(vaccination.id) },
-                                    onBookAppointment = { onBookAppointment(vaccination.id) }
+                                    onBookAppointment = { onBookAppointment(vaccination.id, vaccination.veterinarianId ?: "") }
                                 )
                             }
 
@@ -318,7 +318,7 @@ fun VaccinationListScreen(
 private fun VaccinationListItem(
     vaccination: Vaccination,
     onClick: () -> Unit,
-    onBookAppointment: (vaccinationId: String) -> Unit
+    onBookAppointment: () -> Unit
 ) {
     val style = statusStyle(vaccination.status)
 
@@ -421,7 +421,7 @@ private fun VaccinationListItem(
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
-                            onClick = { onBookAppointment(vaccination.id) },
+                            onClick = { onBookAppointment() },
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             colors = ButtonDefaults.outlinedButtonColors(

@@ -29,7 +29,11 @@ data class StoreOrderDto(
     val deliveryCharges: Double = 0.0,
     val total: Double = 0.0,
     val status: String = "PENDING",
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val checkoutUrl: String? = null,
+    val receiverName: String? = null,
+    val receiverPhone: String? = null,
+    val deliveryAddress: String? = null
 )
 
 data class OrderItemDto(
@@ -38,4 +42,3 @@ data class OrderItemDto(
     val quantity: Int = 0,
     val lineTotal: Double = 0.0
 )
-

@@ -8,6 +8,8 @@ import androidx.core.app.NotificationCompat
 import com.example.vetbook.MainActivity
 import com.example.vetbook.R
 import com.example.vetbook.VetBookApplication
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
@@ -15,16 +17,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class VetBookFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject lateinit var firestore: FirebaseFirestore
+    @Inject lateinit var auth: FirebaseAuth
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Token is forwarded to the Worker via NotificationRepository.subscribeToPush()
-        // triggered by whoever calls that method on app start
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -39,7 +44,21 @@ class VetBookFirebaseMessagingService : FirebaseMessagingService() {
         val type = remoteMessage.data["type"]
         val refId = remoteMessage.data["refId"]
 
-        showNotification(title, body, type, refId)
+        serviceScope.launch {
+            // PRO-01: Check user's notification preference before posting.
+            // If disabled in-app, suppress the notification silently.
+            val uid = auth.currentUser?.uid
+            if (uid != null) {
+                try {
+                    val doc = firestore.collection("users").document(uid).get().await()
+                    val enabled = doc.getBoolean("preferences.notificationsEnabled") ?: true
+                    if (!enabled) return@launch
+                } catch (_: Exception) {
+                    // On error, default to showing the notification
+                }
+            }
+            showNotification(title, body, type, refId)
+        }
     }
 
     private fun showNotification(

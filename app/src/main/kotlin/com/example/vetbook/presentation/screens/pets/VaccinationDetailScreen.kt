@@ -80,7 +80,7 @@ fun VaccinationDetailScreen(
     viewModel: VaccinationDetailViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onVetClick: (String) -> Unit = {},
-    onBookAppointment: (vaccinationId: String, doctorId: String) -> Unit = { _, _ -> }
+    onBookAppointment: (vaccinationId: String, doctorId: String, vaccineTitle: String) -> Unit = { _, _, _ -> }
 ) {
     val vaccination by viewModel.vaccination.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -266,7 +266,7 @@ fun VaccinationDetailScreen(
 private fun DetailContent(
     vaccination: Vaccination,
     onVetClick: (String) -> Unit,
-    onBookAppointment: (vaccinationId: String, doctorId: String) -> Unit,
+    onBookAppointment: (vaccinationId: String, doctorId: String, vaccineTitle: String) -> Unit,
     onMarkDone: () -> Unit,
     onMarkSkipped: () -> Unit,
     onUploadCert: () -> Unit,
@@ -503,7 +503,7 @@ private fun DetailContent(
         when (vaccination.status) {
             VaccinationStatus.PENDING -> {
                 Button(
-                    onClick = { onBookAppointment(vaccination.id, vaccination.veterinarianId ?: "") },
+                    onClick = { onBookAppointment(vaccination.id, vaccination.veterinarianId ?: "", vaccination.title) },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Teal),
                     shape = RoundedCornerShape(12.dp)
@@ -537,6 +537,23 @@ private fun DetailContent(
                     ) {
                         Text("Bỏ qua", fontWeight = FontWeight.Medium)
                     }
+                }
+                // VAC-03: Re-book button for when appointment was missed or cancelled
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { onBookAppointment(vaccination.id, vaccination.veterinarianId ?: "", vaccination.title) },
+                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Teal),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Teal.copy(alpha = 0.5f))
+                ) {
+                    Icon(Icons.Default.CalendarMonth, null, Modifier.size(15.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        if (vaccination.status == VaccinationStatus.OVERDUE) "Đặt lại lịch" else "Đổi lịch hẹn",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
             else -> {}

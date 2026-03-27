@@ -295,7 +295,7 @@ selectedRecords.forEach { record ->
                         appointmentId,
                         "Tiêm chủng: ${record.title}"
                     )
-                } catch (_: Exception) { /* non-critical */ }
+                } catch (_: Exception) { /* non-criticMainscreen al */ }
             }
         }
     }

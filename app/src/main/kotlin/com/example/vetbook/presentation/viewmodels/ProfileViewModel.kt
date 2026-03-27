@@ -2,10 +2,13 @@ package com.example.vetbook.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.app.Application
 import com.example.vetbook.data.datasource.RemoteUserDataSource
 import com.example.vetbook.domain.repository.AuthRepository
 import com.example.vetbook.domain.repository.BookingRepository
+import com.example.vetbook.domain.repository.NotificationRepository
 import com.example.vetbook.domain.usecases.GetUserProfileUseCase
+import com.example.vetbook.notification.ReminderNotificationHelper
 import com.example.vetbook.domain.usecases.UpdateUserAvatarUseCase
 import com.example.vetbook.presentation.models.ProfileUiState
 import com.google.firebase.auth.FirebaseAuth
@@ -19,12 +22,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
+    private val application: Application,
     private val getUserProfileUseCase: GetUserProfileUseCase,
     private val updateUserAvatarUseCase: UpdateUserAvatarUseCase,
     private val remoteUserDataSource: RemoteUserDataSource,
     private val authRepository: AuthRepository,
     private val auth: FirebaseAuth,
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -57,8 +62,15 @@ class ProfileViewModel @Inject constructor(
                         },
                         pets = result?.second ?: emptyList(),
                         upcomingAppointmentCount = upcomingCount,
+                        notificationsEnabled = true, // default; overridden by Firestore read below
                         isLoading = false
                     )
+                }
+                // Read notifications preference from Firestore
+                if (uid.isNotBlank()) {
+                    val profile = remoteUserDataSource.getUserProfile(uid)
+                    val notifEnabled = profile?.preferences?.notificationsEnabled ?: true
+                    _uiState.update { it.copy(notificationsEnabled = notifEnabled) }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(user = null, pets = emptyList(), isLoading = false) }
@@ -116,6 +128,56 @@ class ProfileViewModel @Inject constructor(
                 onResult(true, "Tài khoản đã được xóa")
             } else {
                 onResult(false, result.exceptionOrNull()?.message ?: "Xóa tài khoản thất bại")
+            }
+        }
+    }
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        val uid = auth.currentUser?.uid ?: return
+        _uiState.update { it.copy(notificationsEnabled = enabled) }
+        viewModelScope.launch {
+            try {
+                remoteUserDataSource.updateUserProfileFields(
+                    uid = uid,
+                    fields = mapOf("preferences.notificationsEnabled" to enabled)
+                )
+                // When turning ON, immediately schedule/show reminders for each upcoming appointment
+                if (enabled) {
+                    try {
+                        val upcoming = bookingRepository.getUserAppointments(uid)
+                            .first()
+                            .filter { it.status == "UPCOMING" || it.status == "PENDING_PAYMENT" }
+                        val now = System.currentTimeMillis()
+                        upcoming.forEach { appt ->
+                            val apptMillis = appt.appointmentAt.toEpochMilli()
+                            val reminderMillis = apptMillis - (24 * 60 * 60 * 1000L)
+                            val apptFormatted = java.text.SimpleDateFormat(
+                                "dd/MM/yyyy HH:mm", java.util.Locale.getDefault()
+                            ).format(java.util.Date(apptMillis))
+                            val petName = appt.petNames.firstOrNull() ?: "Thú cưng"
+                            if (reminderMillis > now) {
+                                // More than 24h away — schedule WorkManager reminder
+                                ReminderNotificationHelper.scheduleAppointmentReminder(
+                                    context = application,
+                                    workName = "appointment_reminder_${appt.id}",
+                                    vetName = appt.veterinarianName,
+                                    petName = petName,
+                                    appointmentTime = apptFormatted,
+                                    reminderTimeMillis = reminderMillis
+                                )
+                            } else if (apptMillis > now) {
+                                // Less than 24h away — show notification immediately
+                                ReminderNotificationHelper.showNotification(
+                                    context = application,
+                                    title = "Nhắc lịch hẹn hôm nay",
+                                    body = "Lịch khám với ${appt.veterinarianName} lúc $apptFormatted cho $petName"
+                                )
+                            }
+                        }
+                    } catch (_: Exception) { }
+                }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(notificationsEnabled = !enabled) }
             }
         }
     }

@@ -58,7 +58,11 @@ fun StoreOrderDto.toDomain(): StoreOrder = StoreOrder(
     deliveryCharges = deliveryCharges,
     total = total,
     status = com.example.vetbook.domain.models.OrderStatus.fromString(status),
-    createdAt = createdAt
+    createdAt = createdAt,
+    checkoutUrl = checkoutUrl,
+    receiverName = receiverName,
+    receiverPhone = receiverPhone,
+    deliveryAddress = deliveryAddress
 )
 
 fun OrderItemDto.toDomain(): com.example.vetbook.domain.models.OrderItem =

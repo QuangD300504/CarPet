@@ -39,6 +39,8 @@ import com.example.vetbook.presentation.theme.Divider
 import com.example.vetbook.presentation.viewmodels.CheckoutViewModel
 import com.example.vetbook.presentation.components.common.VetBookSnackbarHost
 import com.example.vetbook.utils.PayosLauncher
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 @Composable
 fun PaymentScreen(
@@ -136,6 +138,59 @@ fun PaymentScreen(
                                 OrderSummaryCard(orderSummary = orderSummary)
                             }
 
+                            // STO-01: Delivery address form
+                            item {
+                                Text(
+                                    text = "Thông tin giao hàng",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary,
+                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                )
+                            }
+                            item {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color.White,
+                                    shadowElevation = 1.dp
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = uiState.receiverName,
+                                            onValueChange = { viewModel.setReceiverName(it) },
+                                            label = { Text("Tên người nhận") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        OutlinedTextField(
+                                            value = uiState.receiverPhone,
+                                            onValueChange = { viewModel.setReceiverPhone(it) },
+                                            label = { Text("Số điện thoại") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Phone
+                                            ),
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        OutlinedTextField(
+                                            value = uiState.deliveryAddress,
+                                            onValueChange = { viewModel.setDeliveryAddress(it) },
+                                            label = { Text("Địa chỉ giao hàng") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            minLines = 2,
+                                            maxLines = 3,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                    }
+                                }
+                            }
+
                             item {
                                 Text(
                                     text = "Chọn phương thức thanh toán",
@@ -179,7 +234,10 @@ fun PaymentScreen(
                                         containerColor = HealthPrimary
                                     ),
                                     shape = RoundedCornerShape(16.dp),
-                                    enabled = uiState.itemCount > 0
+                                    enabled = uiState.itemCount > 0 &&
+                                        uiState.receiverName.isNotBlank() &&
+                                        uiState.receiverPhone.isNotBlank() &&
+                                        uiState.deliveryAddress.isNotBlank()
                                 ) {
                                     Text(
                                         text = "Xác nhận Thanh toán",

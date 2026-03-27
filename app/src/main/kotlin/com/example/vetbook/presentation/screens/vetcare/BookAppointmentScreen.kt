@@ -69,7 +69,9 @@ fun BookAppointmentScreen(
     bookingViewModel: BookAppointmentViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
     onShowPayment: (checkoutUrl: String) -> Unit = {},
-    onPaymentFinished: (isSuccess: Boolean, appointmentId: String, vetName: String?, appointmentAt: java.util.Date?) -> Unit = { _, _, _, _ -> }
+    onPaymentFinished: (isSuccess: Boolean, appointmentId: String, vetName: String?, appointmentAt: java.util.Date?) -> Unit = { _, _, _, _ -> },
+    vaccineContextLabel: String? = null,
+    onDismissVaccineContext: () -> Unit = {}
 ) {
     val uiState by vetsViewModel.uiState.collectAsState()
     val doctor = uiState.veterinarians.find { it.id == doctorId }
@@ -176,6 +178,8 @@ fun BookAppointmentScreen(
             pastSlots         = pastSlots,
             timeSlots         = timeSlots,
             onBackClick       = onBackClick,
+            vaccineContextLabel = vaccineContextLabel,
+            onDismissVaccineContext = onDismissVaccineContext,
             onPetToggle       = { bookingViewModel.togglePetSelection(it) },
             onDateSelect      = { selectedDateMillis = it },
             onSlotSelect      = { selectedSlot = it },
@@ -225,6 +229,8 @@ private fun BookAppointmentContent(
     pastSlots: Set<String> = emptySet(),
     timeSlots: List<String> = emptyList(),
     onBackClick: () -> Unit = {},
+    vaccineContextLabel: String? = null,
+    onDismissVaccineContext: () -> Unit = {},
     onPetToggle: (String) -> Unit,
     onDateSelect: (Long?) -> Unit,
     onSlotSelect: (String?) -> Unit,
@@ -349,6 +355,55 @@ private fun BookAppointmentContent(
             }
 
             Column(modifier = Modifier.padding(20.dp)) {
+                // VAC-01: Vaccine context banner
+                if (vaccineContextLabel != null) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFE6F4F1),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0D7377).copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Vaccines,
+                                contentDescription = null,
+                                tint = Color(0xFF0D7377),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Đang đặt lịch tiêm chủng",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF0D5E61),
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    vaccineContextLabel,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0D7377)
+                                )
+                            }
+                            // VAC-05: dismiss
+                            IconButton(
+                                onClick = onDismissVaccineContext,
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Hủy chọn vaccine",
+                                    tint = Color(0xFF0D7377).copy(alpha = 0.7f),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
                 // Section: Pets
                 SectionTitle(title = "Chọn Thú Cưng", icon = Icons.Default.Pets)
                 Spacer(modifier = Modifier.height(16.dp))

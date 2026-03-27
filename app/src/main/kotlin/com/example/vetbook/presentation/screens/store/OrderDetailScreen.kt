@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vetbook.domain.models.OrderItem
+import com.example.vetbook.domain.models.OrderStatus
 import com.example.vetbook.domain.models.StoreOrder
 import com.example.vetbook.presentation.components.common.VetBookImage
 import com.example.vetbook.presentation.components.store.OrderSummaryCard
@@ -37,7 +39,8 @@ import java.util.*
 fun OrderDetailScreen(
     orderId: String,
     viewModel: OrderHistoryViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onRetryPayment: (checkoutUrl: String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -117,7 +120,7 @@ fun OrderDetailScreen(
                 }
 
                 else -> {
-                    OrderDetailContent(order = order!!)
+                    OrderDetailContent(order = order!!, onRetryPayment = onRetryPayment)
                 }
             }
         }
@@ -125,7 +128,7 @@ fun OrderDetailScreen(
 }
 
 @Composable
-private fun OrderDetailContent(order: StoreOrder) {
+private fun OrderDetailContent(order: StoreOrder, onRetryPayment: (String) -> Unit = {}) {
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("vi", "VN")) }
     val dateStr = remember(order.createdAt) {
         dateFormatter.format(Date(order.createdAt))
@@ -173,6 +176,41 @@ private fun OrderDetailContent(order: StoreOrder) {
                         fontSize = 14.sp,
                         color = HealthMuted
                     )
+                }
+            }
+        }
+
+        // STO-02: Retry payment button for PENDING orders
+        if (order.status == OrderStatus.PENDING && !order.checkoutUrl.isNullOrBlank()) {
+            item {
+                Button(
+                    onClick = { onRetryPayment(order.checkoutUrl!!) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthPrimary),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Tiếp tục thanh toán", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
+
+        // Delivery address card
+        if (!order.receiverName.isNullOrBlank() || !order.deliveryAddress.isNullOrBlank()) {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    shadowElevation = 2.dp
+                ) {
+                    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Địa chỉ giao hàng", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        order.receiverName?.let { Text(it, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary) }
+                        order.receiverPhone?.let { Text(it, fontSize = 13.sp, color = HealthMuted) }
+                        order.deliveryAddress?.let { Text(it, fontSize = 13.sp, color = HealthMuted) }
+                    }
                 }
             }
         }

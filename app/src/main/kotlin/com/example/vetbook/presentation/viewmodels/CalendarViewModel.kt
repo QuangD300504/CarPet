@@ -36,30 +36,26 @@ class CalendarViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
-    init {
-        val userId = auth.currentUser?.uid
-        if (userId != null) {
-            _uiState.update { it.copy(isLoading = true) }
-            viewModelScope.launch {
-                bookingRepository.getUserAppointments(userId).collect { appointments ->
-                    // Auto-complete past UPCOMING appointments
-                    val now = java.time.Instant.now()
-                    val pastUpcoming = appointments.filter {
-                        it.status == "UPCOMING" &&
-                        it.appointmentAt.isBefore(now)
-                    }
-                    pastUpcoming.forEach { appt ->
-                        launch {
-                            bookingRepository.markAppointmentCompleted(appt.id)
-                        }
-                    }
-                    _uiState.update {
-                        it.copy(
-                            appointments = appointments,
-                            isLoading = false
-                        )
-                    }
+    private var listenerJob: kotlinx.coroutines.Job? = null
+
+    init { startListening() }
+
+    fun refresh() {
+        listenerJob?.cancel()
+        startListening()
+    }
+
+    private fun startListening() {
+        val userId = auth.currentUser?.uid ?: return
+        _uiState.update { it.copy(isLoading = true) }
+        listenerJob = viewModelScope.launch {
+            bookingRepository.getUserAppointments(userId).collect { appointments ->
+                val now = java.time.Instant.now()
+                val pastUpcoming = appointments.filter {
+                    it.status == "UPCOMING" && it.appointmentAt.isBefore(now)
                 }
+                pastUpcoming.forEach { appt -> launch { bookingRepository.markAppointmentCompleted(appt.id) } }
+                _uiState.update { it.copy(appointments = appointments, isLoading = false) }
             }
         }
     }

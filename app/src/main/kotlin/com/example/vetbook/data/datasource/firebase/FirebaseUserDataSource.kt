@@ -29,7 +29,15 @@ class FirebaseUserDataSource(
             createdAt = snapshot.getLong("createdAt") ?: 0L,
             updatedAt = snapshot.getLong("updatedAt"),
             isEmailVerified = snapshot.getBoolean("isEmailVerified") ?: false,
-            lastLogin = snapshot.getLong("lastLogin")
+            lastLogin = snapshot.getLong("lastLogin"),
+            preferences = snapshot.get("preferences")?.let { raw ->
+                @Suppress("UNCHECKED_CAST")
+                val map = raw as? Map<String, Any> ?: emptyMap()
+                UserProfileDto.Preferences(
+                    notificationsEnabled = map["notificationsEnabled"] as? Boolean ?: true,
+                    language = map["language"] as? String ?: "en"
+                )
+            }
         )
     }
 
@@ -66,5 +74,3 @@ class FirebaseUserDataSource(
             .await()
     }
 }
-
-

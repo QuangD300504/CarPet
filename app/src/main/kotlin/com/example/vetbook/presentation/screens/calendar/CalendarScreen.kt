@@ -42,6 +42,10 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @Composable
 fun CalendarScreen(
@@ -53,6 +57,17 @@ fun CalendarScreen(
     val uiState by viewModel.uiState.collectAsState()
     val reviewMessage by veterinariansViewModel.reviewMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // VAC-06: Refresh appointments when returning to Calendar tab so newly
+    // booked vaccine-linked appointments appear without a full app restart.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(uiState.paymentUrl) {
         uiState.paymentUrl?.let { url ->

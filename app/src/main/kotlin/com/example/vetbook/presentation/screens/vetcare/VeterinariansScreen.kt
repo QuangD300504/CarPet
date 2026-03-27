@@ -49,14 +49,18 @@ import com.example.vetbook.presentation.components.common.VetBookImage
 fun VeterinariansScreen(
     viewModel: VeterinariansViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
-    onVetClick: (String) -> Unit = {}
+    onVetClick: (String) -> Unit = {},
+    vaccineContextLabel: String? = null,
+    onDismissVaccineContext: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     VeterinariansContent(
         uiState     = uiState,
         onBackClick = onBackClick,
-        onVetClick  = onVetClick
+        onVetClick  = onVetClick,
+        vaccineContextLabel = vaccineContextLabel,
+        onDismissVaccineContext = onDismissVaccineContext
     )
 }
 
@@ -64,7 +68,9 @@ fun VeterinariansScreen(
 fun VeterinariansContent(
     uiState: VeterinariansUiState,
     onBackClick: () -> Unit,
-    onVetClick: (String) -> Unit
+    onVetClick: (String) -> Unit,
+    vaccineContextLabel: String? = null,
+    onDismissVaccineContext: () -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -127,6 +133,56 @@ fun VeterinariansContent(
                 contentPadding      = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // VAC-01: Show vaccine context banner when booking from vaccine flow
+                if (vaccineContextLabel != null) {
+                    item {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFE6F4F1),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0D7377).copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Vaccines,
+                                    contentDescription = null,
+                                    tint = Color(0xFF0D7377),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Đang đặt lịch tiêm chủng",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF0D5E61),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        vaccineContextLabel,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0D7377)
+                                    )
+                                }
+                                // VAC-05: dismiss button
+                                IconButton(
+                                    onClick = onDismissVaccineContext,
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Hủy chọn vaccine",
+                                        tint = Color(0xFF0D7377).copy(alpha = 0.7f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 item {
                     Text(
                         text      = "Bác Sĩ Hàng Đầu",

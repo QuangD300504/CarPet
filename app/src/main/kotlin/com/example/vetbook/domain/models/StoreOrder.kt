@@ -11,7 +11,11 @@ data class StoreOrder(
     val deliveryCharges: Double,
     val total: Double,
     val status: OrderStatus,
-    val createdAt: Long
+    val createdAt: Long,
+    val checkoutUrl: String? = null,
+    val receiverName: String? = null,
+    val receiverPhone: String? = null,
+    val deliveryAddress: String? = null
 )
 
 data class OrderItem(

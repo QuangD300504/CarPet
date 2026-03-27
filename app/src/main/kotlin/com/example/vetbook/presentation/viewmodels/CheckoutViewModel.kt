@@ -56,8 +56,16 @@ class CheckoutViewModel @Inject constructor(
         val discount: Double = 0.0,
         val deliveryCharges: Double = 0.0,
         val total: Double = 0.0,
-        val checkoutSuccess: Boolean = false
+        val checkoutSuccess: Boolean = false,
+        // Delivery address fields
+        val receiverName: String = "",
+        val receiverPhone: String = "",
+        val deliveryAddress: String = ""
     )
+
+    // Retained across fetchPayosUrl → onCheckoutSuccess to avoid orderCode mismatch
+    private var pendingOrderCode: Long? = null
+    private var pendingCheckoutUrl: String? = null
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -73,11 +81,15 @@ class CheckoutViewModel @Inject constructor(
         }
     }
 
+    fun setReceiverName(v: String) { _uiState.value = _uiState.value.copy(receiverName = v) }
+    fun setReceiverPhone(v: String) { _uiState.value = _uiState.value.copy(receiverPhone = v) }
+    fun setDeliveryAddress(v: String) { _uiState.value = _uiState.value.copy(deliveryAddress = v) }
+
     suspend fun fetchPayosUrl(): String {
         val total = _uiState.value.total
         val amount = kotlin.math.round(total).toInt()
         if (amount <= 0) throw IllegalArgumentException("Cart is empty.")
-        
+
         val orderCode = System.currentTimeMillis()
         val description = "VetBook Store Order"
         val cancelUrl = "vetbook-payos://payment-result"
@@ -90,9 +102,9 @@ class CheckoutViewModel @Inject constructor(
             "orderCode" to orderCode,
             "returnUrl" to returnUrl
         )
-        
+
         val signature = PayosHelper.calculateSignature(params)
-        
+
         val request = PayosPaymentRequest(
             orderCode = orderCode,
             amount = amount,
@@ -101,18 +113,19 @@ class CheckoutViewModel @Inject constructor(
             returnUrl = returnUrl,
             signature = signature
         )
-        
+
         val response = payosApi.createPaymentLink(PayosHelper.CLIENT_ID, PayosHelper.API_KEY, request)
-        
+
         if (response.code != "00") {
             throw IllegalStateException("PayOS error: ${response.desc}")
         }
-        
+
         val checkoutUrl = response.data?.checkoutUrl ?: throw IllegalStateException("Failed to get checkout URL")
-        
-        // Save orderCode to a local property or Firestore if needed for IPN
-        // For now, it's enough to just return the URL
-        
+
+        // Persist orderCode and checkoutUrl so onCheckoutSuccess uses the same order
+        pendingOrderCode = orderCode
+        pendingCheckoutUrl = checkoutUrl
+
         return checkoutUrl
     }
 
@@ -123,42 +136,45 @@ class CheckoutViewModel @Inject constructor(
     fun onCheckoutSuccess() {
         val uid = auth.currentUser?.uid ?: return
         val state = _uiState.value
+        // Use the orderCode from fetchPayosUrl to avoid mismatch with PayOS
+        val orderCode = pendingOrderCode ?: System.currentTimeMillis()
+        val checkoutUrl = pendingCheckoutUrl
         viewModelScope.launch {
             try {
-                // Write order record to Firestore
-            val orderCode = System.currentTimeMillis()
-            val orderData = hashMapOf(
-                "uid" to uid,
-                "orderCode" to orderCode.toString(), // matches PayOS orderCode
-                "items" to state.lines.map { line ->
-                    mapOf(
-                        "productId" to line.product.id,
-                        "productName" to line.product.name,
-                        "quantity" to line.quantity,
-                        "lineTotal" to line.lineTotal
-                    )
-                },
+                val orderData = hashMapOf(
+                    "uid" to uid,
+                    "orderCode" to orderCode.toString(),
+                    "items" to state.lines.map { line ->
+                        mapOf(
+                            "productId" to line.product.id,
+                            "productName" to line.product.name,
+                            "quantity" to line.quantity,
+                            "lineTotal" to line.lineTotal
+                        )
+                    },
                     "itemCount" to state.itemCount,
                     "subtotal" to state.subtotal,
                     "discount" to state.discount,
                     "deliveryCharges" to state.deliveryCharges,
                     "total" to state.total,
                     "status" to "PAID",
-                    "createdAt" to System.currentTimeMillis()
+                    "createdAt" to System.currentTimeMillis(),
+                    "receiverName" to state.receiverName.ifBlank { null },
+                    "receiverPhone" to state.receiverPhone.ifBlank { null },
+                    "deliveryAddress" to state.deliveryAddress.ifBlank { null },
+                    "checkoutUrl" to checkoutUrl
                 )
                 firestore.collection("storeOrders").add(orderData).await()
                 Log.d("CheckoutViewModel", "Order saved successfully")
             } catch (e: Exception) {
                 Log.e("CheckoutViewModel", "Failed to save order: ${e.message}")
-                // Non-fatal: still proceed to clear cart and navigate
             }
-
-            // Clear cart regardless of order-save result
+            pendingOrderCode = null
+            pendingCheckoutUrl = null
             val result = clearCartUseCase(uid)
             if (result.isFailure) {
                 Log.e("CheckoutViewModel", "Failed to clear cart: ${result.exceptionOrNull()?.message}")
             }
-
             _uiState.value = _uiState.value.copy(checkoutSuccess = true)
         }
     }

@@ -8,6 +8,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Vaccines
+import androidx.compose.material.icons.filled.Vaccines
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,7 +43,9 @@ fun PaymentResultScreen(
     onContinueShoppingClick: () -> Unit,
     onHomeClick: () -> Unit,
     onViewCalendarClick: (() -> Unit)? = null,
-    onTryAgainClick: (() -> Unit)? = null
+    onTryAgainClick: (() -> Unit)? = null,
+    onViewVaccinationClick: (() -> Unit)? = null,
+    onOrderHistoryClick: (() -> Unit)? = null
 ) {
     // Vet-booking mode: we have a calendar action (success) or try-again action (failure)
     val isVetBookingFlow = onViewCalendarClick != null || onTryAgainClick != null
@@ -175,6 +180,54 @@ fun PaymentResultScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Show order history shortcut for store payment success
+            if (isSuccess && onOrderHistoryClick != null && onViewCalendarClick == null) {
+                OutlinedButton(
+                    onClick = onOrderHistoryClick,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, HealthPrimary.copy(alpha = 0.5f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingBag,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Xem đơn hàng",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // VAC-02: Show vaccine shortcut when booking came from vaccine flow
+            if (isSuccess && onViewVaccinationClick != null) {
+                OutlinedButton(
+                    onClick = onViewVaccinationClick,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, HealthPrimary.copy(alpha = 0.5f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Vaccines,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Xem lịch tiêm chủng",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             OutlinedButton(
                 onClick = onHomeClick,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -191,4 +244,3 @@ fun PaymentResultScreen(
         }
     }
 }
-

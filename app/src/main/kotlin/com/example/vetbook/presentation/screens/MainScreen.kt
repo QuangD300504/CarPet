@@ -282,6 +282,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val veterinariansViewModel: VeterinariansViewModel = hiltViewModel()
     val vaccinationViewModel: VaccinationViewModel = hiltViewModel()
     var pendingVaccineId by remember { mutableStateOf<String?>(null) }
+    var pendingVaccineTitle by remember { mutableStateOf<String?>(null) }
     val categories by homeViewModel.categories.collectAsState()
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -839,6 +840,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         onNotificationClick = {
                             bottomNavController.navigate(Routes.Notifications.route)
                         },
+                        onOrderHistoryClick = {
+                            bottomNavController.navigate(Routes.OrderHistory.route)
+                        },
                         onLanguageClick = {
                             bottomNavController.navigate(Routes.Language.route)
                         },
@@ -978,9 +982,15 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     petType = petType,
                     birthDate = birthDate,
                     viewModel = viewModel,
-                    onBookAppointment = { vaccinationId ->
+                    onBookAppointment = { vaccinationId, doctorId ->
     pendingVaccineId = vaccinationId
-    bottomNavController.navigate(Routes.Veterinarians.route)
+    pendingVaccineTitle = viewModel.uiState.value.vaccinations
+        .find { it.id == vaccinationId }?.title
+    if (doctorId.isBlank()) {
+        bottomNavController.navigate(Routes.Veterinarians.route)
+    } else {
+        bottomNavController.navigate(Routes.BookAppointment.createRoute(doctorId))
+    }
 },
                     onBackClick = { bottomNavController.popBackStack() },
                     onAddClick = {
@@ -1030,8 +1040,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     onVetClick = { doctorId ->
                         bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
                     },
-                    onBookAppointment = { vaccinationId, doctorId ->
+                    onBookAppointment = { vaccinationId, doctorId, vaccineTitle ->
     pendingVaccineId = vaccinationId
+    pendingVaccineTitle = vaccineTitle
     if (doctorId.isBlank()) {
         bottomNavController.navigate(Routes.Veterinarians.route)
     } else {
@@ -1085,7 +1096,10 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
                 com.example.vetbook.presentation.screens.store.OrderDetailScreen(
                     orderId = orderId,
-                    onBackClick = { bottomNavController.popBackStack() }
+                    onBackClick = { bottomNavController.popBackStack() },
+                    onRetryPayment = { url ->
+                        bottomNavController.navigate(Routes.InAppPayment.createRoute(url))
+                    }
                 )
             }
 
@@ -1100,6 +1114,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     onBackClick = { bottomNavController.popBackStack() },
                     onVetClick = { doctorId ->
                         bottomNavController.navigate(Routes.DoctorProfile.createRoute(doctorId))
+                    },
+                    vaccineContextLabel = pendingVaccineTitle,
+                    onDismissVaccineContext = {
+                        pendingVaccineId = null
+                        pendingVaccineTitle = null
                     }
                 )
             }
@@ -1134,12 +1153,18 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 BookAppointmentScreen(
                     doctorId = doctorId,
                     onBackClick = { bottomNavController.popBackStack() },
+                    vaccineContextLabel = pendingVaccineTitle,
+                    onDismissVaccineContext = {
+                        pendingVaccineId = null
+                        pendingVaccineTitle = null
+                    },
                     onShowPayment = { url ->
                         bottomNavController.navigate(Routes.InAppPayment.createRoute(url))
                     },
                     onPaymentFinished = { isSuccess, appointmentId, vetName, appointmentAt ->
+    val linkedVaccId = pendingVaccineId
     if (isSuccess) {
-        pendingVaccineId?.let { vaccId ->
+        linkedVaccId?.let { vaccId ->
             vaccinationViewModel.linkAppointment(
                 vaccinationId = vaccId,
                 appointmentId = appointmentId,
@@ -1150,8 +1175,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         }
     }
     pendingVaccineId = null
+    pendingVaccineTitle = null
     bottomNavController.navigate(
-        Routes.PaymentResult.createRoute(isSuccess, source = "vet")
+        Routes.PaymentResult.createRoute(isSuccess, source = if (linkedVaccId != null) "vaccine" else "vet")
     ) {
         popUpTo(Routes.Home.route) { inclusive = false }
     }
@@ -1190,7 +1216,8 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) { backStackEntry ->
                 val isSuccess = backStackEntry.arguments?.getBoolean("isSuccess") ?: false
                 val source = backStackEntry.arguments?.getString("source") ?: "store"
-                val isVetFlow = source == "vet"
+                val isVetFlow = source == "vet" || source == "vaccine"
+                val isVaccineFlow = source == "vaccine"
                 PaymentResultScreen(
                     isSuccess = isSuccess,
                     onContinueShoppingClick = {
@@ -1201,7 +1228,6 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     },
                     onViewCalendarClick = if (isVetFlow && isSuccess) {
                         {
-                            // Navigate to Calendar tab, clearing the result + booking stack
                             bottomNavController.navigate(Routes.Calendar.route) {
                                 popUpTo(Routes.Home.route) { inclusive = false }
                                 launchSingleTop = true
@@ -1210,8 +1236,22 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     } else null,
                     onTryAgainClick = if (isVetFlow && !isSuccess) {
                         {
-                            // Pop back to the BookAppointment screen so user can retry
                             bottomNavController.popBackStack()
+                        }
+                    } else null,
+                    onViewVaccinationClick = if (isVaccineFlow && isSuccess) {
+                        {
+                            bottomNavController.navigate(Routes.Pet.route) {
+                                popUpTo(Routes.Home.route) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        }
+                    } else null,
+                    onOrderHistoryClick = if (!isVetFlow && isSuccess) {
+                        {
+                            bottomNavController.navigate(Routes.OrderHistory.route) {
+                                popUpTo(Routes.Store.route) { inclusive = false }
+                            }
                         }
                     } else null
                 )
@@ -1241,4 +1281,3 @@ private fun handleServiceNavigation(categoryId: String, navController: NavContro
 fun MainScreenPreview() {
     MainScreen()
 }
-

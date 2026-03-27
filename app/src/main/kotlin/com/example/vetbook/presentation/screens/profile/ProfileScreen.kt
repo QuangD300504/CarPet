@@ -1,4 +1,4 @@
-    package com.example.vetbook.presentation.screens.profile
+package com.example.vetbook.presentation.screens.profile
 
     import androidx.compose.foundation.background
     import androidx.compose.foundation.border
@@ -51,6 +51,7 @@
         onAvatarClick: () -> Unit = {},
         onEditProfileClick: () -> Unit = {},
         onNotificationClick: () -> Unit = {},
+        onOrderHistoryClick: () -> Unit = {},
         onLanguageClick: () -> Unit = {},
         onSecurityClick: () -> Unit = {},
         onHelpAndSupportClick: () -> Unit = {},
@@ -67,6 +68,8 @@
             onAvatarClick = onAvatarClick,
             onEditProfileClick = onEditProfileClick,
             onNotificationClick = onNotificationClick,
+            onNotificationsToggle = { enabled -> viewModel.setNotificationsEnabled(enabled) },
+            onOrderHistoryClick = onOrderHistoryClick,
             onLanguageClick = onLanguageClick,
             onSecurityClick = onSecurityClick,
             onHelpAndSupportClick = onHelpAndSupportClick,
@@ -85,6 +88,8 @@
         onAvatarClick: () -> Unit = {},
         onEditProfileClick: () -> Unit = {},
         onNotificationClick: () -> Unit = {},
+        onNotificationsToggle: (Boolean) -> Unit = {},
+        onOrderHistoryClick: () -> Unit = {},
         onLanguageClick: () -> Unit = {},
         onSecurityClick: () -> Unit = {},
         onHelpAndSupportClick: () -> Unit = {},
@@ -92,7 +97,9 @@
         onPrivacyPolicyClick: () -> Unit = {},
         onLogout: () -> Unit = {}
     ) {
-        var notificationsEnabled by remember { mutableStateOf(true) }
+        var notificationsEnabled by remember(uiState.notificationsEnabled) {
+            mutableStateOf(uiState.notificationsEnabled)
+        }
         var selectedLanguage by remember { mutableStateOf(uiState.selectedLanguage) }
         val context = LocalContext.current
 
@@ -260,6 +267,7 @@
                                         checked = notificationsEnabled,
                                         onCheckedChange = { enabled ->
                                             notificationsEnabled = enabled
+                                            onNotificationsToggle(enabled)
                                             if (enabled) {
                                                 sharedNotificationViewModel?.subscribeToPushWithPermission(
                                                 context as androidx.activity.ComponentActivity
@@ -276,6 +284,12 @@
                                         )
                                     )
                                 }
+                            )
+
+                            MenuItemComponent(
+                                icon = Icons.Default.ShoppingBag,
+                                label = "Lịch sử đơn hàng",
+                                onClick = onOrderHistoryClick
                             )
 
                             MenuItemComponent(
@@ -391,4 +405,3 @@
             }
         }
     }
-

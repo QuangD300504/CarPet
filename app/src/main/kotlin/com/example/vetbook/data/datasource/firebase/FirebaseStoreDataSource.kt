@@ -261,9 +261,11 @@ class FirebaseStoreDataSource(
             deliveryCharges = getDouble("deliveryCharges") ?: 0.0,
             total = getDouble("total") ?: 0.0,
             status = getString("status") ?: "PENDING",
-            createdAt = getLong("createdAt") ?: 0L
+            createdAt = getLong("createdAt") ?: 0L,
+            checkoutUrl = getString("checkoutUrl"),
+            receiverName = getString("receiverName"),
+            receiverPhone = getString("receiverPhone"),
+            deliveryAddress = getString("deliveryAddress")
         )
     }
 }
-
-

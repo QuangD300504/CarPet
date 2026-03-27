@@ -9,6 +9,6 @@ data class ProfileUiState(
     val isLoading: Boolean = true,
     val selectedLanguage: String = "English",
     val isDarkModeEnabled: Boolean = false,
-    val upcomingAppointmentCount: Int = 0
+    val upcomingAppointmentCount: Int = 0,
+    val notificationsEnabled: Boolean = true
 )
-

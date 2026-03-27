@@ -210,13 +210,12 @@ class AddPetViewModel @Inject constructor(
     fun confirmVaccineReview(selectedRecords: List<Vaccination>, onComplete: () -> Unit) {
         val petId = _uiState.value.pendingVaccinePet?.id ?: return
         viewModelScope.launch {
-            
-selectedRecords.forEach { record ->
-    val result = vaccinationRepository.addVaccination(record)
-result.getOrNull()?.let { saved ->
-    val dueDate = saved.scheduledDate ?: return@let
-    val reminderTimeMillis = System.currentTimeMillis() + 10_000L
-    val dueDateFormatted = dueDate
+            selectedRecords.forEach { record ->
+                val result = vaccinationRepository.addVaccination(record)
+                result.getOrNull()?.let { saved ->
+                    val dueDate = saved.scheduledDate ?: return@let
+                    val reminderTimeMillis = System.currentTimeMillis() + 10_000L
+                    val dueDateFormatted = dueDate
         .atZone(java.time.ZoneId.systemDefault())
         .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
     android.util.Log.d("VetBook", "AddPet scheduling reminder for ${saved.title}")
