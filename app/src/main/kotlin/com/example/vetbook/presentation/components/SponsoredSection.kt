@@ -23,6 +23,9 @@ fun SponsoredSection(
     banners: List<Banner> = emptyList(),
     modifier: Modifier = Modifier
 ) {
+    // Hide the entire section when there are no banners — no blank cards
+    if (banners.isEmpty()) return
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -43,12 +46,8 @@ fun SponsoredSection(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (banners.isEmpty()) {
-                items(3) { SponsoredCard() }
-            } else {
-                items(banners) { banner ->
-                    BannerCard(banner = banner)
-                }
+            items(banners) { banner ->
+                BannerCard(banner = banner)
             }
         }
     }
@@ -60,17 +59,6 @@ fun BannerCard(banner: Banner, modifier: Modifier = Modifier) {
         model = banner.imageUrl.ifBlank { "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=1964&auto=format&fit=crop" },
         contentDescription = banner.title,
         contentScale = ContentScale.Crop,
-        modifier = modifier
-            .width(160.dp)
-            .height(240.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFF2F2F2))
-    )
-}
-
-@Composable
-fun SponsoredCard(modifier: Modifier = Modifier) {
-    Box(
         modifier = modifier
             .width(160.dp)
             .height(240.dp)

@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -23,14 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.example.vetbook.presentation.navigation.Routes
 import com.example.vetbook.presentation.theme.Brand
 
-// ── Nav item definition with Material vector icon ──────────────────────────────
 private data class BottomNavEntry(
     val route: String,
     val label: String,
@@ -44,12 +40,59 @@ private val bottomNavEntries = listOf(
     BottomNavEntry(Routes.Pet.route,      "Pet",      Icons.Default.Pets)
 )
 
+// Maps every sub-screen route prefix to its owning tab route.
+// This lets the bar highlight the correct tab when inside a sub-screen.
+private val routeToTab = mapOf(
+    // Home tab owns
+    Routes.Home.route         to Routes.Home.route,
+    Routes.Services.route     to Routes.Home.route,
+    Routes.Notifications.route to Routes.Home.route,
+    Routes.Community.route    to Routes.Home.route,
+    // Vet / booking flow — lives under Home tab
+    Routes.Veterinarians.route to Routes.Home.route,
+    "doctor_profile"          to Routes.Home.route,
+    "book_appointment"        to Routes.Home.route,
+    "service_detail"          to Routes.Home.route,
+    "payment_result"          to Routes.Home.route,
+    "in_app_payment"          to Routes.Home.route,
+    // Calendar tab
+    Routes.Calendar.route     to Routes.Calendar.route,
+    // Store tab
+    Routes.Store.route        to Routes.Store.route,
+    Routes.Cart.route         to Routes.Store.route,
+    Routes.Payment.route      to Routes.Store.route,
+    Routes.OrderHistory.route to Routes.Store.route,
+    "order_detail"            to Routes.Store.route,
+    "product_detail"          to Routes.Store.route,
+    "products"                to Routes.Store.route,
+    // Pet tab
+    Routes.Pet.route          to Routes.Pet.route,
+    Routes.AddPet.route       to Routes.Pet.route,
+    "pet_profile"             to Routes.Pet.route,
+    "vaccination_list"        to Routes.Pet.route,
+    "vaccination_detail"      to Routes.Pet.route,
+    "add_vaccination"         to Routes.Pet.route,
+    // Profile — treated as Home tab since it's accessed from multiple places
+    Routes.Profile.route      to Routes.Home.route,
+    Routes.EditProfile.route  to Routes.Home.route,
+    Routes.Security.route     to Routes.Home.route,
+    Routes.Language.route     to Routes.Home.route,
+    Routes.PrivacyPolicy.route to Routes.Home.route,
+    Routes.HelpSupport.route  to Routes.Home.route,
+)
+
+private fun resolveTab(currentRoute: String?): String? {
+    if (currentRoute == null) return null
+    // Try exact match first
+    routeToTab[currentRoute]?.let { return it }
+    // Try prefix match for parameterised routes like "doctor_profile/abc123"
+    val prefix = currentRoute.substringBefore("/").substringBefore("?")
+    return routeToTab[prefix]
+}
+
 @Composable
 fun VetBookBottomBar(navController: NavController) {
-    Surface(
-        color           = Color.White,
-        shadowElevation = 10.dp
-    ) {
+    Surface(color = Color.White, shadowElevation = 10.dp) {
         NavigationBar(
             containerColor = Color.White,
             tonalElevation = 0.dp,
@@ -57,20 +100,28 @@ fun VetBookBottomBar(navController: NavController) {
         ) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
+            val activeTab = resolveTab(currentRoute)
 
             bottomNavEntries.forEach { entry ->
-                val isSelected = currentRoute == entry.route
+                val isSelected = activeTab == entry.route
                 NavigationBarItem(
                     selected = isSelected,
                     onClick = {
-                        if (currentRoute != entry.route) {
-                            navController.navigate(entry.route) {
-                                navController.graph.startDestinationRoute?.let { startRoute ->
-                                    popUpTo(startRoute) { saveState = true }
-                                }
-                                launchSingleTop = true
-                                restoreState    = true
+                        if (currentRoute == entry.route) {
+                            // Already on this tab's exact root — nothing to do
+                            return@NavigationBarItem
+                        }
+                        navController.navigate(entry.route) {
+                            // Pop back to the graph root without saving state.
+                            // saveState/restoreState is intentionally omitted because
+                            // Profile (and other sub-screens) get pushed on top of Home
+                            // without their own popUpTo — saving state would capture
+                            // [Home, Profile] and restore it when switching back to Home,
+                            // making Profile appear in the wrong tab.
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = false
                             }
+                            launchSingleTop = true
                         }
                     },
                     icon = {
@@ -100,17 +151,4 @@ fun VetBookBottomBar(navController: NavController) {
             }
         }
     }
-}
-
-@androidx.compose.ui.tooling.preview.Preview
-@Composable
-fun VetBookBottomBarPreview() {
-    val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Routes.Home.route) {
-        composable(Routes.Home.route) {}
-        composable(Routes.Calendar.route) {}
-        composable(Routes.Store.route) {}
-        composable(Routes.Pet.route) {}
-    }
-    VetBookBottomBar(navController = navController)
 }

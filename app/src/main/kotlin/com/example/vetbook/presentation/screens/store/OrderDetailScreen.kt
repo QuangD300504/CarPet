@@ -254,10 +254,9 @@ private fun OrderItemCard(item: OrderItem) {
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             VetBookImage(
-                model = null,
+                model = item.imageUrl,
                 contentDescription = item.productName,
-                modifier = Modifier
-                    .size(64.dp),
+                modifier = Modifier.size(64.dp),
                 shape = RoundedCornerShape(10.dp),
                 contentScale = ContentScale.Fit,
                 fallbackIcon = androidx.compose.material.icons.Icons.Default.Inventory,

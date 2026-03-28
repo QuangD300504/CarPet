@@ -54,9 +54,17 @@ fun AddPetScreen(
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
     var showDatePicker by remember { mutableStateOf(false) }
-val datePickerState = rememberDatePickerState(
-    initialSelectedDateMillis = uiState.birthDateMillis
-)
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = uiState.birthDateMillis
+    )
+    // Sync picker when birthDateMillis loads asynchronously (edit mode)
+    androidx.compose.runtime.LaunchedEffect(uiState.birthDateMillis) {
+        uiState.birthDateMillis?.let { millis ->
+            if (datePickerState.selectedDateMillis != millis) {
+                datePickerState.selectedDateMillis = millis
+            }
+        }
+    }
 
 if (showDatePicker) {
     DatePickerDialog(
@@ -214,19 +222,10 @@ if (showDatePicker) {
                 CustomTextField(
                     value = uiState.name,
                     onValueChange = viewModel::setName,
-                    placeholder = "Tên thú cưng *",
+                    placeholder = "Tên thú cưng",
                     imeAction = ImeAction.Next,
-                    onImeAction = { focusManager.moveFocus(FocusDirection.Down) },
-                    isError = uiState.errorMessage != null && uiState.name.isBlank()
+                    onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
                 )
-                if (uiState.errorMessage != null && uiState.name.isBlank()) {
-                    Text(
-                        text = "Vui lòng nhập tên thú cưng",
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
-                    )
-                }
 
                 // Type dropdown
                 Box(modifier = Modifier.fillMaxWidth()) {

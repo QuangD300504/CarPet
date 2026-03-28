@@ -49,7 +49,6 @@ import com.example.vetbook.utils.PayosLauncher
 import com.example.vetbook.utils.DeepLinkHandler
 import com.example.vetbook.presentation.viewmodels.BookAppointmentViewModel
 import com.example.vetbook.presentation.viewmodels.VeterinariansViewModel
-import com.example.vetbook.presentation.components.calendar.SlotGrid
 import com.example.vetbook.presentation.components.calendar.SlotOption
 import com.example.vetbook.presentation.components.common.SnackbarType
 import com.example.vetbook.presentation.components.common.VetBookSnackbar
@@ -460,13 +459,87 @@ private fun BookAppointmentContent(
                         Text("Vui lòng chọn ngày trước", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
-                    SlotGrid(
-                        slots = SlotOption.defaults,
-                        bookedSlots = bookedSlots,
-                        pastSlots = pastSlots,
-                        selectedSlot = selectedSlot,
-                        onSlotSelected = { onSlotSelect(it) }
-                    )
+                    // Time slot dropdown
+                    var timeDropdownExpanded by remember { mutableStateOf(false) }
+                    val availableSlots = SlotOption.defaults.filter { slot ->
+                        slot.label !in bookedSlots && slot.label !in pastSlots
+                    }
+                    ExposedDropdownMenuBox(
+                        expanded = timeDropdownExpanded,
+                        onExpandedChange = { timeDropdownExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedSlot ?: "Chọn giờ khám",
+                            onValueChange = {},
+                            readOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeDropdownExpanded)
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Schedule, null, tint = HealthPrimary, modifier = Modifier.size(20.dp))
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = HealthPrimary,
+                                unfocusedBorderColor = HealthMuted.copy(alpha = 0.3f)
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = timeDropdownExpanded,
+                            onDismissRequest = { timeDropdownExpanded = false }
+                        ) {
+                            val morningSlots = availableSlots.filter { it.time.hour < 12 }
+                            val afternoonSlots = availableSlots.filter { it.time.hour >= 12 }
+                            if (morningSlots.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Buổi sáng", fontSize = 11.sp, color = HealthMuted, fontWeight = FontWeight.SemiBold) },
+                                    onClick = {},
+                                    enabled = false
+                                )
+                                morningSlots.forEach { slot ->
+                                    DropdownMenuItem(
+                                        text = { Text(slot.label, fontSize = 15.sp) },
+                                        onClick = {
+                                            onSlotSelect(slot.label)
+                                            timeDropdownExpanded = false
+                                        },
+                                        leadingIcon = if (selectedSlot == slot.label) ({
+                                            Icon(Icons.Default.Check, null, tint = HealthPrimary, modifier = Modifier.size(16.dp))
+                                        }) else null
+                                    )
+                                }
+                            }
+                            if (afternoonSlots.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Buổi chiều", fontSize = 11.sp, color = HealthMuted, fontWeight = FontWeight.SemiBold) },
+                                    onClick = {},
+                                    enabled = false
+                                )
+                                afternoonSlots.forEach { slot ->
+                                    DropdownMenuItem(
+                                        text = { Text(slot.label, fontSize = 15.sp) },
+                                        onClick = {
+                                            onSlotSelect(slot.label)
+                                            timeDropdownExpanded = false
+                                        },
+                                        leadingIcon = if (selectedSlot == slot.label) ({
+                                            Icon(Icons.Default.Check, null, tint = HealthPrimary, modifier = Modifier.size(16.dp))
+                                        }) else null
+                                    )
+                                }
+                            }
+                            if (availableSlots.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("Không còn khung giờ trống", color = HealthMuted) },
+                                    onClick = {},
+                                    enabled = false
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))

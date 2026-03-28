@@ -252,16 +252,20 @@ fun VaccinationListScreen(
                         )
                     } else {
                         // Group upcoming tab: OVERDUE first, then PENDING, then SCHEDULED
+                        // Secondary sort by offsetDays so dose #1 always appears before #2
                         val sorted = if (selectedTab == 0) {
                             vaccinations.sortedWith(
-                                compareBy {
-                                    when (it.status) {
-                                        VaccinationStatus.OVERDUE   -> 0
-                                        VaccinationStatus.PENDING   -> 1
-                                        VaccinationStatus.SCHEDULED -> 2
-                                        else -> 3
-                                    }
-                                }
+                                compareBy(
+                                    {
+                                        when (it.status) {
+                                            VaccinationStatus.OVERDUE   -> 0
+                                            VaccinationStatus.PENDING   -> 1
+                                            VaccinationStatus.SCHEDULED -> 2
+                                            else -> 3
+                                        }
+                                    },
+                                    { it.offsetDays ?: Int.MAX_VALUE } // #1 before #2 within same status
+                                )
                             )
                         } else vaccinations
 

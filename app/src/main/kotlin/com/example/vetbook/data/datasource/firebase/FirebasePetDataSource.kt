@@ -164,7 +164,8 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toPetDto(): PetDto {
         note = getString("note") ?: "",
         createdAt = getLong("createdAt"),
         updatedAt = getLong("updatedAt"),
-        isForAdoption = getBoolean("isForAdoption") ?: false
+        isForAdoption = getBoolean("isForAdoption") ?: false,
+        birthDate = getLong("birthDate")
     )
 }
 
@@ -187,5 +188,3 @@ private fun PetDto.toMap(): Map<String, Any?> {
         "isForAdoption" to isForAdoption
     )
 }
-
-

@@ -982,15 +982,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                     petType = petType,
                     birthDate = birthDate,
                     viewModel = viewModel,
-                    onBookAppointment = { vaccinationId, doctorId ->
+                    onBookAppointment = { vaccinationId ->
     pendingVaccineId = vaccinationId
     pendingVaccineTitle = viewModel.uiState.value.vaccinations
         .find { it.id == vaccinationId }?.title
-    if (doctorId.isBlank()) {
-        bottomNavController.navigate(Routes.Veterinarians.route)
-    } else {
-        bottomNavController.navigate(Routes.BookAppointment.createRoute(doctorId))
-    }
+    bottomNavController.navigate(Routes.Veterinarians.route)
 },
                     onBackClick = { bottomNavController.popBackStack() },
                     onAddClick = {
@@ -1134,6 +1130,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
                 DoctorProfileScreen(
                     doctorId = doctorId,
+                    viewModel = veterinariansViewModel,
                     onBackClick = { bottomNavController.popBackStack() },
                     onBookClick = {
                         bottomNavController.navigate(Routes.BookAppointment.createRoute(doctorId))

@@ -149,7 +149,8 @@ class CheckoutViewModel @Inject constructor(
                             "productId" to line.product.id,
                             "productName" to line.product.name,
                             "quantity" to line.quantity,
-                            "lineTotal" to line.lineTotal
+                            "lineTotal" to line.lineTotal,
+                            "imageUrl" to line.product.imageUrl
                         )
                     },
                     "itemCount" to state.itemCount,

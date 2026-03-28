@@ -40,5 +40,6 @@ data class OrderItemDto(
     val productId: String = "",
     val productName: String = "",
     val quantity: Int = 0,
-    val lineTotal: Double = 0.0
+    val lineTotal: Double = 0.0,
+    val imageUrl: String? = null
 )

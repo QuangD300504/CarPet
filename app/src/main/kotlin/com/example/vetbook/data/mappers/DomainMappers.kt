@@ -70,7 +70,8 @@ fun OrderItemDto.toDomain(): com.example.vetbook.domain.models.OrderItem =
         productId = productId,
         productName = productName,
         quantity = quantity,
-        lineTotal = lineTotal
+        lineTotal = lineTotal,
+        imageUrl = imageUrl
     )
 
 // endregion

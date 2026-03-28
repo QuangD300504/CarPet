@@ -117,16 +117,16 @@ class FirebaseVaccinationDataSource(
                 return Result.failure(Exception("Vaccination ID is required for update"))
             }
 
-            // if (vaccination.petId.isNotBlank()) {
-            //     val petDoc = firestore.collection(PETS_COLLECTION)
-            //         .document(vaccination.petId)
-            //         .get()
-            //         .await()
+            if (vaccination.petId.isNotBlank()) {
+                val petDoc = firestore.collection(PETS_COLLECTION)
+                    .document(vaccination.petId)
+                    .get()
+                    .await()
 
-            //     if (!petDoc.exists()) {
-            //         return Result.failure(Exception("Pet not found: ${vaccination.petId}"))
-            //     }
-            // }
+                if (!petDoc.exists()) {
+                    return Result.failure(Exception("Pet not found: ${vaccination.petId}"))
+                }
+            }
 
             if (vaccination.veterinarianId != null && vaccination.veterinarianId.isNotBlank()) {
                 val vetDoc = firestore.collection(VETERINARIANS_COLLECTION)
@@ -223,7 +223,8 @@ private fun com.google.firebase.firestore.DocumentSnapshot.toVaccinationDto(): V
         reminderDaysBefore = getLong("reminderDaysBefore")?.toInt() ?: 7,
 
         isCompleted = getBoolean("isCompleted") ?: false,
-        date = getLong("date")
+        date = getLong("date"),
+        offsetDays = getLong("offsetDays")?.toInt()
     )
 }
 
@@ -256,5 +257,6 @@ private fun VaccinationRecordDto.toMap(): Map<String, Any?> {
 
         put("isCompleted", status == "COMPLETED")
         put("date", scheduledDate ?: completedDate)
+        put("offsetDays", offsetDays)
     }
 }

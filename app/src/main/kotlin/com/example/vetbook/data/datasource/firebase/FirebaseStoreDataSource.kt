@@ -248,7 +248,8 @@ class FirebaseStoreDataSource(
                     productId = map["productId"] as? String ?: "",
                     productName = map["productName"] as? String ?: "",
                     quantity = (map["quantity"] as? Number)?.toInt() ?: 0,
-                    lineTotal = (map["lineTotal"] as? Number)?.toDouble() ?: 0.0
+                    lineTotal = (map["lineTotal"] as? Number)?.toDouble() ?: 0.0,
+                    imageUrl = map["imageUrl"] as? String
                 )
             }
         }
