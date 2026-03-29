@@ -176,11 +176,14 @@ class BookingRepositoryImpl @Inject constructor(
 
         val response = payosApi.createPaymentLink(PayosHelper.CLIENT_ID, PayosHelper.API_KEY, request)
         
-        if (response.code != "00") {
-            throw IllegalStateException("PayOS error: ${response.desc ?: "Unknown error"}")
-        }
-
-        val checkoutUrl = response.data?.checkoutUrl ?: throw IllegalStateException("No checkout URL")
+        if (response.code == null) {
+    throw IllegalStateException("Lỗi kết nối PayOS. Vui lòng thử lại.")
+}
+if (response.code != "00") {
+    throw IllegalStateException("PayOS: ${response.desc ?: "Lỗi không xác định"}")
+}
+val checkoutUrl = response.data?.checkoutUrl
+    ?: throw IllegalStateException("PayOS không trả về link thanh toán.")
 
         // Save orderCode to appointment so we can keep track
         firestore.collection("appointments").document(appointmentId)

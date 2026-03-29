@@ -1,6 +1,7 @@
 package com.example.vetbook.data.models
 
 import androidx.annotation.Keep
+import com.example.vetbook.domain.models.DoctorReview
 
 /**
  * Firestore document in `veterinarians` collection.
@@ -24,7 +25,8 @@ data class VeterinarianDto(
     val isActive: Boolean = true,
     val servicePrice: Double = 0.0,
     val createdAt: Long? = null,
-    val updatedAt: Long? = null
+    val updatedAt: Long? = null,
+    val reviews: List<DoctorReview> = emptyList()
 ) {
     data class Clinic(
         val name: String = "",

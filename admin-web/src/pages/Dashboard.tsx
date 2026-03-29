@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import {
     ShoppingBag,
@@ -112,8 +112,11 @@ export default function Dashboard() {
         let vetsData: any[] = [];
         let apptsData: any[] = [];
 
+        // Track which collections have loaded (even if empty)
+        const loaded = { users: false, orders: false, vets: false, appts: false };
+
         const tick = () => {
-            if ([usersData, ordersData, vetsData, apptsData].every(d => d.length > 0)) {
+            if (Object.values(loaded).every(Boolean)) {
                 buildDashboard(usersData, ordersData, vetsData, apptsData);
             }
         };
@@ -130,7 +133,7 @@ export default function Dashboard() {
             const dailyOrders  = { ...initOrders };
 
             orders.forEach(o => {
-                const amount = o.totalAmount || o.totalPrice || 0;
+                const amount = o.total || o.totalAmount || o.totalPrice || 0;
                 totalRevenue += amount;
                 const createdAt = o.createdAt instanceof Timestamp
                     ? o.createdAt.toDate()
@@ -145,8 +148,8 @@ export default function Dashboard() {
             // ── Trends: compare last-7 vs prev-7 ─────────────────────────────
             const last7  = getPeriodOrders(orders, 7);
             const prev7  = getPeriodOrders(orders, 14).filter(o => !last7.includes(o));
-            const revThis  = last7.reduce((s, o) => s + (o.totalAmount || o.totalPrice || 0), 0);
-            const revPrev  = prev7.reduce((s, o) => s + (o.totalAmount || o.totalPrice || 0), 0);
+            const revThis  = last7.reduce((s, o) => s + (o.total || o.totalAmount || o.totalPrice || 0), 0);
+            const revPrev  = prev7.reduce((s, o) => s + (o.total || o.totalAmount || o.totalPrice || 0), 0);
             const revenueTrend  = calcTrend(revThis, revPrev);
             const ordersTrend    = calcTrend(last7.length, prev7.length);
 
@@ -170,7 +173,7 @@ export default function Dashboard() {
             const salesCount: Record<string, number> = {};
             orders.forEach(o => {
                 (o.items || []).forEach((item: any) => {
-                    const name = item.name || item.productId || 'Unknown';
+                    const name = item.productName || item.name || item.productId || 'Unknown';
                     salesCount[name] = (salesCount[name] || 0) + (item.quantity || 1);
                 });
             });
@@ -219,23 +222,22 @@ export default function Dashboard() {
         };
 
         const collections = [
-            { col: 'users',          set: (d: any[]) => { usersData = d; tick(); } },
-            { col: 'orders',          set: (d: any[]) => { ordersData = d; tick(); } },
-            { col: 'veterinarians',  set: (d: any[]) => { vetsData = d; tick(); } },
-            { col: 'appointments',    set: (d: any[]) => { apptsData = d; tick(); } },
+            { col: 'users',         key: 'users' as const,  set: (d: any[]) => { usersData = d;  loaded.users = true;  tick(); } },
+            { col: 'storeOrders',   key: 'orders' as const, set: (d: any[]) => { ordersData = d; loaded.orders = true; tick(); } },
+            { col: 'veterinarians', key: 'vets' as const,   set: (d: any[]) => { vetsData = d;   loaded.vets = true;   tick(); } },
+            { col: 'appointments',  key: 'appts' as const,  set: (d: any[]) => { apptsData = d;  loaded.appts = true;  tick(); } },
         ];
 
         collections.forEach(({ col, set }) => {
-            const q = query(collection(db, col), orderBy('createdAt', 'desc'));
-            const unsub = onSnapshot(q, snap => {
+            // No orderBy to avoid requiring composite Firestore indexes
+            const unsub = onSnapshot(collection(db, col), snap => {
                 set(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             }, err => console.error(`Dashboard ${col} listener error:`, err));
             unsubs.push(unsub);
         });
 
-        // Products tracked separately via state (used in JSX inventory alerts)
         const unsubProducts = onSnapshot(
-            query(collection(db, 'products'), orderBy('createdAt', 'desc')),
+            collection(db, 'products'),
             snap => setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
             err => console.error('Dashboard products listener error:', err)
         );
@@ -445,7 +447,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm font-extrabold text-slate-900">{formatVND(order.totalAmount || 0)}</p>
+                                    <p className="text-sm font-extrabold text-slate-900">{formatVND(order.total || order.totalAmount || 0)}</p>
                                     <p className="text-[10px] text-slate-400">SECURED PAYMENT</p>
                                 </div>
                             </div>

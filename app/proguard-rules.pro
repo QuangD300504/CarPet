@@ -40,3 +40,20 @@
     @com.google.gson.annotations.SerializedName <fields>;
     @com.squareup.moshi.Json <fields>;
 }
+
+# Bảo vệ PayOS
+-keep class vn.payos.** { *; }
+
+# Giữ lại các thuộc tính hệ thống quan trọng
+-keepattributes Signature, *Annotation*, EnclosingMethod, InnerClasses
+
+# For Retrofit hoặc Gson/Moshi cho PayOs only
+-keepattributes SourceFile, LineNumberTable
+
+# Giữ lại các class chứa @SerializedName để Gson hoạt động
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# Bảo vệ các Model DTO cụ thể của PayOS
+-keep class com.example.vetbook.data.network.Payos** { *; }

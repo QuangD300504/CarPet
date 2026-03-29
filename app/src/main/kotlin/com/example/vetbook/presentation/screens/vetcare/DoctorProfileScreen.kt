@@ -133,11 +133,18 @@ fun DoctorProfileScreen(
 private fun DoctorProfileContent(
     doctor: Veterinarian,
     clinic: Clinic?,
-    reviews: List<com.example.vetbook.domain.models.DoctorReview> = emptyList(),
+    reviews: List<DoctorReview> = emptyList(),
     onBackClick: () -> Unit = {},
     onBookClick: () -> Unit,
     onWriteReviewClick: () -> Unit = {}
 ) {
+    // Compute rating from live reviews — ignores the stale Firestore field
+    val liveRating = if (reviews.isEmpty()) null 
+                     else reviews.map { it.rating }.average()
+    val liveRatingLabel = when {
+        reviews.isEmpty() -> "Mới"
+        else -> String.format("%.1f", liveRating)
+    }   
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -252,7 +259,7 @@ private fun DoctorProfileContent(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text       = doctor.ratingLabel,
+                                    text       = liveRatingLabel,
                                     style      = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                     color      = Color(0xFF2D3142)
                                 )
@@ -269,7 +276,7 @@ private fun DoctorProfileContent(
                     ) {
 StatCard(
     icon     = Icons.Default.People,
-    value    = if (reviews.isEmpty()) "${doctor.reviewsCount}+" else "${reviews.size}",
+    value    = if (reviews.isEmpty()) "0" else "${reviews.size}+",
     label    = "Đánh giá",
     modifier = Modifier.weight(1f)
 )
@@ -281,7 +288,7 @@ StatCard(
 )
 StatCard(
     icon     = Icons.Default.ChatBubble,
-    value    = reviews.size.toString(),   // live count, was doctor.reviewsCount
+    value    = reviews.size.toString(),  // was doctor.reviewsCount
     label    = "Nhận xét",
     modifier = Modifier.weight(1f)
 )

@@ -23,20 +23,38 @@ data class PayosPaymentRequest(
     val signature: String
 )
 
+// data class PayosPaymentResponse(
+//     val code: String?,
+//     val desc: String?,
+//     val data: PayosPaymentData?
+// )
+
+// data class PayosPaymentData(
+//     val orderCode: Long,
+//     val amount: Int,
+//     val description: String,
+//     val bin: String,
+//     val accountNumber: String,
+//     val accountName: String,
+//     val qrCode: String,
+//     val checkoutUrl: String,
+//     val status: String
+// )
+
 data class PayosPaymentResponse(
-    val code: String?,
-    val desc: String?,
-    val data: PayosPaymentData?
+    @SerializedName("code") val code: String?,
+    @SerializedName("desc") val desc: String?,
+    @SerializedName("data") val data: PayosPaymentData?
 )
 
 data class PayosPaymentData(
-    val orderCode: Long,
-    val amount: Int,
-    val description: String,
-    val bin: String,
-    val accountNumber: String,
-    val accountName: String,
-    val qrCode: String,
-    val checkoutUrl: String,
-    val status: String
+    @SerializedName("orderCode") val orderCode: Long,
+    @SerializedName("amount") val amount: Int,
+    @SerializedName("description") val description: String,
+    @SerializedName("bin") val bin: String,
+    @SerializedName("accountNumber") val accountNumber: String,
+    @SerializedName("accountName") val accountName: String,
+    @SerializedName("qrCode") val qrCode: String,
+    @SerializedName("checkoutUrl") val checkoutUrl: String,
+    @SerializedName("status") val status: String
 )

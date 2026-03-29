@@ -77,7 +77,16 @@ export default function ProductsList() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-slate-800">Products Management</h1>
-                <span className="text-sm text-slate-500">{filtered.length} products</span>
+                <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500">{filtered.length} products</span>
+                    <Link
+                        to="/store/products/new"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                        <span className="text-lg leading-none">+</span>
+                        Add Product
+                    </Link>
+                </div>
             </div>
 
             <div className="flex flex-wrap gap-3">

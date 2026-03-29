@@ -116,11 +116,15 @@ class CheckoutViewModel @Inject constructor(
 
         val response = payosApi.createPaymentLink(PayosHelper.CLIENT_ID, PayosHelper.API_KEY, request)
 
-        if (response.code != "00") {
-            throw IllegalStateException("PayOS error: ${response.desc}")
-        }
+        if (response.code == null) {
+    throw IllegalStateException("Lỗi kết nối PayOS. Vui lòng thử lại.")
+}
+if (response.code != "00") {
+    throw IllegalStateException("PayOS: ${response.desc ?: "Lỗi không xác định (code=${response.code})"}")
+}
 
-        val checkoutUrl = response.data?.checkoutUrl ?: throw IllegalStateException("Failed to get checkout URL")
+val checkoutUrl = response.data?.checkoutUrl
+    ?: throw IllegalStateException("Không nhận được link thanh toán từ PayOS.")
 
         // Persist orderCode and checkoutUrl so onCheckoutSuccess uses the same order
         pendingOrderCode = orderCode

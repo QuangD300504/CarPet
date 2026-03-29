@@ -241,16 +241,25 @@ fun NavigationIcon(
 
 @Composable
 fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
+    // 1. Tính toán rating live từ danh sách reviews có trong đối tượng vet
+    val liveRating = if (vet.reviews.isEmpty()) null 
+                     else vet.reviews.map { it.rating }.average()
+
+    val liveRatingLabel = when {
+        vet.reviews.isEmpty() -> "Mới"
+        else -> String.format("%.1f", liveRating)
+    }
+
     Surface(
-        modifier  = Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape     = RoundedCornerShape(20.dp),
-        color     = Color.White,
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
         shadowElevation = 2.dp
     ) {
         Row(
-            modifier          = Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             VetBookImage(
@@ -267,7 +276,7 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text  = vet.name,
+                    text = vet.name,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2D3142)
@@ -277,7 +286,7 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text  = vet.specialty,
+                    text = vet.specialty,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -285,9 +294,7 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = null,
@@ -295,11 +302,23 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
+                    
+                    // SỬ DỤNG LABEL ĐÃ TÍNH TOÁN LIVE
                     Text(
-                        text = vet.ratingLabel,
+                        text = liveRatingLabel,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFF2D3142)
                     )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // HIỂN THỊ SỐ LƯỢNG ĐÁNH GIÁ THỰC TẾ
+                    Text(
+                        text = "(${vet.reviews.size} đánh giá)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "Phí: ${String.format("%,.0f", vet.servicePrice)}đ",
@@ -313,10 +332,10 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
 
             IconButton(onClick = onClick) {
                 Icon(
-                    imageVector        = Icons.AutoMirrored.Filled.ArrowForward,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Xem chi tiết",
-                    tint               = HealthPrimary,
-                    modifier           = Modifier.size(24.dp)
+                    tint = HealthPrimary,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

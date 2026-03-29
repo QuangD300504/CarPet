@@ -14,7 +14,8 @@ data class Veterinarian(
     val bio: String = "",
     val imageUrl: String? = null,
     val clinicId: String = "",
-    val servicePrice: Double = 100000.0
+    val servicePrice: Double = 100000.0,
+    val reviews: List<DoctorReview> = emptyList()
 ) {
     val ratingLabel: String
         get() = if (reviewsCount == 0) "Mới" else String.format("%.1f", rating)
