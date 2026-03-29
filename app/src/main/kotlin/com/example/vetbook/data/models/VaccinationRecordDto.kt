@@ -1,5 +1,8 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
+
+@Keep
 data class VaccinationRecordDto(
     val id: String = "",
     val petId: String = "",

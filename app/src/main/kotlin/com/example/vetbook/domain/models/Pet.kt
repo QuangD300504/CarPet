@@ -1,10 +1,12 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
 import java.time.Instant
 
 /**
  * Represents a pet in the VetBook application (either owned by a user or available for adoption).
  */
+@Keep
 data class Pet(
     val id: String,
     val ownerId: String? = null, // Null if the pet is for adoption

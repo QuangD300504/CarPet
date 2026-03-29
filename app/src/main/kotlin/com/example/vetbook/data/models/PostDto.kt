@@ -1,8 +1,11 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
+
 /**
  * Firestore document in `posts` collection.
  */
+@Keep
 data class PostDto(
     val id: String = "",
     val authorId: String = "",

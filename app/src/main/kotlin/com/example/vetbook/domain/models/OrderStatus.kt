@@ -1,5 +1,8 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
+@Keep
 enum class OrderStatus(val value: String, val displayName: String) {
     PENDING("PENDING", "Chờ xử lý"),
     PAID("PAID", "Đã thanh toán"),

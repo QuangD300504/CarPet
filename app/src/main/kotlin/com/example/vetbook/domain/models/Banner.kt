@@ -1,5 +1,8 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
+@Keep
 data class Banner(
     val id: String = "",
     val title: String = "",

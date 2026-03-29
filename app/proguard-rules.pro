@@ -19,3 +19,24 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# 1. Giữ lại các Class Models của bạn (Thay đổi package nếu cần)
+-keep class com.example.vetbook.data.models.** { *; }
+-keep class com.example.vetbook.domain.models.** { *; }
+
+# 2. Giữ lại các quy tắc chung cho Firebase & Serialization
+-keepattributes Signature, *Annotation*, EnclosingMethod, InnerClasses
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# 3. Giữ lại các constructor không tham số (No-argument constructors)
+# Đây là phần quan trọng nhất để sửa lỗi "Class o7.b does not define a no-argument constructor"
+-keepclassmembers class com.example.vetbook.** {
+    public <init>(...);
+}
+
+# 4. Giữ lại các thuộc tính cho Retrofit/Moshi/Gson (nếu bạn dùng)
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+    @com.squareup.moshi.Json <fields>;
+}

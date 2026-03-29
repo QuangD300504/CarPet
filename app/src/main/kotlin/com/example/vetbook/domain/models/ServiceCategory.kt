@@ -1,9 +1,12 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
 /**
  * Representing a major service category on the main Service Screen.
  * Based on the Pitchdeck's 3-in-1 solution.
  */
+@Keep
 data class ServiceCategory(
     val id: String,
     val title: String,
@@ -12,12 +15,13 @@ data class ServiceCategory(
     val iconUrl: String? = null,
     val imageUrl: String? = null
 )
+@Keep
 data class ServicePackage(
     val id: String,
     val name: String,
     val price: Double
 )
-
+@Keep
 data class PetServiceDetail(
     val categoryId: String,
     val rating: Float,

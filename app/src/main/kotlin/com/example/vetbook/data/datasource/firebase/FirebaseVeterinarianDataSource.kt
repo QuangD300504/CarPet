@@ -102,54 +102,61 @@ class FirebaseVeterinarianDataSource(
     }
 
     override suspend fun submitReview(review: DoctorReviewDto): Result<Unit> {
-        return try {
-            val docRef = firestore.collection(REVIEWS_COLLECTION).document()
-            val reviewWithId = review.copy(id = docRef.id)
-            docRef.set(reviewWithId).await()
-            // Recalculate and persist the doctor's aggregate rating
-            updateDoctorRating(review.doctorId)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    return try {
+        val docRef = firestore.collection(REVIEWS_COLLECTION).document()
+        // FIX: use explicit Map instead of docRef.set(kotlinDataClass) — Firestore's
+        // Java reflection serializer can mis-serialize Kotlin Int fields, storing the
+        // wrong rating value and breaking updateDoctorRating's average calculation.
+        docRef.set(mapOf(
+            "id"            to docRef.id,
+            "appointmentId" to review.appointmentId,
+            "doctorId"      to review.doctorId,
+            "userId"        to review.userId,
+            "userName"      to review.userName,
+            "rating"        to review.rating.toLong(), // explicit Long so getLong() never returns null
+            "comment"       to review.comment,
+            "createdAt"     to review.createdAt
+        )).await()
+        updateDoctorRating(review.doctorId)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
     }
+}
 
-    override suspend fun updateDoctorRating(doctorId: String) {
-        try {
-            val snapshot = firestore.collection(REVIEWS_COLLECTION)
-                .whereEqualTo("doctorId", doctorId)
-                .get()
-                .await()
+override suspend fun updateDoctorRating(doctorId: String) {
+    try {
+        val snapshot = firestore.collection(REVIEWS_COLLECTION)
+            .whereEqualTo("doctorId", doctorId)
+            .get()
+            .await()
 
-            val count = snapshot.documents.size
-            if (count == 0) return
+        val count = snapshot.documents.size
+        // FIX: removed early return — seeded doctors have count=0 and the early
+        // return prevented their rating from ever syncing with actual reviews.
+        val total = snapshot.documents.mapNotNull {
+            it.getLong("rating")?.toInt()
+        }.sum()
+        val average = if (count == 0) 0.0 else total.toDouble() / count
 
-            val total = snapshot.documents.mapNotNull {
-                it.getLong("rating")?.toInt()
-            }.sum()
-            val average = total.toDouble() / count
-
-            firestore.collection(VETERINARIANS_COLLECTION)
-                .document(doctorId)
-                .update(
-                    mapOf(
-                        "rating" to average,
-                        "reviewsCount" to count,
-                        "updatedAt" to System.currentTimeMillis()
-                    )
-                )
-                .await()
-        } catch (e: Exception) {
-            // Log but don't propagate — review was already saved
-            android.util.Log.e("VetDataSource", "Failed to update doctor rating", e)
-        }
+        firestore.collection(VETERINARIANS_COLLECTION)
+            .document(doctorId)
+            .update(mapOf(
+                "rating"      to average,
+                "reviewsCount" to count,
+                "updatedAt"   to System.currentTimeMillis()
+            ))
+            .await()
+    } catch (e: Exception) {
+        android.util.Log.e("VetDataSource", "Failed to update doctor rating", e)
     }
+}
 
-    override suspend fun getDoctorReviews(doctorId: String): List<DoctorReviewDto> {
-        return try {
-            val snapshot = firestore.collection(REVIEWS_COLLECTION)
-                .whereEqualTo("doctorId", doctorId)
-                .get()
+override suspend fun getDoctorReviews(doctorId: String): List<DoctorReviewDto> {
+    return try {
+        val snapshot = firestore.collection(REVIEWS_COLLECTION)
+            .whereEqualTo("doctorId", doctorId)
+            .get()
                 .await()
             snapshot.documents.mapNotNull { doc ->
                 DoctorReviewDto(

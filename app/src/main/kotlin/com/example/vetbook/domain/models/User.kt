@@ -1,8 +1,11 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
 /**
  * Represents a user in the VetBook application.
  */
+@Keep
 data class User(
     val id: String,
     val name: String,

@@ -1,7 +1,8 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
 import java.time.Instant
-
+@Keep
 data class Notification(
     val id: String,
     val userId: String,
@@ -12,7 +13,7 @@ data class Notification(
     val isRead: Boolean = false,
     val createdAt: Instant
 )
-
+@Keep
 enum class NotificationType {
     INFO,      // Blue icon
     INCIDENT,  // Red icon with exclamation

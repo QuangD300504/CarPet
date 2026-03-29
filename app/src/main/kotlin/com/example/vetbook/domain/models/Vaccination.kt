@@ -1,11 +1,13 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
 import java.time.Instant
 
 /**
  * Represents a vaccination record for a pet.
  * Enhanced version with status tracking and reminders.
  */
+@Keep
 data class Vaccination(
     val id: String,
     val petId: String,
@@ -56,7 +58,7 @@ data class Vaccination(
     val reminderEnabled: Boolean = true,
     val reminderDaysBefore: Int = 7
 )
-
+@Keep
 enum class VaccinationType {
     CORE,            // Essential for all pets (WSAVA-mandated)
     REGIONAL,        // Endemic-area core — recommended in specific regions
@@ -64,7 +66,7 @@ enum class VaccinationType {
     NOT_RECOMMENDED, // WSAVA-flagged — insufficient clinical evidence
     CUSTOM           // User-defined vaccine
 }
-
+@Keep
 enum class VaccinationStatus {
     PENDING,    // Selected, no appointment booked yet
     SCHEDULED,  // Appointment booked, date confirmed

@@ -1,7 +1,8 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
 import java.time.Instant
-
+@Keep
 data class Appointment(
     val id: String,
     val userId: String,

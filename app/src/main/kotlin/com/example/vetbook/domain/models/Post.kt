@@ -1,5 +1,7 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
 /**
  * Represents a community post in the VetBook application.
  * 
@@ -13,6 +15,7 @@ package com.example.vetbook.domain.models
  * @param likesCount Number of likes
  * @param commentsCount Number of comments
  */
+@Keep
 data class Post(
     val id: String,
     val authorId: String, // Foreign key to User

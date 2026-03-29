@@ -44,11 +44,6 @@ fun ServiceScreen(
             .fillMaxSize()
             .background(Background)
     ) {
-        SimpleTopBar(
-            title = "Dịch vụ",
-            onBackClick = onBackClick
-        )
-
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),

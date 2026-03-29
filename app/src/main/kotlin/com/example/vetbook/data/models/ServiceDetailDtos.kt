@@ -1,5 +1,8 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
+
+@Keep
 data class ServicePackageDto(
     val id: String = "",
     val name: String = "",
@@ -9,7 +12,7 @@ data class ServicePackageDto(
     val isActive: Boolean = true,
     val createdAt: Long? = null
 )
-
+@Keep
 data class PetServiceDetailDto(
     val categoryId: String = "",
     val rating: Double = 0.0,

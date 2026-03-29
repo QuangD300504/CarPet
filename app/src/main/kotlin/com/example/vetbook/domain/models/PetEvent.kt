@@ -1,5 +1,7 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
 /**
  * Represents a pet-related event in the VetBook application.
  * 
@@ -11,6 +13,7 @@ package com.example.vetbook.domain.models
  * @param imageUrl Optional event image URL
  * @param iconRes Optional icon resource ID
  */
+@Keep
 data class PetEvent(
     val id: String,
     val organizerId: String, // Foreign key to User

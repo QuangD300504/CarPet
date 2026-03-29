@@ -1,8 +1,11 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
+
 /**
  * Firestore document in `services` collection.
  */
+@Keep
 data class ServiceCategoryDto(
     val id: String = "",
     val title: String = "",

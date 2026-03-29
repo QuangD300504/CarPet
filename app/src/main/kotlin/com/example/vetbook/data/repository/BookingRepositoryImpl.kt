@@ -177,7 +177,7 @@ class BookingRepositoryImpl @Inject constructor(
         val response = payosApi.createPaymentLink(PayosHelper.CLIENT_ID, PayosHelper.API_KEY, request)
         
         if (response.code != "00") {
-            throw IllegalStateException("PayOS error: ${response.desc}")
+            throw IllegalStateException("PayOS error: ${response.desc ?: "Unknown error"}")
         }
 
         val checkoutUrl = response.data?.checkoutUrl ?: throw IllegalStateException("No checkout URL")

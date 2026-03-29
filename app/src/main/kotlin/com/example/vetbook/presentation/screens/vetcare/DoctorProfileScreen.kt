@@ -267,24 +267,24 @@ private fun DoctorProfileContent(
                         modifier              = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        StatCard(
-                            icon = Icons.Default.People,
-                            value = "${doctor.reviewsCount}+",
-                            label = "Đánh giá",
-                            modifier = Modifier.weight(1f)
-                        )
-                        StatCard(
-                            icon = Icons.Default.Verified,
-                            value = doctor.experience,
-                            label = "Kinh nghiệm",
-                            modifier = Modifier.weight(1f)
-                        )
-                        StatCard(
-                            icon = Icons.Default.ChatBubble,
-                            value = doctor.reviewsCount.toString(),
-                            label = "Nhận xét",
-                            modifier = Modifier.weight(1f)
-                        )
+StatCard(
+    icon     = Icons.Default.People,
+    value    = if (reviews.isEmpty()) "${doctor.reviewsCount}+" else "${reviews.size}",
+    label    = "Đánh giá",
+    modifier = Modifier.weight(1f)
+)
+StatCard(
+    icon     = Icons.Default.Verified,
+    value    = doctor.experience,
+    label    = "Kinh nghiệm",
+    modifier = Modifier.weight(1f)
+)
+StatCard(
+    icon     = Icons.Default.ChatBubble,
+    value    = reviews.size.toString(),   // live count, was doctor.reviewsCount
+    label    = "Nhận xét",
+    modifier = Modifier.weight(1f)
+)
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))

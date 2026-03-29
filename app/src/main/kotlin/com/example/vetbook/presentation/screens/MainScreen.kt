@@ -1150,6 +1150,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 BookAppointmentScreen(
                     doctorId = doctorId,
                     onBackClick = { bottomNavController.popBackStack() },
+                    onNavigateToPets    = { bottomNavController.navigate(Routes.Pet.route) },
                     vaccineContextLabel = pendingVaccineTitle,
                     onDismissVaccineContext = {
                         pendingVaccineId = null

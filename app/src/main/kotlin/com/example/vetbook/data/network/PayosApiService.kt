@@ -24,8 +24,8 @@ data class PayosPaymentRequest(
 )
 
 data class PayosPaymentResponse(
-    val code: String,
-    val desc: String,
+    val code: String?,
+    val desc: String?,
     val data: PayosPaymentData?
 )
 

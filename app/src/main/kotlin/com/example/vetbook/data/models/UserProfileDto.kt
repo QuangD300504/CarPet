@@ -1,10 +1,13 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
+
 /**
  * Firestore representation of a user document in `users` collection.
  *
  * Mirrors the structure defined in the Firestore database design plan.
  */
+@Keep
 data class UserProfileDto(
     val uid: String = "",
     val fullName: String = "",

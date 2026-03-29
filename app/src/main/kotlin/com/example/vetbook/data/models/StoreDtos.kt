@@ -1,5 +1,8 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
+
+@Keep
 data class StoreProductDto(
     val id: String = "",
     val name: String = "",
@@ -17,7 +20,7 @@ data class CartLineDto(
     val quantity: Int = 0,
     val addedAt: Long? = null
 )
-
+@Keep
 data class StoreOrderDto(
     val id: String = "",
     val uid: String = "",

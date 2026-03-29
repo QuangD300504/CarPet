@@ -1,5 +1,8 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
+@Keep
 data class StoreOrder(
     val id: String,
     val uid: String,
@@ -17,7 +20,7 @@ data class StoreOrder(
     val receiverPhone: String? = null,
     val deliveryAddress: String? = null
 )
-
+@Keep
 data class OrderItem(
     val productId: String,
     val productName: String,

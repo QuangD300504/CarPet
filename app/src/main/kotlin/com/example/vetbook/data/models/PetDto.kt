@@ -1,11 +1,14 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
+
 /**
  * Firestore representation of a pet document.
  *
  * Fields are nullable / have defaults to keep reads resilient to
  * missing data while the project is evolving.
  */
+@Keep
 data class PetDto(
     val id: String = "",
     val ownerId: String? = null,

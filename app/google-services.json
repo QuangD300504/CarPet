@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "1074707230062-jikqr6dokomo4hg7i9ibhv8vea5s3oec.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vetbook",
+            "certificate_hash": "141fef1150decd5d247ad32eccc8ef0c038eaa34"
+          }
+        },
+        {
           "client_id": "1074707230062-tk1duchbpji4avvhtcevvfsoatthkdsm.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -40,8 +48,6 @@
         }
       ],
       "services": {
-        "messaging_sender_id": "1074707230062",
-        "gcm_sender_id": "1074707230062",
         "appinvite_service": {
           "other_platform_oauth_client": [
             {

@@ -70,7 +70,8 @@ fun BookAppointmentScreen(
     onShowPayment: (checkoutUrl: String) -> Unit = {},
     onPaymentFinished: (isSuccess: Boolean, appointmentId: String, vetName: String?, appointmentAt: java.util.Date?) -> Unit = { _, _, _, _ -> },
     vaccineContextLabel: String? = null,
-    onDismissVaccineContext: () -> Unit = {}
+    onDismissVaccineContext: () -> Unit = {},
+    onNavigateToPets: () -> Unit = {}
 ) {
     val uiState by vetsViewModel.uiState.collectAsState()
     val doctor = uiState.veterinarians.find { it.id == doctorId }
@@ -179,6 +180,7 @@ fun BookAppointmentScreen(
             onBackClick       = onBackClick,
             vaccineContextLabel = vaccineContextLabel,
             onDismissVaccineContext = onDismissVaccineContext,
+            onNavigateToPets = onNavigateToPets,
             onPetToggle       = { bookingViewModel.togglePetSelection(it) },
             onDateSelect      = { selectedDateMillis = it },
             onSlotSelect      = { selectedSlot = it },
@@ -234,6 +236,7 @@ private fun BookAppointmentContent(
     onDateSelect: (Long?) -> Unit,
     onSlotSelect: (String?) -> Unit,
     onNoteChange: (String) -> Unit,
+    onNavigateToPets: () -> Unit = {},
     onConfirmClick: () -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
@@ -285,19 +288,28 @@ private fun BookAppointmentContent(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text(
-                            text = "Tổng thanh toán",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = HealthMuted
-                        )
-                        val total = doctor.servicePrice * selectedPetIds.size
-                        Text(
-                            text = String.format("%,.0f đ", total),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = HealthPrimary
-                        )
-                    }
+    Text(
+        text = "Tổng thanh toán",
+        style = MaterialTheme.typography.labelMedium,
+        color = HealthMuted
+    )
+    if (selectedPetIds.isEmpty()) {
+        Text(
+            text = "${String.format("%,.0f", doctor.servicePrice)}đ / thú cưng",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = HealthMuted  // greyed out — nothing selected yet
+        )
+    } else {
+        val total = doctor.servicePrice * selectedPetIds.size
+        Text(
+            text = String.format("%,.0f đ", total),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = HealthPrimary
+        )
+    }
+}
                     Button(
                         onClick = onConfirmClick,
                         enabled = selectedDateMillis != null && selectedSlot != null && selectedPetIds.isNotEmpty() && bookingState !is BookAppointmentViewModel.UiState.Loading,
@@ -407,8 +419,29 @@ private fun BookAppointmentContent(
                 SectionTitle(title = "Chọn Thú Cưng", icon = Icons.Default.Pets)
                 Spacer(modifier = Modifier.height(16.dp))
                 if (pets.isEmpty()) {
-                    Text("Vui lòng thêm thú cưng trong hồ sơ của bạn để đặt lịch khám", color = HealthMuted, style = MaterialTheme.typography.bodyMedium)
-                } else {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            "Bạn chưa có thú cưng trong hồ sơ.",
+            color = HealthMuted,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        OutlinedButton(
+            onClick = onNavigateToPets,
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = HealthPrimary),
+            border = androidx.compose.foundation.BorderStroke(1.dp, HealthPrimary.copy(alpha = 0.5f))
+        ) {
+            Icon(Icons.Default.Add, null, Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Thêm thú cưng ngay")
+        }
+    }
+} else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(pets) { pet ->
                             PetSelectionItem(

@@ -1,10 +1,13 @@
 package com.example.vetbook.domain.models
 
+import androidx.annotation.Keep
+
+@Keep
 enum class VaccineSpecies {
     DOG,
     CAT,
 }
-
+@Keep
 data class VaccineTemplate(
     val name: String,
     val alsoKnownAs: String? = null,
@@ -15,7 +18,7 @@ data class VaccineTemplate(
     val lifestyleTrigger: String? = null,
     val description: String? = null,
 )
-
+@Keep
 object VaccineTemplates {
 
     val bySpecies: Map<VaccineSpecies, List<VaccineTemplate>> = mapOf(

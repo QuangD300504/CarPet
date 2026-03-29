@@ -1,7 +1,8 @@
 package com.example.vetbook.data.models
 
+import androidx.annotation.Keep
 import com.google.firebase.Timestamp
-
+@Keep
 data class NotificationDto(
     val id: String = "",
     val userId: String = "",
