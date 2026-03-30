@@ -59,9 +59,16 @@ class VeterinariansViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 getVeterinariansUseCase().collect { vets ->
+                    // Duyệt qua từng bác sĩ để lấy danh sách reviews "live"
+                    val vetsWithReviews = vets.map { vet ->
+                        val doctorReviews = getDoctorReviewsUseCase(vet.id)
+                        // Gán danh sách reviews vào model Veterinarian
+                        vet.copy(reviews = doctorReviews)
+                    }
+
                     _uiState.update {
                         it.copy(
-                            veterinarians = vets,
+                            veterinarians = vetsWithReviews,
                             isLoading = false,
                             error = null
                         )

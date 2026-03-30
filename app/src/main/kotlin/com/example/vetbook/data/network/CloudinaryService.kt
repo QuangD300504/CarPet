@@ -1,5 +1,6 @@
 package com.example.vetbook.data.network
 
+import androidx.annotation.Keep
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -23,7 +24,7 @@ interface CloudinaryService {
         @Part("api_key") apiKey: RequestBody
     ): Response<CloudinaryUploadResponse>
 }
-
+@Keep
 data class CloudinaryUploadResponse(
     val public_id: String,
     val secure_url: String

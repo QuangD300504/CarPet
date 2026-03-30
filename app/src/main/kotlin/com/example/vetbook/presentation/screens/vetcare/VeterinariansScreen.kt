@@ -241,9 +241,9 @@ fun NavigationIcon(
 
 @Composable
 fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
-    // 1. Tính toán rating live từ danh sách reviews có trong đối tượng vet
-    val liveRating = if (vet.reviews.isEmpty()) null 
-                     else vet.reviews.map { it.rating }.average()
+    // 1. Tính toán rating live
+    val liveRating = if (vet.reviews.isEmpty()) null
+    else vet.reviews.map { it.rating }.average()
 
     val liveRatingLabel = when {
         vet.reviews.isEmpty() -> "Mới"
@@ -291,9 +291,10 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
+                // Hàng 1: Rating
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Star,
@@ -302,33 +303,30 @@ fun TopRateDoctorCard(vet: Veterinarian, onClick: () -> Unit) {
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    
-                    // SỬ DỤNG LABEL ĐÃ TÍNH TOÁN LIVE
                     Text(
                         text = liveRatingLabel,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFF2D3142)
                     )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    // HIỂN THỊ SỐ LƯỢNG ĐÁNH GIÁ THỰC TẾ
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "(${vet.reviews.size} đánh giá)",
+                        text = "(${vet.reviews.size})",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Phí: ${String.format("%,.0f", vet.servicePrice)}đ",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = HealthPrimary
-                        )
-                    )
                 }
-            }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Hàng 2: Giá phí
+                Text(
+                    text = "Phí: ${String.format("%,.0f", vet.servicePrice)}đ",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = HealthPrimary
+                    )
+                )
+            } 
 
             IconButton(onClick = onClick) {
                 Icon(
