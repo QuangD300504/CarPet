@@ -10,11 +10,11 @@ interface SeedProduct {
 }
 
 const CUSTOMERS = [
-    { uid: 'user_001', name: 'Nguyễn Văn An', email: 'an.nguyen@example.com', phone: '0901234567', address: '123 Lê Lợi, Quận 1, HCM' },
-    { uid: 'user_002', name: 'Trần Thị Bình', email: 'binh.tran@example.com', phone: '0912345678', address: '456 Nguyễn Huệ, Quận 1, HCM' },
-    { uid: 'user_003', name: 'Lê Hoàng Nam', email: 'nam.le@example.com', phone: '0923456789', address: '789 CMT8, Quận 3, HCM' },
-    { uid: 'user_004', name: 'Phạm Minh Đức', email: 'duc.pham@example.com', phone: '0934567890', address: '101 Võ Văn Tần, Quận 3, HCM' },
-    { uid: 'user_005', name: 'Đặng Thu Thảo', email: 'thao.dang@example.com', phone: '0945678901', address: '202 Lý Tự Trọng, Quận 1, HCM' }
+    { uid: 'user_001', name: 'Nguyễn Văn An', email: 'an.nguyen99@gmail.com', phone: '0901234567', address: '123 Lê Lợi, Quận 1, HCM' },
+    { uid: 'user_002', name: 'Trần Thị Bình', email: 'binhtran.work@fpt.edu.vn', phone: '0912345678', address: '456 Nguyễn Huệ, Quận 1, HCM' },
+    { uid: 'user_003', name: 'Lê Hoàng Nam', email: 'namlh.k17@gmail.com', phone: '0923456789', address: '789 CMT8, Quận 3, HCM' },
+    { uid: 'user_004', name: 'Phạm Minh Đức', email: 'ducpm.dev@outlook.com', phone: '0934567890', address: '101 Võ Văn Tần, Quận 3, HCM' },
+    { uid: 'user_005', name: 'Đặng Thu Thảo', email: 'thaodt.petcare@gmail.com', phone: '0945678901', address: '202 Lý Tự Trọng, Quận 1, HCM' }
 ];
 
 const STATUSES = ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
