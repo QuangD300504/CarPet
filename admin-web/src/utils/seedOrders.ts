@@ -1,5 +1,13 @@
-import { db } from './firebase/config';
+import { db } from '../firebase/config';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
+
+interface SeedProduct {
+    id: string;
+    name: string;
+    price: number;
+    imageUrl?: string;
+    category?: string;
+}
 
 const CUSTOMERS = [
     { uid: 'user_001', name: 'Nguyễn Văn An', phone: '0901234567', address: '123 Lê Lợi, Quận 1, HCM' },
@@ -17,7 +25,7 @@ export async function seedSampleOrders() {
         
         // 1. Get products to use in orders
         const productSnap = await getDocs(collection(db, 'products'));
-        const products = productSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const products = productSnap.docs.map(d => ({ id: d.id, ...d.data() } as SeedProduct));
         
         if (products.length === 0) {
             console.error('No products found in Firestore. Please add products first.');
