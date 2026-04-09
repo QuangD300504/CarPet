@@ -77,6 +77,23 @@ function calcTrend(current: number, previous: number): number {
 }
 
 export default function Dashboard() {
+    // ── Keyboard Cheat Code ─────────────────────────────────────────────
+    useEffect(() => {
+        let keys = '';
+        const handleKeyDown = (e: KeyboardEvent) => {
+            keys += e.key.toLowerCase();
+            if (keys.endsWith('seed')) {
+                if (window.confirm('Clear existing sample orders and generate 20 new ones?')) {
+                    seedSampleOrders();
+                }
+                keys = '';
+            }
+            if (keys.length > 10) keys = keys.slice(-10);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalOrders: 0,
@@ -274,12 +291,6 @@ export default function Dashboard() {
             <div>
                 <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Executive Dashboard</h1>
                 <p className="text-slate-500 mt-1">Real-time overview of VetBook operations.</p>
-                <button 
-                    onClick={seedSampleOrders}
-                    className="mt-4 px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-                >
-                    Generate 20 Sample Orders
-                </button>
             </div>
 
             {/* Metrics Grid */}

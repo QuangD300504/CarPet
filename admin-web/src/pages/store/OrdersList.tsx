@@ -13,6 +13,7 @@ export interface Order {
     userName?: string;
     userEmail?: string;
     receiverName?: string;
+    receiverEmail?: string;
     receiverPhone?: string;
     total: number;
     subtotal?: number;
@@ -179,7 +180,7 @@ export default function OrdersList() {
                         ) : paginatedItems.map((order) => {
                             const createdAt = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A';
                             const customerName = order.receiverName || userNames[order.uid] || order.uid;
-                            const customerEmail = userNames[`${order.uid}:email`];
+                            const customerEmail = order.receiverEmail || userNames[`${order.uid}:email`];
 
                             return (
                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedOrder(order)}>
@@ -282,7 +283,7 @@ export default function OrdersList() {
                                     <div className="space-y-2">
                                         <p className="text-sm font-medium text-slate-800">{selectedOrder.receiverName || userNames[selectedOrder.uid] || 'Unknown'}</p>
                                         <p className="text-sm text-slate-500 flex items-center gap-2">
-                                            <Mail className="h-3.5 w-3.5" /> {userNames[`${selectedOrder.uid}:email`] || 'No email'}
+                                            <Mail className="h-3.5 w-3.5" /> {selectedOrder.receiverEmail || userNames[`${selectedOrder.uid}:email`] || 'No email'}
                                         </p>
                                         <p className="text-sm text-slate-500 flex items-center gap-2">
                                             <span className="h-3.5 w-3.5 text-xs">📞</span> {selectedOrder.receiverPhone || userNames[`${selectedOrder.uid}:phone`] || 'No phone'}
