@@ -65,7 +65,7 @@ function getPeriodOrders(orders: any[], days: number): any[] {
     return orders.filter(o => {
         const createdAt = o.createdAt instanceof Timestamp
             ? o.createdAt.toDate()
-            : o.createdAt ? new Date(o.createdAt) : null;
+            : (typeof o.createdAt === 'number' ? new Date(o.createdAt) : (o.createdAt ? new Date(o.createdAt) : null));
         return createdAt && createdAt >= cutoff;
     });
 }
@@ -138,7 +138,7 @@ export default function Dashboard() {
                 totalRevenue += amount;
                 const createdAt = o.createdAt instanceof Timestamp
                     ? o.createdAt.toDate()
-                    : o.createdAt ? new Date(o.createdAt) : null;
+                    : (typeof o.createdAt === 'number' ? new Date(o.createdAt) : (o.createdAt ? new Date(o.createdAt) : null));
                 if (createdAt) {
                     const lbl = dayLabel(createdAt);
                     if (lbl in dailyRevenue) dailyRevenue[lbl] += amount;
@@ -214,8 +214,8 @@ export default function Dashboard() {
             setTopProducts(topProducts);
             setRecentOrders([...orders]
                 .sort((a, b) => {
-                    const ta = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-                    const tb = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+                    const ta = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : (typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt ? new Date(a.createdAt).getTime() : 0));
+                    const tb = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : (typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt ? new Date(b.createdAt).getTime() : 0));
                     return tb - ta;
                 })
                 .slice(0, 5));
@@ -450,8 +450,8 @@ export default function Dashboard() {
                                         <ShoppingBag className="h-5 w-5 text-slate-400" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-slate-900">Order #{order.id.slice(-6)}</p>
-                                        <p className="text-[10px] text-slate-500 font-medium">{userMap[order.userId] || 'Anonymous Customer'}</p>
+                                        <p className="text-sm font-bold text-slate-900">Order #{order.orderCode || order.id.slice(-6)}</p>
+                                        <p className="text-[10px] text-slate-500 font-medium">{order.receiverName || userMap[order.uid] || 'Anonymous Customer'}</p>
                                         <p className="text-[10px] text-slate-400 capitalize">{order.status || 'Pending'}</p>
                                     </div>
                                 </div>

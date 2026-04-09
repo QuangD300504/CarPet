@@ -8,23 +8,29 @@ import { formatVND } from '../../utils/format';
 
 export interface Order {
     id: string;
-    userId: string;
+    uid: string;
+    orderCode: string;
     userName?: string;
     userEmail?: string;
-    totalAmount: number;
-    status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-    shippingAddress: string;
-    createdAt: any;
-    items: Array<{ productId: string; quantity: number; price: number; name: string }>;
+    receiverName?: string;
+    receiverPhone?: string;
+    total: number;
+    subtotal?: number;
+    discount?: number;
+    deliveryCharges?: number;
+    status: string;
+    shippingAddress?: string;
+    createdAt: number;
+    items: Array<{ productId: string; quantity: number; lineTotal: number; productName: string }>;
 }
 
-const STATUS_OPTIONS: Order['status'][] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+const STATUS_OPTIONS = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 export default function OrdersList() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<Order['status'] | ''>('');
+    const [statusFilter, setStatusFilter] = useState<string>('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     // Cache userId → display name
@@ -68,9 +74,9 @@ export default function OrdersList() {
         fetchUsers();
     }, []);
 
-    const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    const updateOrderStatus = async (orderId: string, newStatus: string) => {
         try {
-            await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
+            await updateDoc(doc(db, 'storeOrders', orderId), { status: newStatus });
         } catch (error) {
             console.error('Error updating order status', error);
         }
@@ -79,11 +85,13 @@ export default function OrdersList() {
     const filteredOrders = useMemo(() => {
         const q = search.trim().toLowerCase();
         return orders.filter(o => {
+            const customerName = o.receiverName || userNames[o.uid] || '';
             const matchesSearch =
                 !q ||
                 o.id.toLowerCase().includes(q) ||
-                (userNames[o.userId] || '').toLowerCase().includes(q) ||
-                (userNames[`${o.userId}:email`] || '').toLowerCase().includes(q);
+                o.orderCode?.toLowerCase().includes(q) ||
+                customerName.toLowerCase().includes(q) ||
+                (userNames[`${o.uid}:email`] || '').toLowerCase().includes(q);
             const matchesStatus = !statusFilter || o.status === statusFilter;
             return matchesSearch && matchesStatus;
         });
@@ -99,11 +107,12 @@ export default function OrdersList() {
     } = usePagination(filteredOrders, 8);
 
     const statusColors: Record<string, string> = {
-        pending:    'bg-yellow-100 text-yellow-800',
-        processing:  'bg-primary-100 text-primary-800',
-        shipped:     'bg-indigo-100 text-indigo-800',
-        delivered:   'bg-green-100 text-green-800',
-        cancelled:   'bg-red-100 text-red-800',
+        PENDING:    'bg-yellow-100 text-yellow-800',
+        PAID:       'bg-emerald-100 text-emerald-800',
+        PROCESSING: 'bg-primary-100 text-primary-800',
+        SHIPPED:    'bg-indigo-100 text-indigo-800',
+        DELIVERED:  'bg-green-100 text-green-800',
+        CANCELLED:  'bg-red-100 text-red-800',
     };
 
     if (loading) return (
@@ -125,7 +134,7 @@ export default function OrdersList() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                         type="text"
-                        placeholder="Search by order ID or customer name..."
+                        placeholder="Search by order ID, code or customer..."
                         value={search}
                         onChange={e => { setSearch(e.target.value); handlePageChange(1); }}
                         className="w-full pl-9 pr-8 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
@@ -139,12 +148,12 @@ export default function OrdersList() {
                 <select
                     title="Filter by status"
                     value={statusFilter}
-                    onChange={e => { setStatusFilter(e.target.value as Order['status'] | ''); handlePageChange(1); }}
+                    onChange={e => { setStatusFilter(e.target.value); handlePageChange(1); }}
                     className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
                 >
                     <option value="">All Statuses</option>
                     {STATUS_OPTIONS.map(s => (
-                        <option key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        <option key={s} value={s}>{s}</option>
                     ))}
                 </select>
             </div>
@@ -168,15 +177,15 @@ export default function OrdersList() {
                                 </td>
                             </tr>
                         ) : paginatedItems.map((order) => {
-                            const createdAt = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
-                            const customerName = userNames[order.userId] || order.userId;
-                            const customerEmail = userNames[`${order.userId}:email`];
+                            const createdAt = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A';
+                            const customerName = order.receiverName || userNames[order.uid] || order.uid;
+                            const customerEmail = userNames[`${order.uid}:email`];
 
                             return (
                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedOrder(order)}>
                                     <td className="px-6 py-4">
                                         <div className="font-mono text-sm text-slate-900 flex items-center gap-2 group">
-                                            {order.id.slice(0, 8)}...
+                                            {order.orderCode || order.id.slice(0, 8)}
                                             <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-primary-500 transition-colors" />
                                         </div>
                                         <div className="text-sm text-slate-500">{createdAt}</div>
@@ -191,24 +200,24 @@ export default function OrdersList() {
                                         )}
                                     </td>
                                     <td className="px-6 py-4 font-medium text-slate-900">
-                                        {formatVND(order.totalAmount || 0)}
+                                        {formatVND(order.total || 0)}
                                     </td>
                                     <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                         <select
                                             title="Change order status"
                                             value={order.status}
-                                            onChange={(e) => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                                            className={`text-xs font-semibold rounded-full px-3 py-1 outline-none appearance-none cursor-pointer border-none ${statusColors[order.status] || statusColors.pending}`}
+                                            onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                                            className={`text-xs font-semibold rounded-full px-3 py-1 outline-none appearance-none cursor-pointer border-none ${statusColors[order.status] || statusColors.PENDING}`}
                                         >
                                             {STATUS_OPTIONS.map(s => (
-                                                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                                                <option key={s} value={s}>{s}</option>
                                             ))}
                                         </select>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600">
                                         {order.items?.length || 0} items
                                         <div className="text-xs text-slate-400 mt-1 line-clamp-1 max-w-[200px]">
-                                            {order.items?.map(i => i.name).join(', ')}
+                                            {order.items?.map(i => i.productName).join(', ')}
                                         </div>
                                     </td>
                                 </tr>
@@ -233,7 +242,7 @@ export default function OrdersList() {
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                             <div>
                                 <h2 className="text-xl font-bold text-slate-900">Order Details</h2>
-                                <p className="text-sm text-slate-500 font-mono mt-1">ID: {selectedOrder.id}</p>
+                                <p className="text-sm text-slate-500 font-mono mt-1">Code: {selectedOrder.orderCode || selectedOrder.id}</p>
                             </div>
                             <button
                                 onClick={() => setSelectedOrder(null)}
@@ -251,7 +260,7 @@ export default function OrdersList() {
                                         <Calendar className="h-3.5 w-3.5" /> Date & Time
                                     </div>
                                     <p className="text-sm font-semibold text-slate-900">
-                                        {selectedOrder.createdAt?.toDate ? selectedOrder.createdAt.toDate().toLocaleString('vi-VN') : 'N/A'}
+                                        {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString('vi-VN') : 'N/A'}
                                     </p>
                                 </div>
                                 <div className="p-4 bg-primary-50 rounded-xl border border-primary-100">
@@ -259,7 +268,7 @@ export default function OrdersList() {
                                         <ShoppingBag className="h-3.5 w-3.5" /> Total Amount
                                     </div>
                                     <p className="text-lg font-bold text-primary-700">
-                                        {formatVND(selectedOrder.totalAmount)}
+                                        {formatVND(selectedOrder.total)}
                                     </p>
                                 </div>
                             </div>
@@ -271,15 +280,13 @@ export default function OrdersList() {
                                         <User className="h-4 w-4 text-primary-500" /> Customer Information
                                     </h3>
                                     <div className="space-y-2">
-                                        <p className="text-sm font-medium text-slate-800">{userNames[selectedOrder.userId] || 'Unknown'}</p>
+                                        <p className="text-sm font-medium text-slate-800">{selectedOrder.receiverName || userNames[selectedOrder.uid] || 'Unknown'}</p>
                                         <p className="text-sm text-slate-500 flex items-center gap-2">
-                                            <Mail className="h-3.5 w-3.5" /> {userNames[`${selectedOrder.userId}:email`] || 'No email'}
+                                            <Mail className="h-3.5 w-3.5" /> {userNames[`${selectedOrder.uid}:email`] || 'No email'}
                                         </p>
-                                        {userNames[`${selectedOrder.userId}:phone`] && (
-                                            <p className="text-sm text-slate-500 flex items-center gap-2">
-                                                <span className="h-3.5 w-3.5 text-xs">📞</span> {userNames[`${selectedOrder.userId}:phone`]}
-                                            </p>
-                                        )}
+                                        <p className="text-sm text-slate-500 flex items-center gap-2">
+                                            <span className="h-3.5 w-3.5 text-xs">📞</span> {selectedOrder.receiverPhone || userNames[`${selectedOrder.uid}:phone`] || 'No phone'}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
@@ -287,7 +294,7 @@ export default function OrdersList() {
                                         <MapPin className="h-4 w-4 text-red-500" /> Shipping Address
                                     </h3>
                                     <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
-                                        {selectedOrder.shippingAddress || 'No address provided'}
+                                        {selectedOrder.shippingAddress || 'Address details in receiver info'}
                                     </p>
                                 </div>
                             </div>
@@ -303,24 +310,32 @@ export default function OrdersList() {
                                             <tr>
                                                 <th className="px-4 py-3 text-left">Product</th>
                                                 <th className="px-4 py-3 text-center">Qty</th>
-                                                <th className="px-4 py-3 text-right">Price</th>
-                                                <th className="px-4 py-3 text-right">Subtotal</th>
+                                                <th className="px-4 py-3 text-right">Line Total</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {selectedOrder.items?.map((item, idx) => (
                                                 <tr key={idx}>
-                                                    <td className="px-4 py-3 font-medium text-slate-800">{item.name}</td>
+                                                    <td className="px-4 py-3 font-medium text-slate-800">{item.productName}</td>
                                                     <td className="px-4 py-3 text-center text-slate-600">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-right text-slate-600">{formatVND(item.price)}</td>
-                                                    <td className="px-4 py-3 text-right font-bold text-slate-900">{formatVND(item.price * item.quantity)}</td>
+                                                    <td className="px-4 py-3 text-right font-bold text-slate-900">{formatVND(item.lineTotal)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                         <tfoot className="bg-slate-50 font-bold">
                                             <tr>
-                                                <td colSpan={3} className="px-4 py-3 text-right text-slate-500">Total</td>
-                                                <td className="px-4 py-3 text-right text-primary-600">{formatVND(selectedOrder.totalAmount)}</td>
+                                                <td colSpan={2} className="px-4 py-3 text-right text-slate-500">Subtotal</td>
+                                                <td className="px-4 py-3 text-right">{formatVND(selectedOrder.subtotal || selectedOrder.total)}</td>
+                                            </tr>
+                                            {selectedOrder.discount ? (
+                                                <tr>
+                                                    <td colSpan={2} className="px-4 py-3 text-right text-slate-500">Discount</td>
+                                                    <td className="px-4 py-3 text-right text-red-500">-{formatVND(selectedOrder.discount)}</td>
+                                                </tr>
+                                            ) : null}
+                                            <tr>
+                                                <td colSpan={2} className="px-4 py-3 text-right text-slate-500 font-black">Grand Total</td>
+                                                <td className="px-4 py-3 text-right text-primary-600 font-black text-base">{formatVND(selectedOrder.total)}</td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -333,11 +348,11 @@ export default function OrdersList() {
                                 <span className="text-sm font-bold text-slate-500">Status:</span>
                                 <select
                                     value={selectedOrder.status}
-                                    onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value as Order['status'])}
-                                    className={`text-sm font-bold rounded-full px-4 py-1.5 border-none outline-none ring-2 ring-white shadow-sm ${statusColors[selectedOrder.status]}`}
+                                    onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
+                                    className={`text-sm font-bold rounded-full px-4 py-1.5 border-none outline-none ring-2 ring-white shadow-sm ${statusColors[selectedOrder.status] || statusColors.PENDING}`}
                                 >
                                     {STATUS_OPTIONS.map(s => (
-                                        <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                                        <option key={s} value={s}>{s}</option>
                                     ))}
                                 </select>
                             </div>
