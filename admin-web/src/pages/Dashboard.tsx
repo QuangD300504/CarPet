@@ -89,6 +89,7 @@ export default function Dashboard() {
     const [products, setProducts] = useState<any[]>([]);
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [recentAppts, setRecentAppts] = useState<any[]>([]);
+    const [userMap, setUserMap] = useState<Record<string, string>>({});
     const [chartData, setChartData] = useState<any[]>([]);
     const [healthData, setHealthData] = useState<any[]>([]);
     const [topProducts, setTopProducts] = useState<{ name: string; count: number }[]>([]);
@@ -181,6 +182,13 @@ export default function Dashboard() {
                 .sort(([, a], [, b]) => b - a)
                 .slice(0, 5)
                 .map(([name, count]) => ({ name, count }));
+
+            // ── User Mapping ─────────────────────────────────────────────
+            const uMap: Record<string, string> = {};
+            users.forEach(u => {
+                uMap[u.id] = u.fullName || u.displayName || u.name || u.id;
+            });
+            setUserMap(uMap);
 
             // ── Low stock ────────────────────────────────────────────────────
             const lowStock = products.filter((p: any) => p.stock < 10).length;
@@ -443,7 +451,8 @@ export default function Dashboard() {
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-slate-900">Order #{order.id.slice(-6)}</p>
-                                        <p className="text-xs text-slate-500 capitalize">{order.status || 'Pending'}</p>
+                                        <p className="text-[10px] text-slate-500 font-medium">{userMap[order.userId] || 'Anonymous Customer'}</p>
+                                        <p className="text-[10px] text-slate-400 capitalize">{order.status || 'Pending'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
