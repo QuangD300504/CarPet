@@ -19,7 +19,7 @@ export interface Order {
     discount?: number;
     deliveryCharges?: number;
     status: string;
-    shippingAddress?: string;
+    deliveryAddress?: string;
     createdAt: number;
     items: Array<{ productId: string; quantity: number; lineTotal: number; productName: string }>;
 }
@@ -294,7 +294,7 @@ export default function OrdersList() {
                                         <MapPin className="h-4 w-4 text-red-500" /> Shipping Address
                                     </h3>
                                     <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
-                                        {selectedOrder.shippingAddress || 'Address details in receiver info'}
+                                        {selectedOrder.deliveryAddress || 'No address provided'}
                                     </p>
                                 </div>
                             </div>

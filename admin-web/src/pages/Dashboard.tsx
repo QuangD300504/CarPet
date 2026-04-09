@@ -24,6 +24,7 @@ import {
 import { Link } from 'react-router-dom';
 
 import { formatVND } from '../utils/format';
+import { seedSampleOrders } from '../utils/seedOrders';
 
 interface StatCardProps {
     title: string;
@@ -273,6 +274,12 @@ export default function Dashboard() {
             <div>
                 <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Executive Dashboard</h1>
                 <p className="text-slate-500 mt-1">Real-time overview of VetBook operations.</p>
+                <button 
+                    onClick={seedSampleOrders}
+                    className="mt-4 px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                >
+                    Generate 20 Sample Orders
+                </button>
             </div>
 
             {/* Metrics Grid */}
