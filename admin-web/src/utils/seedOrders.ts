@@ -1,5 +1,5 @@
 import { db } from '../firebase/config';
-import { collection, getDocs, addDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, query } from 'firebase/firestore';
 
 interface SeedProduct {
     id: string;
@@ -44,8 +44,6 @@ export async function seedSampleOrders() {
             return;
         }
 
-        const ordersCol = collection(db, 'storeOrders');
-        
         for (let i = 0; i < 20; i++) {
             const customer = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
             const orderStatus = STATUSES[Math.floor(Math.random() * STATUSES.length)];
